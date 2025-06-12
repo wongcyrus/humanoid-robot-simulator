@@ -35,6 +35,23 @@ This implementation provides:
 - **Push-ups**: Horizontal body position
 - **Movement**: Realistic walking and turning
 
+## 💻 Platform Support
+
+### Windows
+- **PowerShell Script**: `run_simulator.ps1` (recommended)
+- **Batch File**: `run_simulator.bat` (alternative)
+- **Test Script**: `test_humanoid_robots.ps1`
+- **Requirements**: Python 3.8+, Windows 7+
+
+### Linux/macOS
+- **Bash Script**: `run_simulator.sh`
+- **Test Script**: `test_humanoid_robots.py`
+- **Requirements**: Python 3.8+
+
+### Cross-Platform
+- **Direct Python**: `python humanoid_robot_simulator.py`
+- **Works on**: Windows, Linux, macOS, any Python-supported platform
+
 ## 🚀 Quick Start
 
 ### Installation
@@ -54,6 +71,7 @@ pip install -r requirements.txt
 
 ### Running the Simulator
 
+#### Linux/macOS
 ```bash
 # Start the simulator
 ./run_simulator.sh
@@ -63,6 +81,27 @@ python3 humanoid_robot_simulator.py
 
 # Test the API
 python3 test_humanoid_robots.py
+```
+
+#### Windows
+```powershell
+# PowerShell (Recommended)
+.\run_simulator.ps1
+
+# Or Command Prompt
+run_simulator.bat
+
+# Test the API
+.\test_humanoid_robots.ps1
+```
+
+#### Direct Python (All Platforms)
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run simulator
+python humanoid_robot_simulator.py [port]
 ```
 
 ## 📁 Project Structure
