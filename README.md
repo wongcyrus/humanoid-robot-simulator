@@ -2,6 +2,11 @@
 
 A production-ready 6-robot humanoid simulator with realistic humanoid visualization and web API control.
 
+[![GitHub](https://img.shields.io/badge/GitHub-wongcyrus-blue?logo=github)](https://github.com/wongcyrus/humanoid-robot-simulator)
+[![Python](https://img.shields.io/badge/Python-3.8+-green?logo=python)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-2.0+-red?logo=flask)](https://flask.palletsprojects.com)
+[![Pygame](https://img.shields.io/badge/Pygame-2.1+-orange?logo=python)](https://pygame.org)
+
 ## 🎯 Overview
 
 This implementation provides:
@@ -32,9 +37,29 @@ This implementation provides:
 
 ## 🚀 Quick Start
 
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/wongcyrus/humanoid-robot-simulator.git
+cd humanoid-robot-simulator
+
+# Setup virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Running the Simulator
+
 ```bash
 # Start the simulator
 ./run_simulator.sh
+
+# Or run directly
+python3 humanoid_robot_simulator.py
 
 # Test the API
 python3 test_humanoid_robots.py

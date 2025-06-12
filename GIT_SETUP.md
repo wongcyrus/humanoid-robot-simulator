@@ -1,28 +1,44 @@
 # Git Setup Guide
 
-## Initialize Git Repository
+## Repository Information
+
+- **GitHub Username**: `wongcyrus`
+- **Repository URL**: `https://github.com/wongcyrus/humanoid-robot-simulator.git`
+- **Local Path**: `/home/cyrus/mock_robot_simulator`
+
+## Push to GitHub
 
 ```bash
-# Initialize git repository
-git init
+# First time push (after creating repository on GitHub)
+git push -u origin master
 
-# Add all files (respecting .gitignore)
-git add .
-
-# Create initial commit
-git commit -m "Initial commit: Humanoid Robot Simulator
-
-- 6 humanoid robots (robot_1 to robot_6)
-- Web API with 'all' robot support
-- 26 humanoid actions with realistic animations
-- Real-time pygame visualization
-- Production-ready Flask API"
-
-# Optional: Add remote repository
-# git remote add origin https://github.com/yourusername/humanoid-robot-simulator.git
-# git branch -M main
-# git push -u origin main
+# Or if you prefer main branch
+git branch -M main
+git push -u origin main
 ```
+
+## Clone Repository
+
+```bash
+# Clone your repository
+git clone https://github.com/wongcyrus/humanoid-robot-simulator.git
+cd humanoid-robot-simulator
+
+# Setup virtual environment
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Run the simulator
+./run_simulator.sh
+```
+
+## Repository Already Configured
+
+✅ **Git Configuration:**
+- Remote origin: `https://github.com/wongcyrus/humanoid-robot-simulator.git`
+- Author: `wongcyrus <wongcyrus@users.noreply.github.com>`
+- Initial commit created with proper attribution
 
 ## Files Tracked by Git
 
@@ -54,9 +70,20 @@ git add .
 # Commit changes
 git commit -m "Description of changes"
 
-# Push to remote (if configured)
+# Push to GitHub
 git push
 ```
+
+## Creating the GitHub Repository
+
+1. Go to https://github.com/wongcyrus
+2. Click "New repository"
+3. Repository name: `humanoid-robot-simulator`
+4. Description: "6 Humanoid Robot Simulator with Web API - realistic visualization and synchronized control"
+5. Make it Public (recommended for portfolio)
+6. Don't initialize with README (we already have one)
+7. Click "Create repository"
+8. Run: `git push -u origin master`
 
 ## Branch Strategy
 
@@ -70,13 +97,13 @@ git checkout -b feature/new-robot-action
 git add .
 git commit -m "Add new robot action: dance"
 
-# Switch back to main
-git checkout main
+# Push feature branch
+git push -u origin feature/new-robot-action
 
-# Merge feature
-git merge feature/new-robot-action
-
-# Delete feature branch
+# Create pull request on GitHub
+# After merge, switch back to main
+git checkout master
+git pull
 git branch -d feature/new-robot-action
 ```
 
@@ -89,15 +116,12 @@ git log --oneline
 # View changes
 git diff
 
-# Undo last commit (keep changes)
-git reset --soft HEAD~1
-
-# Undo last commit (discard changes)
-git reset --hard HEAD~1
-
 # View remote repositories
 git remote -v
 
 # Pull latest changes
 git pull
+
+# Check repository status
+git status
 ```
