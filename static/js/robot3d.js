@@ -7,8 +7,29 @@ class Robot3D {
     constructor(robotData) {
         this.robotId = robotData.robot_id;
         this.color = robotData.color;
-        this.position = robotData.position;
-        this.rotation = robotData.rotation;
+        
+        // Fix position handling - convert array to object
+        if (Array.isArray(robotData.position)) {
+            this.position = {
+                x: robotData.position[0],
+                y: robotData.position[1], 
+                z: robotData.position[2]
+            };
+        } else {
+            this.position = robotData.position || {x: 0, y: 0, z: 0};
+        }
+        
+        // Fix rotation handling - convert array to object
+        if (Array.isArray(robotData.rotation)) {
+            this.rotation = {
+                x: robotData.rotation[0],
+                y: robotData.rotation[1],
+                z: robotData.rotation[2]
+            };
+        } else {
+            this.rotation = robotData.rotation || {x: 0, y: 0, z: 0};
+        }
+        
         this.currentAction = robotData.current_action;
         this.lastAction = 'idle'; // Track last action to prevent constant resets
         this.actionProgress = robotData.action_progress;
@@ -17,6 +38,8 @@ class Robot3D {
         // Three.js objects
         this.group = new THREE.Group();
         this.parts = {};
+        
+        console.log(`🔧 Robot ${this.robotId} position fixed:`, this.position);
         
         this.createRobot();
         this.updatePosition();
@@ -233,6 +256,8 @@ class Robot3D {
     }
     
     updatePosition() {
+        console.log(`🔧 ${this.robotId} updatePosition called with:`, this.position);
+        
         this.group.position.set(
             this.position.x,
             this.position.y,
@@ -240,6 +265,8 @@ class Robot3D {
         );
         
         this.group.rotation.y = THREE.MathUtils.degToRad(this.rotation.y);
+        
+        console.log(`✅ ${this.robotId} positioned at:`, this.group.position);
     }
     
     updateAnimations() {
@@ -438,6 +465,8 @@ class Scene3D {
         
         console.log('✅ Three.js initialized');
         console.log('📷 Camera position:', this.camera.position);
+        console.log('📷 Camera looking at: (0, 0, 0)');
+        console.log('🌍 Scene children count:', this.scene.children.length);
     }
     
     setupLighting() {
@@ -574,7 +603,13 @@ class Scene3D {
         this.robots.set(robotData.robot_id, robot);
         this.scene.add(robot.group);
         
+        // DEBUG: Check robot visibility and position
         console.log(`✅ Robot ${robotData.robot_id} added to scene at position:`, robot.position);
+        console.log(`🔍 DEBUG: Robot group visible:`, robot.group.visible);
+        console.log(`🔍 DEBUG: Robot group position:`, robot.group.position);
+        console.log(`🔍 DEBUG: Robot group scale:`, robot.group.scale);
+        console.log(`🔍 DEBUG: Robot group children count:`, robot.group.children.length);
+        console.log(`🔍 DEBUG: Scene children count:`, this.scene.children.length);
         console.log(`📊 Total robots in scene: ${this.robots.size}`);
     }
     
