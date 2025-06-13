@@ -262,8 +262,20 @@ class WebHumanoidSimulator:
         self.robots = {}
         self._create_robots()
         
-        # Action mapping
+        # Action mapping - include ALL frontend actions
         self.action_mapping = {
+            # Frontend actions (used by JavaScript client)
+            "dance": HumanoidAction.DANCE,
+            "wave": HumanoidAction.WAVE,
+            "kung_fu": HumanoidAction.KUNG_FU,
+            "jump": HumanoidAction.JUMP,
+            "go_forward": HumanoidAction.GO_FORWARD,
+            "move_forward": HumanoidAction.GO_FORWARD,
+            "move_backward": HumanoidAction.BACK_FAST,
+            "turn_left": HumanoidAction.TURN_LEFT,
+            "turn_right": HumanoidAction.TURN_RIGHT,
+            
+            # Legacy actions (from original mapping)
             "stepping": HumanoidAction.STEPPING,
             "twist": HumanoidAction.TWIST,
             "stand_up_back": HumanoidAction.STAND_UP_BACK,
@@ -279,9 +291,6 @@ class WebHumanoidSimulator:
             "squat_up": HumanoidAction.SQUAT_UP,
             "squat": HumanoidAction.SQUAT,
             "bow": HumanoidAction.BOW,
-            "wave": HumanoidAction.WAVE,
-            "turn_right": HumanoidAction.TURN_RIGHT,
-            "turn_left": HumanoidAction.TURN_LEFT,
             "sit_ups": HumanoidAction.SIT_UPS,
             "right_move_fast": HumanoidAction.RIGHT_MOVE_FAST,
             "left_move_fast": HumanoidAction.LEFT_MOVE_FAST,
@@ -456,6 +465,8 @@ class WebHumanoidSimulator:
     
     def _execute_action(self, robot_id: str, robot: Robot3D, action: str):
         """Execute action on a robot"""
+        print(f"🎯 _execute_action called: robot_id={robot_id}, action={action}")
+        
         result = {
             "robot_id": robot_id,
             "action": action,
@@ -471,18 +482,26 @@ class WebHumanoidSimulator:
                 robot._reset_body_parts()
                 result["success"] = True
                 result["message"] = f"Robot {robot_id} stopped successfully"
+                print(f"✅ {robot_id}: Stopped and set to IDLE")
             
             elif action.lower() in self.action_mapping:
                 target_action = self.action_mapping[action.lower()]
+                print(f"🎭 {robot_id}: Found action '{action}' → {target_action}")
                 robot.start_action(target_action)
                 result["success"] = True
                 result["message"] = f"Action '{action}' started for robot {robot_id}"
+                print(f"✅ {robot_id}: Action '{action}' started successfully")
+                print(f"   Current action: {robot.current_action}")
+                print(f"   Action progress: {robot.action_progress}")
             
             else:
                 result["message"] = f"Unknown action: {action}"
+                print(f"❌ {robot_id}: Unknown action '{action}'")
+                print(f"   Available actions: {list(self.action_mapping.keys())}")
         
         except Exception as e:
             result["message"] = f"Error executing action: {str(e)}"
+            print(f"❌ {robot_id}: Error executing action '{action}': {e}")
         
         return result
     
