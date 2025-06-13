@@ -213,6 +213,12 @@ class Robot3D {
     }
     
     updateAnimations() {
+        // Debug: Log animation data
+        if (this.currentAction !== 'idle') {
+            console.log(`🎭 ${this.robotId}: Updating animations for ${this.currentAction}`);
+            console.log('Body parts data:', this.bodyParts);
+        }
+        
         // Reset rotations
         Object.values(this.parts).forEach(part => {
             if (part.rotation) {
@@ -222,56 +228,92 @@ class Robot3D {
         
         // Apply body part rotations from server
         if (this.bodyParts) {
+            let animatedParts = 0;
+            
             // Head
             if (this.bodyParts.head) {
-                this.parts.head.rotation.set(
-                    THREE.MathUtils.degToRad(this.bodyParts.head.x),
-                    THREE.MathUtils.degToRad(this.bodyParts.head.y),
-                    THREE.MathUtils.degToRad(this.bodyParts.head.z)
-                );
+                const head = this.bodyParts.head;
+                if (Math.abs(head.x) > 0.1 || Math.abs(head.y) > 0.1 || Math.abs(head.z) > 0.1) {
+                    this.parts.head.rotation.set(
+                        THREE.MathUtils.degToRad(head.x),
+                        THREE.MathUtils.degToRad(head.y),
+                        THREE.MathUtils.degToRad(head.z)
+                    );
+                    animatedParts++;
+                    console.log(`  ✅ Head animated: ${head.x}°, ${head.y}°, ${head.z}°`);
+                }
             }
             
             // Torso
             if (this.bodyParts.torso) {
-                this.parts.torso.rotation.set(
-                    THREE.MathUtils.degToRad(this.bodyParts.torso.x),
-                    THREE.MathUtils.degToRad(this.bodyParts.torso.y),
-                    THREE.MathUtils.degToRad(this.bodyParts.torso.z)
-                );
+                const torso = this.bodyParts.torso;
+                if (Math.abs(torso.x) > 0.1 || Math.abs(torso.y) > 0.1 || Math.abs(torso.z) > 0.1) {
+                    this.parts.torso.rotation.set(
+                        THREE.MathUtils.degToRad(torso.x),
+                        THREE.MathUtils.degToRad(torso.y),
+                        THREE.MathUtils.degToRad(torso.z)
+                    );
+                    animatedParts++;
+                    console.log(`  ✅ Torso animated: ${torso.x}°, ${torso.y}°, ${torso.z}°`);
+                }
             }
             
             // Arms
             if (this.bodyParts.left_arm) {
-                this.parts.leftArm.rotation.set(
-                    THREE.MathUtils.degToRad(this.bodyParts.left_arm.x),
-                    THREE.MathUtils.degToRad(this.bodyParts.left_arm.y),
-                    THREE.MathUtils.degToRad(this.bodyParts.left_arm.z)
-                );
+                const leftArm = this.bodyParts.left_arm;
+                if (Math.abs(leftArm.x) > 0.1 || Math.abs(leftArm.y) > 0.1 || Math.abs(leftArm.z) > 0.1) {
+                    this.parts.leftArm.rotation.set(
+                        THREE.MathUtils.degToRad(leftArm.x),
+                        THREE.MathUtils.degToRad(leftArm.y),
+                        THREE.MathUtils.degToRad(leftArm.z)
+                    );
+                    animatedParts++;
+                    console.log(`  ✅ Left arm animated: ${leftArm.x}°, ${leftArm.y}°, ${leftArm.z}°`);
+                }
             }
             
             if (this.bodyParts.right_arm) {
-                this.parts.rightArm.rotation.set(
-                    THREE.MathUtils.degToRad(this.bodyParts.right_arm.x),
-                    THREE.MathUtils.degToRad(this.bodyParts.right_arm.y),
-                    THREE.MathUtils.degToRad(this.bodyParts.right_arm.z)
-                );
+                const rightArm = this.bodyParts.right_arm;
+                if (Math.abs(rightArm.x) > 0.1 || Math.abs(rightArm.y) > 0.1 || Math.abs(rightArm.z) > 0.1) {
+                    this.parts.rightArm.rotation.set(
+                        THREE.MathUtils.degToRad(rightArm.x),
+                        THREE.MathUtils.degToRad(rightArm.y),
+                        THREE.MathUtils.degToRad(rightArm.z)
+                    );
+                    animatedParts++;
+                    console.log(`  ✅ Right arm animated: ${rightArm.x}°, ${rightArm.y}°, ${rightArm.z}°`);
+                }
             }
             
             // Legs
             if (this.bodyParts.left_leg) {
-                this.parts.leftLeg.rotation.set(
-                    THREE.MathUtils.degToRad(this.bodyParts.left_leg.x),
-                    THREE.MathUtils.degToRad(this.bodyParts.left_leg.y),
-                    THREE.MathUtils.degToRad(this.bodyParts.left_leg.z)
-                );
+                const leftLeg = this.bodyParts.left_leg;
+                if (Math.abs(leftLeg.x) > 0.1 || Math.abs(leftLeg.y) > 0.1 || Math.abs(leftLeg.z) > 0.1) {
+                    this.parts.leftLeg.rotation.set(
+                        THREE.MathUtils.degToRad(leftLeg.x),
+                        THREE.MathUtils.degToRad(leftLeg.y),
+                        THREE.MathUtils.degToRad(leftLeg.z)
+                    );
+                    animatedParts++;
+                    console.log(`  ✅ Left leg animated: ${leftLeg.x}°, ${leftLeg.y}°, ${leftLeg.z}°`);
+                }
             }
             
             if (this.bodyParts.right_leg) {
-                this.parts.rightLeg.rotation.set(
-                    THREE.MathUtils.degToRad(this.bodyParts.right_leg.x),
-                    THREE.MathUtils.degToRad(this.bodyParts.right_leg.y),
-                    THREE.MathUtils.degToRad(this.bodyParts.right_leg.z)
-                );
+                const rightLeg = this.bodyParts.right_leg;
+                if (Math.abs(rightLeg.x) > 0.1 || Math.abs(rightLeg.y) > 0.1 || Math.abs(rightLeg.z) > 0.1) {
+                    this.parts.rightLeg.rotation.set(
+                        THREE.MathUtils.degToRad(rightLeg.x),
+                        THREE.MathUtils.degToRad(rightLeg.y),
+                        THREE.MathUtils.degToRad(rightLeg.z)
+                    );
+                    animatedParts++;
+                    console.log(`  ✅ Right leg animated: ${rightLeg.x}°, ${rightLeg.y}°, ${rightLeg.z}°`);
+                }
+            }
+            
+            if (animatedParts > 0) {
+                console.log(`🎭 ${this.robotId}: Applied ${animatedParts} animations`);
             }
         }
         

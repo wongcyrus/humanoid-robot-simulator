@@ -106,9 +106,12 @@ class Robot3D:
     
     def start_action(self, action: HumanoidAction):
         """Start a specific action"""
+        print(f"🎬 {self.robot_id}: Starting action {action.value}")
         self.current_action = action
         self.action_start_time = time.time()
         self.action_progress = 0.0
+        print(f"   Action start time: {self.action_start_time}")
+        print(f"   Expected duration: {self.action_durations.get(action, 1.0)}s")
     
     def update(self, dt: float):
         """Update robot state and animations"""
@@ -117,7 +120,12 @@ class Robot3D:
             duration = self.action_durations.get(self.current_action, 1.0)
             self.action_progress = min(elapsed / duration, 1.0)
             
+            # Debug output
+            if elapsed < 0.1:  # Only log for first 0.1 seconds to avoid spam
+                print(f"🎭 {self.robot_id}: {self.current_action.value} - {elapsed:.2f}s/{duration}s ({self.action_progress*100:.1f}%)")
+            
             if self.action_progress >= 1.0:
+                print(f"✅ {self.robot_id}: Action {self.current_action.value} completed")
                 self.current_action = HumanoidAction.IDLE
                 self.action_progress = 0.0
                 self._reset_body_parts()
