@@ -72,22 +72,44 @@ class HumanoidSimulator {
     }
     
     setupUIEvents() {
+        console.log('🎮 Setting up UI event listeners...');
+        
         // Action buttons
-        document.querySelectorAll('.action-btn').forEach(button => {
+        const actionButtons = document.querySelectorAll('.action-btn');
+        console.log(`📋 Found ${actionButtons.length} action buttons`);
+        
+        actionButtons.forEach((button, index) => {
+            const action = button.dataset.action;
+            console.log(`🔘 Setting up button ${index + 1}: ${action}`);
+            
             button.addEventListener('click', (e) => {
-                const action = e.target.dataset.action;
+                console.log(`🎯 Action button clicked: ${action}`);
                 const robotId = document.getElementById('robot-select').value;
+                console.log(`🤖 Selected robot: ${robotId}`);
                 this.sendAction(robotId, action);
             });
         });
         
         // Quick action buttons
-        document.getElementById('all-wave').addEventListener('click', () => {
-            this.sendAction('all', 'wave');
-        });
+        const quickButtons = [
+            { id: 'all-wave', action: 'wave' },
+            { id: 'all-dance', action: 'dance' },
+            { id: 'all-kungfu', action: 'kung_fu' },
+            { id: 'all-stop', action: 'stop' }
+        ];
         
-        document.getElementById('all-dance').addEventListener('click', () => {
-            this.sendAction('all', 'dance');
+        quickButtons.forEach(({ id, action }) => {
+            const button = document.getElementById(id);
+            if (button) {
+                console.log(`⚡ Setting up quick button: ${id}`);
+                button.addEventListener('click', () => {
+                    console.log(`⚡ Quick button clicked: ${id} -> ${action}`);
+                    this.sendAction('all', action);
+                });
+            } else {
+                console.warn(`⚠️ Quick button not found: ${id}`);
+            }
+        });
         });
         
         document.getElementById('all-kungfu').addEventListener('click', () => {
@@ -337,8 +359,13 @@ class HumanoidSimulator {
 
 // Initialize the simulator when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 Initializing 3D Humanoid Robot Simulator...');
-    window.simulator = new HumanoidSimulator();
+    console.log('🚀 DOM loaded, initializing 3D Humanoid Robot Simulator...');
+    
+    // Wait a bit more to ensure all elements are rendered
+    setTimeout(() => {
+        window.simulator = new HumanoidSimulator();
+        console.log('✅ Simulator initialized');
+    }, 500);
 });
 
 // Handle page visibility changes
