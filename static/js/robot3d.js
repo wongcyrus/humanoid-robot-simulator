@@ -60,64 +60,79 @@ class Robot3D {
         this.parts.torso.receiveShadow = true;
         this.group.add(this.parts.torso);
         
-        // Arms
-        const armGeometry = new THREE.BoxGeometry(4, 15, 4); // Changed from CapsuleGeometry for better compatibility
+        // Arms with proper pivot points
+        const armGeometry = new THREE.BoxGeometry(4, 15, 4);
         
-        // Left Arm
+        // Left Arm - Fixed pivot point
         this.parts.leftArm = new THREE.Group();
         const leftUpperArm = new THREE.Mesh(armGeometry, bodyMaterial);
-        leftUpperArm.position.set(0, -7, 0);
+        leftUpperArm.position.set(0, -7.5, 0); // Center the arm in the group
         leftUpperArm.castShadow = true;
         leftUpperArm.receiveShadow = true;
         this.parts.leftArm.add(leftUpperArm);
         
         const leftShoulder = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        leftShoulder.position.set(0, 0, 0); // At the pivot point
         leftShoulder.castShadow = true;
         this.parts.leftArm.add(leftShoulder);
         
+        // Position the entire arm group at shoulder
         this.parts.leftArm.position.set(-8, 12, 0);
         this.group.add(this.parts.leftArm);
         
-        // Right Arm
+        // Right Arm - Fixed pivot point
         this.parts.rightArm = new THREE.Group();
         const rightUpperArm = new THREE.Mesh(armGeometry, bodyMaterial);
-        rightUpperArm.position.set(0, -7, 0);
+        rightUpperArm.position.set(0, -7.5, 0); // Center the arm in the group
         rightUpperArm.castShadow = true;
         rightUpperArm.receiveShadow = true;
         this.parts.rightArm.add(rightUpperArm);
         
         const rightShoulder = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        rightShoulder.position.set(0, 0, 0); // At the pivot point
         rightShoulder.castShadow = true;
         this.parts.rightArm.add(rightShoulder);
         
+        // Position the entire arm group at shoulder
         this.parts.rightArm.position.set(8, 12, 0);
         this.group.add(this.parts.rightArm);
         
-        // Legs
-        const legGeometry = new THREE.BoxGeometry(6, 18, 6); // Changed from CapsuleGeometry
+        // Legs with proper pivot points
+        const legGeometry = new THREE.BoxGeometry(6, 18, 6);
         
-        // Left Leg
+        // Left Leg - Fixed pivot point
         this.parts.leftLeg = new THREE.Group();
         const leftThigh = new THREE.Mesh(legGeometry, bodyMaterial);
-        leftThigh.position.set(0, -9, 0);
+        leftThigh.position.set(0, -9, 0); // Center the leg in the group
         leftThigh.castShadow = true;
         leftThigh.receiveShadow = true;
         this.parts.leftLeg.add(leftThigh);
         
         const leftHip = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        leftHip.position.set(0, 0, 0); // At the pivot point
         leftHip.castShadow = true;
         this.parts.leftLeg.add(leftHip);
         
+        // Position the entire leg group at hip
         this.parts.leftLeg.position.set(-4, -5, 0);
         this.group.add(this.parts.leftLeg);
         
-        // Right Leg
+        // Right Leg - Fixed pivot point
         this.parts.rightLeg = new THREE.Group();
         const rightThigh = new THREE.Mesh(legGeometry, bodyMaterial);
-        rightThigh.position.set(0, -9, 0);
+        rightThigh.position.set(0, -9, 0); // Center the leg in the group
         rightThigh.castShadow = true;
         rightThigh.receiveShadow = true;
         this.parts.rightLeg.add(rightThigh);
+        
+        const rightHip = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        rightHip.position.set(0, 0, 0); // At the pivot point
+        rightHip.castShadow = true;
+        this.parts.rightLeg.add(rightHip);
+        
+        // Position the entire leg group at hip
+        this.parts.rightLeg.position.set(4, -5, 0);
+        this.group.add(this.parts.rightLeg);
         
         const rightHip = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
         rightHip.castShadow = true;
@@ -226,12 +241,13 @@ class Robot3D {
             console.log('Body parts data:', this.bodyParts);
         }
         
-        // Reset rotations
-        Object.values(this.parts).forEach(part => {
-            if (part.rotation) {
-                part.rotation.set(0, 0, 0);
-            }
-        });
+        // FORCE RESET all rotations to ensure clean state
+        this.parts.head.rotation.set(0, 0, 0);
+        this.parts.torso.rotation.set(0, 0, 0);
+        this.parts.leftArm.rotation.set(0, 0, 0);
+        this.parts.rightArm.rotation.set(0, 0, 0);
+        this.parts.leftLeg.rotation.set(0, 0, 0);
+        this.parts.rightLeg.rotation.set(0, 0, 0);
         
         // Apply body part rotations from server
         if (this.bodyParts) {
@@ -241,6 +257,7 @@ class Robot3D {
             if (this.bodyParts.head) {
                 const head = this.bodyParts.head;
                 if (Math.abs(head.x) > 0.1 || Math.abs(head.y) > 0.1 || Math.abs(head.z) > 0.1) {
+                    this.parts.head.rotation.order = 'XYZ';
                     this.parts.head.rotation.set(
                         THREE.MathUtils.degToRad(head.x),
                         THREE.MathUtils.degToRad(head.y),
@@ -255,6 +272,7 @@ class Robot3D {
             if (this.bodyParts.torso) {
                 const torso = this.bodyParts.torso;
                 if (Math.abs(torso.x) > 0.1 || Math.abs(torso.y) > 0.1 || Math.abs(torso.z) > 0.1) {
+                    this.parts.torso.rotation.order = 'XYZ';
                     this.parts.torso.rotation.set(
                         THREE.MathUtils.degToRad(torso.x),
                         THREE.MathUtils.degToRad(torso.y),
@@ -265,77 +283,106 @@ class Robot3D {
                 }
             }
             
-            // Arms
+            // Left Arm - FORCE VISIBLE ROTATION
             if (this.bodyParts.left_arm) {
                 const leftArm = this.bodyParts.left_arm;
                 if (Math.abs(leftArm.x) > 0.1 || Math.abs(leftArm.y) > 0.1 || Math.abs(leftArm.z) > 0.1) {
-                    // Apply rotation with proper order and pivot
                     this.parts.leftArm.rotation.order = 'XYZ';
                     this.parts.leftArm.rotation.set(
                         THREE.MathUtils.degToRad(leftArm.x),
                         THREE.MathUtils.degToRad(leftArm.y),
                         THREE.MathUtils.degToRad(leftArm.z)
                     );
+                    
+                    // FORCE UPDATE - ensure Three.js applies the rotation
+                    this.parts.leftArm.updateMatrix();
+                    this.parts.leftArm.updateMatrixWorld(true);
+                    
                     animatedParts++;
-                    console.log(`  ✅ Left arm animated: ${leftArm.x}°, ${leftArm.y}°, ${leftArm.z}°`);
+                    console.log(`  ✅ Left arm FORCED rotation: ${leftArm.x}°, ${leftArm.y}°, ${leftArm.z}°`);
                 }
             }
             
+            // Right Arm - FORCE VISIBLE ROTATION
             if (this.bodyParts.right_arm) {
                 const rightArm = this.bodyParts.right_arm;
                 if (Math.abs(rightArm.x) > 0.1 || Math.abs(rightArm.y) > 0.1 || Math.abs(rightArm.z) > 0.1) {
-                    // Apply rotation with proper order and pivot
                     this.parts.rightArm.rotation.order = 'XYZ';
                     this.parts.rightArm.rotation.set(
                         THREE.MathUtils.degToRad(rightArm.x),
                         THREE.MathUtils.degToRad(rightArm.y),
                         THREE.MathUtils.degToRad(rightArm.z)
                     );
+                    
+                    // FORCE UPDATE - ensure Three.js applies the rotation
+                    this.parts.rightArm.updateMatrix();
+                    this.parts.rightArm.updateMatrixWorld(true);
+                    
                     animatedParts++;
-                    console.log(`  ✅ Right arm animated: ${rightArm.x}°, ${rightArm.y}°, ${rightArm.z}°`);
+                    console.log(`  ✅ Right arm FORCED rotation: ${rightArm.x}°, ${rightArm.y}°, ${rightArm.z}°`);
                 }
             }
             
-            // Legs
+            // Left Leg
             if (this.bodyParts.left_leg) {
                 const leftLeg = this.bodyParts.left_leg;
                 if (Math.abs(leftLeg.x) > 0.1 || Math.abs(leftLeg.y) > 0.1 || Math.abs(leftLeg.z) > 0.1) {
+                    this.parts.leftLeg.rotation.order = 'XYZ';
                     this.parts.leftLeg.rotation.set(
                         THREE.MathUtils.degToRad(leftLeg.x),
                         THREE.MathUtils.degToRad(leftLeg.y),
                         THREE.MathUtils.degToRad(leftLeg.z)
                     );
+                    
+                    // FORCE UPDATE
+                    this.parts.leftLeg.updateMatrix();
+                    this.parts.leftLeg.updateMatrixWorld(true);
+                    
                     animatedParts++;
-                    console.log(`  ✅ Left leg animated: ${leftLeg.x}°, ${leftLeg.y}°, ${leftLeg.z}°`);
+                    console.log(`  ✅ Left leg FORCED rotation: ${leftLeg.x}°, ${leftLeg.y}°, ${leftLeg.z}°`);
                 }
             }
             
+            // Right Leg
             if (this.bodyParts.right_leg) {
                 const rightLeg = this.bodyParts.right_leg;
                 if (Math.abs(rightLeg.x) > 0.1 || Math.abs(rightLeg.y) > 0.1 || Math.abs(rightLeg.z) > 0.1) {
+                    this.parts.rightLeg.rotation.order = 'XYZ';
                     this.parts.rightLeg.rotation.set(
                         THREE.MathUtils.degToRad(rightLeg.x),
                         THREE.MathUtils.degToRad(rightLeg.y),
                         THREE.MathUtils.degToRad(rightLeg.z)
                     );
+                    
+                    // FORCE UPDATE
+                    this.parts.rightLeg.updateMatrix();
+                    this.parts.rightLeg.updateMatrixWorld(true);
+                    
                     animatedParts++;
-                    console.log(`  ✅ Right leg animated: ${rightLeg.x}°, ${rightLeg.y}°, ${rightLeg.z}°`);
+                    console.log(`  ✅ Right leg FORCED rotation: ${rightLeg.x}°, ${rightLeg.y}°, ${rightLeg.z}°`);
                 }
             }
             
             if (animatedParts > 0) {
-                console.log(`🎭 ${this.robotId}: Applied ${animatedParts} animations`);
+                console.log(`🎭 ${this.robotId}: FORCED ${animatedParts} animations with matrix updates`);
                 
-                // Visual feedback: Change robot color when animating
+                // EXTREME Visual feedback: Change robot color when animating
                 this.parts.head.material.color.setHex(0xff0000); // Red when animating
+                this.parts.torso.material.color.setHex(0xff4444); // Light red torso
+                
+                // Force the entire robot group to update
+                this.group.updateMatrix();
+                this.group.updateMatrixWorld(true);
                 
                 // Reset color after a short delay
                 setTimeout(() => {
                     this.parts.head.material.color.setHex(this.color);
-                }, 100);
+                    this.parts.torso.material.color.setHex(this.color);
+                }, 200);
             } else {
                 // Ensure normal color when not animating
                 this.parts.head.material.color.setHex(this.color);
+                this.parts.torso.material.color.setHex(this.color);
             }
         } else {
             console.log(`❌ ${this.robotId}: No body parts data available`);
