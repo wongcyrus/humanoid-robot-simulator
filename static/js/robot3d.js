@@ -228,158 +228,91 @@ class Robot3D {
     }
     
     updateAnimations() {
-        // Debug: Log animation data
+        // DIRECT THREE.JS ANIMATION - bypass server calculations for testing
         if (this.currentAction !== 'idle') {
-            console.log(`🎭 ${this.robotId}: Updating animations for ${this.currentAction}`);
-            console.log('Body parts data:', this.bodyParts);
-        }
-        
-        // FORCE RESET all rotations to ensure clean state
-        this.parts.head.rotation.set(0, 0, 0);
-        this.parts.torso.rotation.set(0, 0, 0);
-        this.parts.leftArm.rotation.set(0, 0, 0);
-        this.parts.rightArm.rotation.set(0, 0, 0);
-        this.parts.leftLeg.rotation.set(0, 0, 0);
-        this.parts.rightLeg.rotation.set(0, 0, 0);
-        
-        // Apply body part rotations from server
-        if (this.bodyParts) {
-            let animatedParts = 0;
+            console.log(`🎭 ${this.robotId}: DIRECT Three.js animation for ${this.currentAction}`);
             
-            // Head
-            if (this.bodyParts.head) {
-                const head = this.bodyParts.head;
-                if (Math.abs(head.x) > 0.1 || Math.abs(head.y) > 0.1 || Math.abs(head.z) > 0.1) {
-                    this.parts.head.rotation.order = 'XYZ';
-                    this.parts.head.rotation.set(
-                        THREE.MathUtils.degToRad(head.x),
-                        THREE.MathUtils.degToRad(head.y),
-                        THREE.MathUtils.degToRad(head.z)
-                    );
-                    animatedParts++;
-                    console.log(`  ✅ Head animated: ${head.x}°, ${head.y}°, ${head.z}°`);
-                }
+            // Get current time for animation
+            const time = Date.now() * 0.001; // Convert to seconds
+            
+            // DIRECT Three.js animations based on action
+            switch(this.currentAction) {
+                case 'dance':
+                    // Direct dance animation
+                    this.parts.leftArm.rotation.z = Math.sin(time * 4) * Math.PI/3; // 60° swing
+                    this.parts.rightArm.rotation.z = -Math.sin(time * 4) * Math.PI/3; // 60° swing opposite
+                    this.parts.head.rotation.y = Math.sin(time * 6) * Math.PI/6; // 30° head turn
+                    this.parts.torso.rotation.y = Math.sin(time * 2) * Math.PI/8; // 22.5° torso twist
+                    console.log(`  🎭 DIRECT dance: arms=${(Math.sin(time * 4) * 60).toFixed(1)}°`);
+                    break;
+                    
+                case 'wave':
+                    // Direct wave animation
+                    this.parts.rightArm.rotation.z = -Math.PI/4 + Math.sin(time * 8) * Math.PI/4; // Wave motion
+                    this.parts.rightArm.rotation.x = Math.sin(time * 6) * Math.PI/12; // Up/down motion
+                    console.log(`  🎭 DIRECT wave: right arm=${((Math.sin(time * 8) * 45)).toFixed(1)}°`);
+                    break;
+                    
+                case 'kung_fu':
+                    // Direct kung fu animation
+                    this.parts.leftArm.rotation.z = Math.sin(time * 10) * Math.PI/2; // 90° punch
+                    this.parts.rightArm.rotation.z = -Math.sin(time * 10 + Math.PI) * Math.PI/2; // Opposite punch
+                    this.parts.leftLeg.rotation.x = Math.sin(time * 8) * Math.PI/6; // Kick motion
+                    console.log(`  🎭 DIRECT kung fu: punches=${(Math.sin(time * 10) * 90).toFixed(1)}°`);
+                    break;
+                    
+                case 'jump':
+                    // Direct jump animation
+                    const jumpHeight = Math.abs(Math.sin(time * 6)) * 20;
+                    this.group.position.y = jumpHeight;
+                    this.parts.leftArm.rotation.z = Math.PI/3; // Arms up
+                    this.parts.rightArm.rotation.z = -Math.PI/3; // Arms up
+                    console.log(`  🎭 DIRECT jump: height=${jumpHeight.toFixed(1)}`);
+                    break;
+                    
+                case 'go_forward':
+                case 'move_forward':
+                    // Direct walking animation
+                    this.parts.leftLeg.rotation.x = Math.sin(time * 8) * Math.PI/6; // 30° leg swing
+                    this.parts.rightLeg.rotation.x = -Math.sin(time * 8) * Math.PI/6; // Opposite leg
+                    this.parts.leftArm.rotation.x = -Math.sin(time * 8) * Math.PI/8; // Arm swing
+                    this.parts.rightArm.rotation.x = Math.sin(time * 8) * Math.PI/8; // Opposite arm
+                    console.log(`  🎭 DIRECT walk: legs=${(Math.sin(time * 8) * 30).toFixed(1)}°`);
+                    break;
+                    
+                default:
+                    // Reset to neutral position
+                    this.parts.head.rotation.set(0, 0, 0);
+                    this.parts.torso.rotation.set(0, 0, 0);
+                    this.parts.leftArm.rotation.set(0, 0, 0);
+                    this.parts.rightArm.rotation.set(0, 0, 0);
+                    this.parts.leftLeg.rotation.set(0, 0, 0);
+                    this.parts.rightLeg.rotation.set(0, 0, 0);
+                    this.group.position.y = 0;
+                    break;
             }
             
-            // Torso
-            if (this.bodyParts.torso) {
-                const torso = this.bodyParts.torso;
-                if (Math.abs(torso.x) > 0.1 || Math.abs(torso.y) > 0.1 || Math.abs(torso.z) > 0.1) {
-                    this.parts.torso.rotation.order = 'XYZ';
-                    this.parts.torso.rotation.set(
-                        THREE.MathUtils.degToRad(torso.x),
-                        THREE.MathUtils.degToRad(torso.y),
-                        THREE.MathUtils.degToRad(torso.z)
-                    );
-                    animatedParts++;
-                    console.log(`  ✅ Torso animated: ${torso.x}°, ${torso.y}°, ${torso.z}°`);
-                }
-            }
+            // EXTREME visual feedback
+            this.parts.head.material.color.setHex(0xff0000); // Red head
+            this.parts.torso.material.color.setHex(0xff4444); // Light red torso
             
-            // Left Arm - FORCE VISIBLE ROTATION
-            if (this.bodyParts.left_arm) {
-                const leftArm = this.bodyParts.left_arm;
-                if (Math.abs(leftArm.x) > 0.1 || Math.abs(leftArm.y) > 0.1 || Math.abs(leftArm.z) > 0.1) {
-                    this.parts.leftArm.rotation.order = 'XYZ';
-                    this.parts.leftArm.rotation.set(
-                        THREE.MathUtils.degToRad(leftArm.x),
-                        THREE.MathUtils.degToRad(leftArm.y),
-                        THREE.MathUtils.degToRad(leftArm.z)
-                    );
-                    
-                    // FORCE UPDATE - ensure Three.js applies the rotation
-                    this.parts.leftArm.updateMatrix();
-                    this.parts.leftArm.updateMatrixWorld(true);
-                    
-                    animatedParts++;
-                    console.log(`  ✅ Left arm FORCED rotation: ${leftArm.x}°, ${leftArm.y}°, ${leftArm.z}°`);
-                }
-            }
+            console.log(`🎭 ${this.robotId}: DIRECT Three.js animation applied`);
             
-            // Right Arm - FORCE VISIBLE ROTATION
-            if (this.bodyParts.right_arm) {
-                const rightArm = this.bodyParts.right_arm;
-                if (Math.abs(rightArm.x) > 0.1 || Math.abs(rightArm.y) > 0.1 || Math.abs(rightArm.z) > 0.1) {
-                    this.parts.rightArm.rotation.order = 'XYZ';
-                    this.parts.rightArm.rotation.set(
-                        THREE.MathUtils.degToRad(rightArm.x),
-                        THREE.MathUtils.degToRad(rightArm.y),
-                        THREE.MathUtils.degToRad(rightArm.z)
-                    );
-                    
-                    // FORCE UPDATE - ensure Three.js applies the rotation
-                    this.parts.rightArm.updateMatrix();
-                    this.parts.rightArm.updateMatrixWorld(true);
-                    
-                    animatedParts++;
-                    console.log(`  ✅ Right arm FORCED rotation: ${rightArm.x}°, ${rightArm.y}°, ${rightArm.z}°`);
-                }
-            }
-            
-            // Left Leg
-            if (this.bodyParts.left_leg) {
-                const leftLeg = this.bodyParts.left_leg;
-                if (Math.abs(leftLeg.x) > 0.1 || Math.abs(leftLeg.y) > 0.1 || Math.abs(leftLeg.z) > 0.1) {
-                    this.parts.leftLeg.rotation.order = 'XYZ';
-                    this.parts.leftLeg.rotation.set(
-                        THREE.MathUtils.degToRad(leftLeg.x),
-                        THREE.MathUtils.degToRad(leftLeg.y),
-                        THREE.MathUtils.degToRad(leftLeg.z)
-                    );
-                    
-                    // FORCE UPDATE
-                    this.parts.leftLeg.updateMatrix();
-                    this.parts.leftLeg.updateMatrixWorld(true);
-                    
-                    animatedParts++;
-                    console.log(`  ✅ Left leg FORCED rotation: ${leftLeg.x}°, ${leftLeg.y}°, ${leftLeg.z}°`);
-                }
-            }
-            
-            // Right Leg
-            if (this.bodyParts.right_leg) {
-                const rightLeg = this.bodyParts.right_leg;
-                if (Math.abs(rightLeg.x) > 0.1 || Math.abs(rightLeg.y) > 0.1 || Math.abs(rightLeg.z) > 0.1) {
-                    this.parts.rightLeg.rotation.order = 'XYZ';
-                    this.parts.rightLeg.rotation.set(
-                        THREE.MathUtils.degToRad(rightLeg.x),
-                        THREE.MathUtils.degToRad(rightLeg.y),
-                        THREE.MathUtils.degToRad(rightLeg.z)
-                    );
-                    
-                    // FORCE UPDATE
-                    this.parts.rightLeg.updateMatrix();
-                    this.parts.rightLeg.updateMatrixWorld(true);
-                    
-                    animatedParts++;
-                    console.log(`  ✅ Right leg FORCED rotation: ${rightLeg.x}°, ${rightLeg.y}°, ${rightLeg.z}°`);
-                }
-            }
-            
-            if (animatedParts > 0) {
-                console.log(`🎭 ${this.robotId}: FORCED ${animatedParts} animations with matrix updates`);
-                
-                // EXTREME Visual feedback: Change robot color when animating
-                this.parts.head.material.color.setHex(0xff0000); // Red when animating
-                this.parts.torso.material.color.setHex(0xff4444); // Light red torso
-                
-                // Force the entire robot group to update
-                this.group.updateMatrix();
-                this.group.updateMatrixWorld(true);
-                
-                // Reset color after a short delay
-                setTimeout(() => {
-                    this.parts.head.material.color.setHex(this.color);
-                    this.parts.torso.material.color.setHex(this.color);
-                }, 200);
-            } else {
-                // Ensure normal color when not animating
-                this.parts.head.material.color.setHex(this.color);
-                this.parts.torso.material.color.setHex(this.color);
-            }
         } else {
-            console.log(`❌ ${this.robotId}: No body parts data available`);
+            // Reset when idle
+            this.parts.head.rotation.set(0, 0, 0);
+            this.parts.torso.rotation.set(0, 0, 0);
+            this.parts.leftArm.rotation.set(0, 0, 0);
+            this.parts.rightArm.rotation.set(0, 0, 0);
+            this.parts.leftLeg.rotation.set(0, 0, 0);
+            this.parts.rightLeg.rotation.set(0, 0, 0);
+            this.group.position.y = 0;
+            
+            // Reset colors
+            this.parts.head.material.color.setHex(this.color);
+            this.parts.torso.material.color.setHex(this.color);
         }
+    }
         
         // Update label to show current action
         if (this.currentAction !== 'idle') {
@@ -668,6 +601,12 @@ class Scene3D {
     
     animate() {
         requestAnimationFrame(() => this.animate());
+        
+        // Update all robot animations every frame
+        this.robots.forEach(robot => {
+            robot.updateAnimations();
+        });
+        
         this.renderer.render(this.scene, this.camera);
     }
 }
