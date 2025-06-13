@@ -10,6 +10,7 @@ class Robot3D {
         this.position = robotData.position;
         this.rotation = robotData.rotation;
         this.currentAction = robotData.current_action;
+        this.lastAction = 'idle'; // Track last action to prevent constant resets
         this.actionProgress = robotData.action_progress;
         this.bodyParts = robotData.body_parts;
         
@@ -203,13 +204,27 @@ class Robot3D {
         console.log(`🔄 ${robotData.robot_id}: Update called`);
         console.log(`   Action: ${robotData.current_action}`);
         console.log(`   Progress: ${(robotData.action_progress * 100).toFixed(1)}%`);
-        console.log(`   Body parts:`, robotData.body_parts);
+        console.log(`   Full robotData:`, robotData);
         
         this.position = robotData.position;
         this.rotation = robotData.rotation;
+        
+        // Track action changes
+        if (this.currentAction !== robotData.current_action) {
+            console.log(`🔄 ${robotData.robot_id}: Action changed from '${this.currentAction}' to '${robotData.current_action}'`);
+            this.lastAction = this.currentAction;
+        }
+        
         this.currentAction = robotData.current_action;
         this.actionProgress = robotData.action_progress;
         this.bodyParts = robotData.body_parts;
+        
+        // DEBUG: Force animation for testing
+        if (robotData.current_action !== 'idle') {
+            console.log(`🎯 Robot ${robotData.robot_id} should animate: ${robotData.current_action}`);
+        } else {
+            console.log(`😴 Robot ${robotData.robot_id} is idle - no animation`);
+        }
         
         this.updatePosition();
         this.updateAnimations();
@@ -228,6 +243,8 @@ class Robot3D {
     }
     
     updateAnimations() {
+        console.log(`🎭 ${this.robotId}: updateAnimations called, currentAction = '${this.currentAction}'`);
+        
         // DIRECT THREE.JS ANIMATION - bypass server calculations for testing
         if (this.currentAction !== 'idle') {
             console.log(`🎭 ${this.robotId}: DIRECT Three.js animation for ${this.currentAction}`);
@@ -299,18 +316,25 @@ class Robot3D {
             console.log(`🎭 ${this.robotId}: DIRECT Three.js animation applied`);
             
         } else {
-            // Reset when idle
-            this.parts.head.rotation.set(0, 0, 0);
-            this.parts.torso.rotation.set(0, 0, 0);
-            this.parts.leftArm.rotation.set(0, 0, 0);
-            this.parts.rightArm.rotation.set(0, 0, 0);
-            this.parts.leftLeg.rotation.set(0, 0, 0);
-            this.parts.rightLeg.rotation.set(0, 0, 0);
-            this.group.position.y = 0;
-            
-            // Reset colors
-            this.parts.head.material.color.setHex(this.color);
-            this.parts.torso.material.color.setHex(this.color);
+            // DON'T constantly reset when idle - this overrides server actions!
+            // Only reset once when transitioning from active to idle
+            if (this.lastAction !== 'idle') {
+                console.log(`🎭 ${this.robotId}: Transitioning to idle, resetting animations`);
+                this.parts.head.rotation.set(0, 0, 0);
+                this.parts.torso.rotation.set(0, 0, 0);
+                this.parts.leftArm.rotation.set(0, 0, 0);
+                this.parts.rightArm.rotation.set(0, 0, 0);
+                this.parts.leftLeg.rotation.set(0, 0, 0);
+                this.parts.rightLeg.rotation.set(0, 0, 0);
+                this.group.position.y = 0;
+                
+                // Reset colors
+                this.parts.head.material.color.setHex(this.color);
+                this.parts.torso.material.color.setHex(this.color);
+                
+                this.lastAction = 'idle';
+            }
+            // If already idle, don't keep resetting - let server actions take precedence
         }
         
         // Update label to show current action
@@ -601,10 +625,9 @@ class Scene3D {
     animate() {
         requestAnimationFrame(() => this.animate());
         
-        // Update all robot animations every frame
-        this.robots.forEach(robot => {
-            robot.updateAnimations();
-        });
+        // DON'T call updateAnimations here - it overrides server actions!
+        // updateAnimations is called from update(robotData) when server sends new states
+        // Calling it here at 60 FPS overrides all server-sent actions with 'idle'
         
         this.renderer.render(this.scene, this.camera);
     }
