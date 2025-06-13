@@ -1,0 +1,527 @@
+/**
+ * 3D Robot Visualization using Three.js
+ * Creates and manages 3D humanoid robot models
+ */
+
+class Robot3D {
+    constructor(robotData) {
+        this.robotId = robotData.robot_id;
+        this.color = robotData.color;
+        this.position = robotData.position;
+        this.rotation = robotData.rotation;
+        this.currentAction = robotData.current_action;
+        this.actionProgress = robotData.action_progress;
+        this.bodyParts = robotData.body_parts;
+        
+        // Three.js objects
+        this.group = new THREE.Group();
+        this.parts = {};
+        
+        this.createRobot();
+        this.updatePosition();
+    }
+    
+    createRobot() {
+        // Materials
+        const bodyMaterial = new THREE.MeshPhongMaterial({ 
+            color: this.color,
+            shininess: 30
+        });
+        const jointMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x444444,
+            shininess: 50
+        });
+        
+        // Head
+        const headGeometry = new THREE.SphereGeometry(8, 16, 16);
+        this.parts.head = new THREE.Mesh(headGeometry, bodyMaterial);
+        this.parts.head.position.set(0, 25, 0);
+        this.group.add(this.parts.head);
+        
+        // Eyes
+        const eyeGeometry = new THREE.SphereGeometry(1, 8, 8);
+        const eyeMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
+        
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-3, 2, 6);
+        this.parts.head.add(leftEye);
+        
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(3, 2, 6);
+        this.parts.head.add(rightEye);
+        
+        // Torso
+        const torsoGeometry = new THREE.BoxGeometry(12, 20, 8);
+        this.parts.torso = new THREE.Mesh(torsoGeometry, bodyMaterial);
+        this.parts.torso.position.set(0, 5, 0);
+        this.group.add(this.parts.torso);
+        
+        // Arms
+        const armGeometry = new THREE.CapsuleGeometry(2, 15, 8, 16);
+        
+        // Left Arm
+        this.parts.leftArm = new THREE.Group();
+        const leftUpperArm = new THREE.Mesh(armGeometry, bodyMaterial);
+        leftUpperArm.position.set(0, -7, 0);
+        this.parts.leftArm.add(leftUpperArm);
+        
+        const leftShoulder = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        this.parts.leftArm.add(leftShoulder);
+        
+        this.parts.leftArm.position.set(-8, 12, 0);
+        this.group.add(this.parts.leftArm);
+        
+        // Right Arm
+        this.parts.rightArm = new THREE.Group();
+        const rightUpperArm = new THREE.Mesh(armGeometry, bodyMaterial);
+        rightUpperArm.position.set(0, -7, 0);
+        this.parts.rightArm.add(rightUpperArm);
+        
+        const rightShoulder = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        this.parts.rightArm.add(rightShoulder);
+        
+        this.parts.rightArm.position.set(8, 12, 0);
+        this.group.add(this.parts.rightArm);
+        
+        // Legs
+        const legGeometry = new THREE.CapsuleGeometry(3, 18, 8, 16);
+        
+        // Left Leg
+        this.parts.leftLeg = new THREE.Group();
+        const leftThigh = new THREE.Mesh(legGeometry, bodyMaterial);
+        leftThigh.position.set(0, -9, 0);
+        this.parts.leftLeg.add(leftThigh);
+        
+        const leftHip = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        this.parts.leftLeg.add(leftHip);
+        
+        this.parts.leftLeg.position.set(-4, -5, 0);
+        this.group.add(this.parts.leftLeg);
+        
+        // Right Leg
+        this.parts.rightLeg = new THREE.Group();
+        const rightThigh = new THREE.Mesh(legGeometry, bodyMaterial);
+        rightThigh.position.set(0, -9, 0);
+        this.parts.rightLeg.add(rightThigh);
+        
+        const rightHip = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        this.parts.rightLeg.add(rightHip);
+        
+        this.parts.rightLeg.position.set(4, -5, 0);
+        this.group.add(this.parts.rightLeg);
+        
+        // Feet
+        const footGeometry = new THREE.BoxGeometry(6, 2, 10);
+        const footMaterial = new THREE.MeshPhongMaterial({ 
+            color: new THREE.Color(this.color).multiplyScalar(0.7)
+        });
+        
+        const leftFoot = new THREE.Mesh(footGeometry, footMaterial);
+        leftFoot.position.set(0, -20, 2);
+        this.parts.leftLeg.add(leftFoot);
+        
+        const rightFoot = new THREE.Mesh(footGeometry, footMaterial);
+        rightFoot.position.set(0, -20, 2);
+        this.parts.rightLeg.add(rightFoot);
+        
+        // Robot ID Label
+        this.createLabel();
+        
+        // Shadow
+        this.createShadow();
+    }
+    
+    createLabel() {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 128;
+        canvas.height = 32;
+        
+        context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        context.fillStyle = 'white';
+        context.font = '16px Arial';
+        context.textAlign = 'center';
+        context.fillText(this.robotId, canvas.width / 2, 20);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({ map: texture });
+        this.label = new THREE.Sprite(material);
+        this.label.position.set(0, 40, 0);
+        this.label.scale.set(20, 5, 1);
+        this.group.add(this.label);
+    }
+    
+    createShadow() {
+        const shadowGeometry = new THREE.PlaneGeometry(30, 15);
+        const shadowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.3
+        });
+        this.shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
+        this.shadow.rotation.x = -Math.PI / 2;
+        this.shadow.position.set(0, -23, 0);
+        this.group.add(this.shadow);
+    }
+    
+    update(robotData) {
+        this.position = robotData.position;
+        this.rotation = robotData.rotation;
+        this.currentAction = robotData.current_action;
+        this.actionProgress = robotData.action_progress;
+        this.bodyParts = robotData.body_parts;
+        
+        this.updatePosition();
+        this.updateAnimations();
+    }
+    
+    updatePosition() {
+        this.group.position.set(
+            this.position.x,
+            this.position.y,
+            this.position.z
+        );
+        
+        this.group.rotation.y = THREE.MathUtils.degToRad(this.rotation.y);
+    }
+    
+    updateAnimations() {
+        // Reset rotations
+        Object.values(this.parts).forEach(part => {
+            if (part.rotation) {
+                part.rotation.set(0, 0, 0);
+            }
+        });
+        
+        // Apply body part rotations from server
+        if (this.bodyParts) {
+            // Head
+            if (this.bodyParts.head) {
+                this.parts.head.rotation.set(
+                    THREE.MathUtils.degToRad(this.bodyParts.head.x),
+                    THREE.MathUtils.degToRad(this.bodyParts.head.y),
+                    THREE.MathUtils.degToRad(this.bodyParts.head.z)
+                );
+            }
+            
+            // Torso
+            if (this.bodyParts.torso) {
+                this.parts.torso.rotation.set(
+                    THREE.MathUtils.degToRad(this.bodyParts.torso.x),
+                    THREE.MathUtils.degToRad(this.bodyParts.torso.y),
+                    THREE.MathUtils.degToRad(this.bodyParts.torso.z)
+                );
+            }
+            
+            // Arms
+            if (this.bodyParts.left_arm) {
+                this.parts.leftArm.rotation.set(
+                    THREE.MathUtils.degToRad(this.bodyParts.left_arm.x),
+                    THREE.MathUtils.degToRad(this.bodyParts.left_arm.y),
+                    THREE.MathUtils.degToRad(this.bodyParts.left_arm.z)
+                );
+            }
+            
+            if (this.bodyParts.right_arm) {
+                this.parts.rightArm.rotation.set(
+                    THREE.MathUtils.degToRad(this.bodyParts.right_arm.x),
+                    THREE.MathUtils.degToRad(this.bodyParts.right_arm.y),
+                    THREE.MathUtils.degToRad(this.bodyParts.right_arm.z)
+                );
+            }
+            
+            // Legs
+            if (this.bodyParts.left_leg) {
+                this.parts.leftLeg.rotation.set(
+                    THREE.MathUtils.degToRad(this.bodyParts.left_leg.x),
+                    THREE.MathUtils.degToRad(this.bodyParts.left_leg.y),
+                    THREE.MathUtils.degToRad(this.bodyParts.left_leg.z)
+                );
+            }
+            
+            if (this.bodyParts.right_leg) {
+                this.parts.rightLeg.rotation.set(
+                    THREE.MathUtils.degToRad(this.bodyParts.right_leg.x),
+                    THREE.MathUtils.degToRad(this.bodyParts.right_leg.y),
+                    THREE.MathUtils.degToRad(this.bodyParts.right_leg.z)
+                );
+            }
+        }
+        
+        // Update label to show current action
+        if (this.currentAction !== 'idle') {
+            this.updateActionLabel();
+        }
+    }
+    
+    updateActionLabel() {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 128;
+        canvas.height = 48;
+        
+        // Background
+        context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Robot ID
+        context.fillStyle = 'white';
+        context.font = '14px Arial';
+        context.textAlign = 'center';
+        context.fillText(this.robotId, canvas.width / 2, 16);
+        
+        // Action
+        context.fillStyle = '#4A90E2';
+        context.font = '12px Arial';
+        const actionText = this.currentAction.replace('_', ' ').toUpperCase();
+        context.fillText(actionText, canvas.width / 2, 32);
+        
+        // Progress bar
+        const progressWidth = (canvas.width - 20) * this.actionProgress;
+        context.fillStyle = 'rgba(76, 175, 80, 0.3)';
+        context.fillRect(10, 36, canvas.width - 20, 4);
+        context.fillStyle = '#4CAF50';
+        context.fillRect(10, 36, progressWidth, 4);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        this.label.material.map = texture;
+        this.label.material.needsUpdate = true;
+    }
+    
+    dispose() {
+        // Clean up Three.js objects
+        this.group.traverse((child) => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(material => material.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+        });
+    }
+}
+
+class Scene3D {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.robots = new Map();
+        
+        this.initThreeJS();
+        this.setupLighting();
+        this.setupControls();
+        this.setupEnvironment();
+        
+        this.animate();
+    }
+    
+    initThreeJS() {
+        // Scene
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x1a1a2e);
+        this.scene.fog = new THREE.Fog(0x1a1a2e, 200, 1000);
+        
+        // Camera
+        this.camera = new THREE.PerspectiveCamera(
+            75,
+            this.canvas.clientWidth / this.canvas.clientHeight,
+            0.1,
+            1000
+        );
+        this.camera.position.set(0, 100, 200);
+        this.camera.lookAt(0, 0, 0);
+        
+        // Renderer
+        this.renderer = new THREE.WebGLRenderer({ 
+            canvas: this.canvas,
+            antialias: true
+        });
+        this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.2;
+        
+        // Handle resize
+        window.addEventListener('resize', () => this.onWindowResize());
+    }
+    
+    setupLighting() {
+        // Ambient light
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+        this.scene.add(ambientLight);
+        
+        // Main directional light
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(50, 100, 50);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 500;
+        directionalLight.shadow.camera.left = -200;
+        directionalLight.shadow.camera.right = 200;
+        directionalLight.shadow.camera.top = 200;
+        directionalLight.shadow.camera.bottom = -200;
+        this.scene.add(directionalLight);
+        
+        // Fill light
+        const fillLight = new THREE.DirectionalLight(0x4A90E2, 0.3);
+        fillLight.position.set(-50, 50, -50);
+        this.scene.add(fillLight);
+        
+        // Point lights for dramatic effect
+        const pointLight1 = new THREE.PointLight(0xFF6B6B, 0.5, 100);
+        pointLight1.position.set(100, 50, 0);
+        this.scene.add(pointLight1);
+        
+        const pointLight2 = new THREE.PointLight(0x4ECDC4, 0.5, 100);
+        pointLight2.position.set(-100, 50, 0);
+        this.scene.add(pointLight2);
+    }
+    
+    setupControls() {
+        // Simple orbit controls using mouse
+        this.isMouseDown = false;
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.cameraAngle = 0;
+        this.cameraHeight = 100;
+        this.cameraDistance = 200;
+        
+        this.canvas.addEventListener('mousedown', (e) => {
+            this.isMouseDown = true;
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
+        });
+        
+        this.canvas.addEventListener('mouseup', () => {
+            this.isMouseDown = false;
+        });
+        
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (this.isMouseDown) {
+                const deltaX = e.clientX - this.mouseX;
+                const deltaY = e.clientY - this.mouseY;
+                
+                this.cameraAngle += deltaX * 0.01;
+                this.cameraHeight = Math.max(20, Math.min(200, this.cameraHeight - deltaY * 0.5));
+                
+                this.updateCameraPosition();
+                
+                this.mouseX = e.clientX;
+                this.mouseY = e.clientY;
+            }
+        });
+        
+        this.canvas.addEventListener('wheel', (e) => {
+            this.cameraDistance = Math.max(50, Math.min(500, this.cameraDistance + e.deltaY * 0.1));
+            this.updateCameraPosition();
+        });
+    }
+    
+    updateCameraPosition() {
+        this.camera.position.x = Math.sin(this.cameraAngle) * this.cameraDistance;
+        this.camera.position.y = this.cameraHeight;
+        this.camera.position.z = Math.cos(this.cameraAngle) * this.cameraDistance;
+        this.camera.lookAt(0, 0, 0);
+    }
+    
+    setupEnvironment() {
+        // Ground plane
+        const groundGeometry = new THREE.PlaneGeometry(400, 400);
+        const groundMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x2c3e50,
+            transparent: true,
+            opacity: 0.8
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -25;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+        
+        // Grid
+        const gridHelper = new THREE.GridHelper(400, 40, 0x4A90E2, 0x333333);
+        gridHelper.position.y = -24;
+        this.scene.add(gridHelper);
+        
+        // Skybox
+        const skyGeometry = new THREE.SphereGeometry(800, 32, 32);
+        const skyMaterial = new THREE.MeshBasicMaterial({
+            color: 0x1a1a2e,
+            side: THREE.BackSide
+        });
+        const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+        this.scene.add(sky);
+    }
+    
+    addRobot(robotData) {
+        const robot = new Robot3D(robotData);
+        robot.group.castShadow = true;
+        robot.group.receiveShadow = true;
+        
+        // Enable shadows for all robot parts
+        robot.group.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+        
+        this.robots.set(robotData.robot_id, robot);
+        this.scene.add(robot.group);
+    }
+    
+    updateRobot(robotData) {
+        const robot = this.robots.get(robotData.robot_id);
+        if (robot) {
+            robot.update(robotData);
+        }
+    }
+    
+    removeRobot(robotId) {
+        const robot = this.robots.get(robotId);
+        if (robot) {
+            this.scene.remove(robot.group);
+            robot.dispose();
+            this.robots.delete(robotId);
+        }
+    }
+    
+    resetCamera() {
+        this.cameraAngle = 0;
+        this.cameraHeight = 100;
+        this.cameraDistance = 200;
+        this.updateCameraPosition();
+    }
+    
+    toggleWireframe() {
+        this.robots.forEach(robot => {
+            robot.group.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material.wireframe = !child.material.wireframe;
+                }
+            });
+        });
+    }
+    
+    toggleShadows() {
+        this.renderer.shadowMap.enabled = !this.renderer.shadowMap.enabled;
+    }
+    
+    onWindowResize() {
+        this.camera.aspect = this.canvas.clientWidth / this.canvas.clientHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
+    }
+    
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        this.renderer.render(this.scene, this.camera);
+    }
+}

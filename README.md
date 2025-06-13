@@ -1,39 +1,55 @@
 # Humanoid Robot Simulator
 
-A production-ready 6-robot humanoid simulator with realistic humanoid visualization and web API control.
+A production-ready 6-robot humanoid simulator with **3D web interface** and desktop visualization options.
 
 [![GitHub](https://img.shields.io/badge/GitHub-wongcyrus-blue?logo=github)](https://github.com/wongcyrus/humanoid-robot-simulator)
 [![Python](https://img.shields.io/badge/Python-3.8+-green?logo=python)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-2.0+-red?logo=flask)](https://flask.palletsprojects.com)
-[![Pygame](https://img.shields.io/badge/Pygame-2.1+-orange?logo=python)](https://pygame.org)
+[![Three.js](https://img.shields.io/badge/Three.js-r128-orange?logo=javascript)](https://threejs.org)
+[![WebSocket](https://img.shields.io/badge/WebSocket-Real--time-purple?logo=websocket)](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
 
 ## 🎯 Overview
 
 This implementation provides:
+- **🌐 3D Web Interface**: Browser-based 3D visualization with Three.js and WebSocket
+- **🖥️ Desktop Version**: Pygame-based local simulator
 - **Exactly 6 humanoid robots**: `robot_1, robot_2, robot_3, robot_4, robot_5, robot_6`
-- **Realistic humanoid appearance**: Head, body, arms, legs with action-based poses
+- **Realistic 3D humanoid models**: Head, body, arms, legs with action-based animations
 - **'all' robot control**: Use `robot_id = "all"` to control all robots simultaneously
-- **26 humanoid actions**: Complete set of realistic movements with visual animations
-- **Web API**: REST API for remote control
-- **Real-time visualization**: Pygame-based simulation with proper humanoid figures
+- **28 humanoid actions**: Complete set of realistic movements with visual animations
+- **Real-time communication**: WebSocket for instant updates and control
 
-## 🤖 Humanoid Features
+## 🌐 3D Web Interface (NEW!)
 
-### Visual Representation
-- **Head**: With eyes and directional indicator
-- **Body**: Rectangular torso with color coding
-- **Arms**: Animated based on actions (waving, kung fu, etc.)
-- **Legs**: Dynamic positioning for kicks, movement
-- **Shadows**: Ground shadows for depth
-- **Action Poses**: Different poses for each action type
+### Features
+- **🎮 Interactive 3D Environment**: Full 3D humanoid robots with realistic animations
+- **🖱️ Camera Controls**: Mouse to rotate, scroll to zoom, keyboard shortcuts
+- **⚡ Real-time Updates**: WebSocket communication for instant robot control
+- **🎨 Modern UI**: Responsive web interface with action buttons and status panels
+- **🎯 28 Actions**: Including new actions like dance, jump, and enhanced martial arts
+- **📱 Cross-platform**: Works in any modern web browser
 
-### Action Animations
-- **Wave**: Right arm waving motion
-- **Bow**: Forward bending posture
-- **Kicks**: Leg extension animations
-- **Kung Fu**: Dynamic arm and body movements
-- **Push-ups**: Horizontal body position
-- **Movement**: Realistic walking and turning
+### Quick Start - 3D Web Version
+```bash
+# Linux/macOS
+./run_web_simulator.sh
+
+# Windows PowerShell
+.\run_web_simulator.ps1
+
+# Direct Python
+python3 web_humanoid_simulator.py
+```
+
+Then open your browser to: **http://localhost:5000**
+
+## 🖥️ Desktop Version
+
+### Features
+- **🎮 Pygame Visualization**: Local 2D humanoid representation
+- **🔧 Direct Control**: No browser required
+- **📊 Real-time Status**: Live robot state monitoring
+- **🎯 26 Actions**: Complete humanoid action set
 
 ## 💻 Platform Support
 

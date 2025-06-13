@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Humanoid Robot Simulator</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div id="container">
+        <!-- Header -->
+        <header id="header">
+            <h1>🤖 3D Humanoid Robot Simulator</h1>
+            <div id="status">
+                <span id="connection-status">🔴 Disconnected</span>
+                <span id="robot-count">Robots: 0/6</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div id="main-content">
+            <!-- 3D Viewport -->
+            <div id="viewport-container">
+                <canvas id="three-canvas"></canvas>
+                <div id="viewport-controls">
+                    <button id="reset-camera">📷 Reset Camera</button>
+                    <button id="toggle-wireframe">🔲 Wireframe</button>
+                    <button id="toggle-shadows">💡 Shadows</button>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div id="control-panel">
+                <div class="panel-section">
+                    <h3>🎮 Robot Control</h3>
+                    
+                    <!-- Robot Selection -->
+                    <div class="control-group">
+                        <label for="robot-select">Select Robot:</label>
+                        <select id="robot-select">
+                            <option value="all">🤖 All Robots</option>
+                            <option value="robot_1">🔵 Robot 1</option>
+                            <option value="robot_2">🔴 Robot 2</option>
+                            <option value="robot_3">🟢 Robot 3</option>
+                            <option value="robot_4">🟠 Robot 4</option>
+                            <option value="robot_5">🟣 Robot 5</option>
+                            <option value="robot_6">🟡 Robot 6</option>
+                        </select>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="control-group">
+                        <label>Actions:</label>
+                        <div class="action-buttons">
+                            <!-- Basic Actions -->
+                            <div class="action-category">
+                                <h4>Basic</h4>
+                                <button class="action-btn" data-action="wave">👋 Wave</button>
+                                <button class="action-btn" data-action="bow">🙇 Bow</button>
+                                <button class="action-btn" data-action="dance">💃 Dance</button>
+                                <button class="action-btn" data-action="jump">🦘 Jump</button>
+                            </div>
+
+                            <!-- Movement Actions -->
+                            <div class="action-category">
+                                <h4>Movement</h4>
+                                <button class="action-btn" data-action="go_forward">⬆️ Forward</button>
+                                <button class="action-btn" data-action="back_fast">⬇️ Backward</button>
+                                <button class="action-btn" data-action="turn_left">⬅️ Turn Left</button>
+                                <button class="action-btn" data-action="turn_right">➡️ Turn Right</button>
+                            </div>
+
+                            <!-- Combat Actions -->
+                            <div class="action-category">
+                                <h4>Combat</h4>
+                                <button class="action-btn" data-action="kung_fu">🥋 Kung Fu</button>
+                                <button class="action-btn" data-action="right_kick">🦵 Right Kick</button>
+                                <button class="action-btn" data-action="left_kick">🦵 Left Kick</button>
+                                <button class="action-btn" data-action="right_uppercut">👊 Uppercut</button>
+                            </div>
+
+                            <!-- Exercise Actions -->
+                            <div class="action-category">
+                                <h4>Exercise</h4>
+                                <button class="action-btn" data-action="push_ups">💪 Push-ups</button>
+                                <button class="action-btn" data-action="squat">🏋️ Squat</button>
+                                <button class="action-btn" data-action="weightlifting">🏋️‍♂️ Weightlifting</button>
+                                <button class="action-btn" data-action="sit_ups">🤸 Sit-ups</button>
+                            </div>
+
+                            <!-- Control Actions -->
+                            <div class="action-category">
+                                <h4>Control</h4>
+                                <button class="action-btn stop-btn" data-action="stop">🛑 Stop</button>
+                                <button class="action-btn" data-action="idle">⏸️ Idle</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Robot Status -->
+                <div class="panel-section">
+                    <h3>📊 Robot Status</h3>
+                    <div id="robot-status">
+                        <!-- Robot status will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="panel-section">
+                    <h3>⚡ Quick Actions</h3>
+                    <div class="quick-actions">
+                        <button id="all-wave" class="quick-btn">👋 All Wave</button>
+                        <button id="all-dance" class="quick-btn">💃 All Dance</button>
+                        <button id="all-kungfu" class="quick-btn">🥋 All Kung Fu</button>
+                        <button id="all-stop" class="quick-btn stop-btn">🛑 Stop All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer id="footer">
+            <div class="footer-content">
+                <p>🤖 3D Humanoid Robot Simulator | WebSocket + Three.js</p>
+                <div class="footer-stats">
+                    <span id="fps-counter">FPS: 0</span>
+                    <span id="robot-actions">Active: 0</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>🤖 Loading 3D Humanoid Robots...</h2>
+            <p>Initializing Three.js and WebSocket connection</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/robot3d.js"></script>
+    <script src="/static/js/simulator.js"></script>
+</body>
+</html>
