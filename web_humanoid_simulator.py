@@ -472,21 +472,37 @@ class WebHumanoidSimulator:
     
     def _update_loop(self):
         """Main update loop for robot animations"""
+        print("🔄 Starting robot animation update loop...")
         last_time = time.time()
+        frame_count = 0
         
         while self.running:
             current_time = time.time()
             dt = current_time - last_time
             last_time = current_time
+            frame_count += 1
+            
+            # Debug every 60 frames (1 second)
+            if frame_count % 60 == 0:
+                active_robots = sum(1 for robot in self.robots.values() if robot.current_action != HumanoidAction.IDLE)
+                if active_robots > 0:
+                    print(f"🎭 Update loop: Frame {frame_count}, {active_robots} robots animating")
             
             # Update all robots
             for robot in self.robots.values():
                 robot.update(dt)
             
             # Broadcast robot states to all connected clients
-            self.socketio.emit('robot_states', {
+            robot_states = {
                 robot_id: robot.to_dict() for robot_id, robot in self.robots.items()
-            })
+            }
+            
+            # Debug broadcast
+            active_in_broadcast = sum(1 for data in robot_states.values() if data['current_action'] != 'idle')
+            if active_in_broadcast > 0 and frame_count % 30 == 0:  # Every 0.5 seconds
+                print(f"📡 Broadcasting: {active_in_broadcast} active robots")
+            
+            self.socketio.emit('robot_states', robot_states)
             
             # 60 FPS update rate
             time.sleep(1/60)

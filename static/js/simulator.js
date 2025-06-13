@@ -54,6 +54,14 @@ class HumanoidSimulator {
         });
         
         this.socket.on('robot_states', (robotStates) => {
+            console.log('📡 Robot states received:', Object.keys(robotStates).length, 'robots');
+            
+            // Check if any robots are animating
+            const animatingRobots = Object.entries(robotStates).filter(([id, data]) => data.current_action !== 'idle');
+            if (animatingRobots.length > 0) {
+                console.log('🎭 Animating robots:', animatingRobots.map(([id, data]) => `${id}:${data.current_action}`).join(', '));
+            }
+            
             this.updateRobotStates(robotStates);
         });
         

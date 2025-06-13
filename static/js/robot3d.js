@@ -192,6 +192,11 @@ class Robot3D {
     }
     
     update(robotData) {
+        console.log(`🔄 ${robotData.robot_id}: Update called`);
+        console.log(`   Action: ${robotData.current_action}`);
+        console.log(`   Progress: ${(robotData.action_progress * 100).toFixed(1)}%`);
+        console.log(`   Body parts:`, robotData.body_parts);
+        
         this.position = robotData.position;
         this.rotation = robotData.rotation;
         this.currentAction = robotData.current_action;
@@ -200,6 +205,8 @@ class Robot3D {
         
         this.updatePosition();
         this.updateAnimations();
+        
+        console.log(`✅ ${robotData.robot_id}: Update completed`);
     }
     
     updatePosition() {
