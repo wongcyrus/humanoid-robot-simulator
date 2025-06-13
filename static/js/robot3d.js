@@ -312,7 +312,6 @@ class Robot3D {
             this.parts.head.material.color.setHex(this.color);
             this.parts.torso.material.color.setHex(this.color);
         }
-    }
         
         // Update label to show current action
         if (this.currentAction !== 'idle') {
