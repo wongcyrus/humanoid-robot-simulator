@@ -110,33 +110,36 @@ class HumanoidSimulator {
                 console.warn(`⚠️ Quick button not found: ${id}`);
             }
         });
-        });
-        
-        document.getElementById('all-kungfu').addEventListener('click', () => {
-            this.sendAction('all', 'kung_fu');
-        });
-        
-        document.getElementById('all-stop').addEventListener('click', () => {
-            this.sendAction('all', 'stop');
-        });
         
         // Viewport controls
-        document.getElementById('reset-camera').addEventListener('click', () => {
-            this.scene3d.resetCamera();
-        });
+        const resetCamera = document.getElementById('reset-camera');
+        const toggleWireframe = document.getElementById('toggle-wireframe');
+        const toggleShadows = document.getElementById('toggle-shadows');
         
-        document.getElementById('toggle-wireframe').addEventListener('click', () => {
-            this.scene3d.toggleWireframe();
-        });
+        if (resetCamera) {
+            resetCamera.addEventListener('click', () => {
+                this.scene3d.resetCamera();
+            });
+        }
         
-        document.getElementById('toggle-shadows').addEventListener('click', () => {
-            this.scene3d.toggleShadows();
-        });
+        if (toggleWireframe) {
+            toggleWireframe.addEventListener('click', () => {
+                this.scene3d.toggleWireframe();
+            });
+        }
+        
+        if (toggleShadows) {
+            toggleShadows.addEventListener('click', () => {
+                this.scene3d.toggleShadows();
+            });
+        }
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             this.handleKeyboard(e);
         });
+        
+        console.log('✅ UI event listeners setup complete');
     }
     
     handleKeyboard(e) {
