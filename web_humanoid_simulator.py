@@ -36,7 +36,14 @@ class Robot3D:
             'color': self.color,
             'current_action': self.current_action.value,
             'action_progress': self.action_progress,
-            'body_parts': {}
+            'body_parts': {
+                'head': {'x': 0, 'y': 0, 'z': 0},
+                'torso': {'x': 0, 'y': 0, 'z': 0},
+                'left_arm': {'x': 0, 'y': 0, 'z': 0},
+                'right_arm': {'x': 0, 'y': 0, 'z': 0},
+                'left_leg': {'x': 0, 'y': 0, 'z': 0},
+                'right_leg': {'x': 0, 'y': 0, 'z': 0}
+            }
         }
     
     def start_action(self, action):
@@ -152,6 +159,17 @@ class CleanWebSocketServer:
             except Exception as e:
                 print(f"❌ Handler error: {e}")
                 emit('action_result', {'success': False, 'error': str(e)})
+        
+        @self.socketio.on('get_robot_states')
+        def handle_get_robot_states():
+            """Send current robot states to client"""
+            print("📡 Client requested robot states")
+            robot_states = {
+                robot_id: robot.to_dict() for robot_id, robot in self.robots.items()
+            }
+            print(f"📤 Sending {len(robot_states)} robot states to client")
+            emit('robot_states', robot_states)
+            print("✅ Robot states sent successfully")
         
         @self.socketio.on('test_connection')
         def handle_test_connection(data):
