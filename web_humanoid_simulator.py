@@ -424,6 +424,22 @@ class WebHumanoidSimulator:
                 })
                 print(f"📤 Action result sent: {len(results)} robot(s) processed")
                 
+                # IMMEDIATELY broadcast robot states after action
+                print("📡 Broadcasting robot states immediately after action...")
+                robot_states = {
+                    robot_id: robot.to_dict() for robot_id, robot in self.robots.items()
+                }
+                
+                # Check if any robots are active
+                active_robots = [rid for rid, data in robot_states.items() if data['current_action'] != 'idle']
+                if active_robots:
+                    print(f"🎭 Active robots after action: {active_robots}")
+                else:
+                    print("😴 All robots idle after action")
+                
+                emit('robot_states', robot_states)
+                print("✅ Robot states broadcasted immediately to trigger frontend updates")
+                
             except Exception as e:
                 print(f"❌ WebSocket action error: {e}")
                 emit('action_result', {
@@ -475,6 +491,7 @@ class WebHumanoidSimulator:
         print("🔄 Starting robot animation update loop...")
         last_time = time.time()
         frame_count = 0
+        last_broadcast_debug = 0
         
         while self.running:
             current_time = time.time()
@@ -482,11 +499,14 @@ class WebHumanoidSimulator:
             last_time = current_time
             frame_count += 1
             
-            # Debug every 60 frames (1 second)
+            # Debug every 60 frames (1 second) but only if there are active robots
+            active_robots = sum(1 for robot in self.robots.values() if robot.current_action != HumanoidAction.IDLE)
+            
             if frame_count % 60 == 0:
-                active_robots = sum(1 for robot in self.robots.values() if robot.current_action != HumanoidAction.IDLE)
                 if active_robots > 0:
                     print(f"🎭 Update loop: Frame {frame_count}, {active_robots} robots animating")
+                elif frame_count % 300 == 0:  # Every 5 seconds when idle
+                    print(f"💤 Update loop: Frame {frame_count}, all robots idle")
             
             # Update all robots
             for robot in self.robots.values():
@@ -497,10 +517,9 @@ class WebHumanoidSimulator:
                 robot_id: robot.to_dict() for robot_id, robot in self.robots.items()
             }
             
-            # Debug broadcast
-            active_in_broadcast = sum(1 for data in robot_states.values() if data['current_action'] != 'idle')
-            if active_in_broadcast > 0 and frame_count % 30 == 0:  # Every 0.5 seconds
-                print(f"📡 Broadcasting: {active_in_broadcast} active robots")
+            # Debug broadcast every 30 frames (0.5 seconds) when active
+            if active_robots > 0 and frame_count % 30 == 0:
+                print(f"📡 Broadcasting: {active_robots} active robots to {len(self.socketio.server.manager.rooms.get('/', {}))} clients")
             
             self.socketio.emit('robot_states', robot_states)
             
