@@ -45,6 +45,14 @@ class HumanoidSimulator {
             // Request initial robot states immediately after connection
             console.log('📡 Requesting initial robot states...');
             this.socket.emit('get_robot_states');
+            
+            // TEST WebSocket communication
+            console.log('🧪 Testing WebSocket communication...');
+            this.socket.emit('test_connection', {test: 'WebSocket test from client'});
+        });
+        
+        this.socket.on('test_response', (data) => {
+            console.log('🧪 TEST: Received test response from server:', data);
         });
         
         this.socket.on('disconnect', () => {

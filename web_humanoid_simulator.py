@@ -371,6 +371,7 @@ class WebHumanoidSimulator:
     
     def _setup_websocket_events(self):
         """Setup WebSocket event handlers"""
+        print("🔧 Setting up WebSocket event handlers...")
         
         @self.socketio.on('connect')
         def handle_connect():
@@ -389,6 +390,8 @@ class WebHumanoidSimulator:
         def handle_run_action(data):
             """Handle robot action requests via WebSocket"""
             print(f"🎮 Received WebSocket action: {data}")
+            print(f"🔍 Server processing action at {time.time()}")
+            print(f"🔍 Action handler called successfully!")
             try:
                 robot_id = data.get('robot_id')
                 action = data.get('action')
@@ -411,7 +414,7 @@ class WebHumanoidSimulator:
                     for rid, robot in self.robots.items():
                         result = self._execute_action(rid, robot, action)
                         results.append(result)
-                        print(f"   ✅ {rid}: {result['success']}")
+                        print(f"   ✅ {rid}: {result['success']} - {result.get('message', '')}")
                 else:
                     # Handle individual robot
                     if robot_id not in self.robots:
@@ -428,6 +431,7 @@ class WebHumanoidSimulator:
                     results.append(result)
                     print(f"   ✅ {robot_id}: {result['success']} - {result['message']}")
                 
+                # Send action result
                 emit('action_result', {
                     'success': True,
                     'results': results
@@ -444,19 +448,33 @@ class WebHumanoidSimulator:
                 active_robots = [rid for rid, data in robot_states.items() if data['current_action'] != 'idle']
                 if active_robots:
                     print(f"🎭 Active robots after action: {active_robots}")
+                    for rid in active_robots:
+                        robot_data = robot_states[rid]
+                        print(f"   {rid}: action={robot_data['current_action']}, progress={robot_data['action_progress']}")
                 else:
                     print("😴 All robots idle after action")
                 
-                # BROADCAST to all clients, not just the sender
+                # BROADCAST to all clients
+                print(f"📡 About to broadcast robot_states to all clients...")
                 self.socketio.emit('robot_states', robot_states)
                 print("✅ Robot states broadcasted to ALL clients to trigger frontend updates")
+                print(f"📊 Broadcast completed at {time.time()}")
                 
             except Exception as e:
                 print(f"❌ WebSocket action error: {e}")
+                import traceback
+                traceback.print_exc()
                 emit('action_result', {
                     'success': False,
                     'error': str(e)
                 })
+        
+        @self.socketio.on('test_connection')
+        def handle_test_connection(data):
+            """Test WebSocket connection"""
+            print(f"🧪 TEST: Received test_connection event: {data}")
+            emit('test_response', {'message': 'Server received test event!'})
+            print(f"🧪 TEST: Sent test_response back to client")
         
         @self.socketio.on('get_robot_states')
         def handle_get_robot_states():
@@ -464,6 +482,14 @@ class WebHumanoidSimulator:
             emit('robot_states', {
                 robot_id: robot.to_dict() for robot_id, robot in self.robots.items()
             })
+        
+        print("✅ WebSocket event handlers registered:")
+        print("   • connect")
+        print("   • disconnect") 
+        print("   • run_action ← KEY HANDLER")
+        print("   • test_connection ← TEST HANDLER")
+        print("   • get_robot_states")
+        print("🔧 WebSocket setup completed!")
     
     def _execute_action(self, robot_id: str, robot: Robot3D, action: str):
         """Execute action on a robot"""
