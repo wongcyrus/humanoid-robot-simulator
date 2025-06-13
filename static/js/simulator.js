@@ -41,6 +41,10 @@ class HumanoidSimulator {
             console.log('🔌 Connected to server');
             this.isConnected = true;
             this.updateConnectionStatus(true);
+            
+            // Request initial robot states immediately after connection
+            console.log('📡 Requesting initial robot states...');
+            this.socket.emit('get_robot_states');
         });
         
         this.socket.on('disconnect', () => {
@@ -152,13 +156,20 @@ class HumanoidSimulator {
     }
     
     updateRobotStates(robotStates) {
+        console.log('📡 Received robot states:', robotStates);
+        console.log('🤖 Number of robots received:', Object.keys(robotStates).length);
+        
         Object.entries(robotStates).forEach(([robotId, robotData]) => {
+            console.log(`🤖 Processing robot: ${robotId}`, robotData);
+            
             // Add robot to scene if not exists
             if (!this.robots.has(robotId)) {
+                console.log(`➕ Adding new robot: ${robotId}`);
                 this.scene3d.addRobot(robotData);
                 this.robots.set(robotId, robotData);
             } else {
                 // Update existing robot
+                console.log(`🔄 Updating existing robot: ${robotId}`);
                 this.scene3d.updateRobot(robotData);
                 this.robots.set(robotId, robotData);
             }
@@ -167,6 +178,8 @@ class HumanoidSimulator {
         // Update UI
         this.updateRobotStatusUI();
         this.updateRobotCount();
+        
+        console.log(`📊 Total robots in simulator: ${this.robots.size}`);
     }
     
     updateRobotStatusUI() {

@@ -36,6 +36,8 @@ class Robot3D {
         const headGeometry = new THREE.SphereGeometry(8, 16, 16);
         this.parts.head = new THREE.Mesh(headGeometry, bodyMaterial);
         this.parts.head.position.set(0, 25, 0);
+        this.parts.head.castShadow = true;
+        this.parts.head.receiveShadow = true;
         this.group.add(this.parts.head);
         
         // Eyes
@@ -54,18 +56,23 @@ class Robot3D {
         const torsoGeometry = new THREE.BoxGeometry(12, 20, 8);
         this.parts.torso = new THREE.Mesh(torsoGeometry, bodyMaterial);
         this.parts.torso.position.set(0, 5, 0);
+        this.parts.torso.castShadow = true;
+        this.parts.torso.receiveShadow = true;
         this.group.add(this.parts.torso);
         
         // Arms
-        const armGeometry = new THREE.CapsuleGeometry(2, 15, 8, 16);
+        const armGeometry = new THREE.BoxGeometry(4, 15, 4); // Changed from CapsuleGeometry for better compatibility
         
         // Left Arm
         this.parts.leftArm = new THREE.Group();
         const leftUpperArm = new THREE.Mesh(armGeometry, bodyMaterial);
         leftUpperArm.position.set(0, -7, 0);
+        leftUpperArm.castShadow = true;
+        leftUpperArm.receiveShadow = true;
         this.parts.leftArm.add(leftUpperArm);
         
         const leftShoulder = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        leftShoulder.castShadow = true;
         this.parts.leftArm.add(leftShoulder);
         
         this.parts.leftArm.position.set(-8, 12, 0);
@@ -75,24 +82,30 @@ class Robot3D {
         this.parts.rightArm = new THREE.Group();
         const rightUpperArm = new THREE.Mesh(armGeometry, bodyMaterial);
         rightUpperArm.position.set(0, -7, 0);
+        rightUpperArm.castShadow = true;
+        rightUpperArm.receiveShadow = true;
         this.parts.rightArm.add(rightUpperArm);
         
         const rightShoulder = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        rightShoulder.castShadow = true;
         this.parts.rightArm.add(rightShoulder);
         
         this.parts.rightArm.position.set(8, 12, 0);
         this.group.add(this.parts.rightArm);
         
         // Legs
-        const legGeometry = new THREE.CapsuleGeometry(3, 18, 8, 16);
+        const legGeometry = new THREE.BoxGeometry(6, 18, 6); // Changed from CapsuleGeometry
         
         // Left Leg
         this.parts.leftLeg = new THREE.Group();
         const leftThigh = new THREE.Mesh(legGeometry, bodyMaterial);
         leftThigh.position.set(0, -9, 0);
+        leftThigh.castShadow = true;
+        leftThigh.receiveShadow = true;
         this.parts.leftLeg.add(leftThigh);
         
         const leftHip = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        leftHip.castShadow = true;
         this.parts.leftLeg.add(leftHip);
         
         this.parts.leftLeg.position.set(-4, -5, 0);
@@ -102,9 +115,12 @@ class Robot3D {
         this.parts.rightLeg = new THREE.Group();
         const rightThigh = new THREE.Mesh(legGeometry, bodyMaterial);
         rightThigh.position.set(0, -9, 0);
+        rightThigh.castShadow = true;
+        rightThigh.receiveShadow = true;
         this.parts.rightLeg.add(rightThigh);
         
         const rightHip = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
+        rightHip.castShadow = true;
         this.parts.rightLeg.add(rightHip);
         
         this.parts.rightLeg.position.set(4, -5, 0);
@@ -118,10 +134,14 @@ class Robot3D {
         
         const leftFoot = new THREE.Mesh(footGeometry, footMaterial);
         leftFoot.position.set(0, -20, 2);
+        leftFoot.castShadow = true;
+        leftFoot.receiveShadow = true;
         this.parts.leftLeg.add(leftFoot);
         
         const rightFoot = new THREE.Mesh(footGeometry, footMaterial);
         rightFoot.position.set(0, -20, 2);
+        rightFoot.castShadow = true;
+        rightFoot.receiveShadow = true;
         this.parts.rightLeg.add(rightFoot);
         
         // Robot ID Label
@@ -129,6 +149,11 @@ class Robot3D {
         
         // Shadow
         this.createShadow();
+        
+        // Make sure the entire group is visible
+        this.group.visible = true;
+        
+        console.log(`✅ Robot ${this.robotId} created with color ${this.color}`);
     }
     
     createLabel() {
@@ -331,7 +356,7 @@ class Scene3D {
             0.1,
             1000
         );
-        this.camera.position.set(0, 100, 200);
+        this.camera.position.set(0, 150, 300); // Better initial position
         this.camera.lookAt(0, 0, 0);
         
         // Renderer
@@ -348,6 +373,9 @@ class Scene3D {
         
         // Handle resize
         window.addEventListener('resize', () => this.onWindowResize());
+        
+        console.log('✅ Three.js initialized');
+        console.log('📷 Camera position:', this.camera.position);
     }
     
     setupLighting() {
@@ -390,8 +418,8 @@ class Scene3D {
         this.mouseX = 0;
         this.mouseY = 0;
         this.cameraAngle = 0;
-        this.cameraHeight = 100;
-        this.cameraDistance = 200;
+        this.cameraHeight = 150; // Higher initial height
+        this.cameraDistance = 300; // Further back initially
         
         this.canvas.addEventListener('mousedown', (e) => {
             this.isMouseDown = true;
@@ -409,7 +437,7 @@ class Scene3D {
                 const deltaY = e.clientY - this.mouseY;
                 
                 this.cameraAngle += deltaX * 0.01;
-                this.cameraHeight = Math.max(20, Math.min(200, this.cameraHeight - deltaY * 0.5));
+                this.cameraHeight = Math.max(20, Math.min(300, this.cameraHeight - deltaY * 0.5));
                 
                 this.updateCameraPosition();
                 
@@ -419,9 +447,15 @@ class Scene3D {
         });
         
         this.canvas.addEventListener('wheel', (e) => {
-            this.cameraDistance = Math.max(50, Math.min(500, this.cameraDistance + e.deltaY * 0.1));
+            e.preventDefault();
+            this.cameraDistance = Math.max(100, Math.min(800, this.cameraDistance + e.deltaY * 0.5));
             this.updateCameraPosition();
         });
+        
+        // Set initial camera position
+        this.updateCameraPosition();
+        
+        console.log('✅ Camera controls initialized');
     }
     
     updateCameraPosition() {
@@ -461,6 +495,8 @@ class Scene3D {
     }
     
     addRobot(robotData) {
+        console.log(`🤖 Adding robot: ${robotData.robot_id}`, robotData);
+        
         const robot = new Robot3D(robotData);
         robot.group.castShadow = true;
         robot.group.receiveShadow = true;
@@ -475,6 +511,9 @@ class Scene3D {
         
         this.robots.set(robotData.robot_id, robot);
         this.scene.add(robot.group);
+        
+        console.log(`✅ Robot ${robotData.robot_id} added to scene at position:`, robot.position);
+        console.log(`📊 Total robots in scene: ${this.robots.size}`);
     }
     
     updateRobot(robotData) {
@@ -495,9 +534,10 @@ class Scene3D {
     
     resetCamera() {
         this.cameraAngle = 0;
-        this.cameraHeight = 100;
-        this.cameraDistance = 200;
+        this.cameraHeight = 150;
+        this.cameraDistance = 300;
         this.updateCameraPosition();
+        console.log('📷 Camera reset to default position');
     }
     
     toggleWireframe() {
