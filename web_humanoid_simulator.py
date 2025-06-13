@@ -142,50 +142,59 @@ class Robot3D:
         t = time.time()
         
         if self.current_action == HumanoidAction.WAVE:
-            # Right arm waving
-            self.body_parts["right_arm"]["z"] = -60 + 30 * math.sin(progress * 8)
-            self.body_parts["right_arm"]["x"] = 10 * math.sin(progress * 6)
+            # Right arm waving - INCREASED amplitude
+            self.body_parts["right_arm"]["z"] = -60 + 60 * math.sin(progress * 8)  # Increased from 30 to 60
+            self.body_parts["right_arm"]["x"] = 20 * math.sin(progress * 6)  # Increased from 10 to 20
             
         elif self.current_action == HumanoidAction.BOW:
-            # Bowing forward
-            self.body_parts["torso"]["x"] = -30 * progress
-            self.body_parts["head"]["x"] = -20 * progress
+            # Bowing forward - INCREASED amplitude
+            self.body_parts["torso"]["x"] = -60 * progress  # Increased from -30 to -60
+            self.body_parts["head"]["x"] = -40 * progress   # Increased from -20 to -40
             
         elif self.current_action == HumanoidAction.RIGHT_KICK:
-            # Right leg kick
-            self.body_parts["right_leg"]["x"] = 45 * progress
+            # Right leg kick - INCREASED amplitude
+            self.body_parts["right_leg"]["x"] = 90 * progress  # Increased from 45 to 90
             
         elif self.current_action == HumanoidAction.LEFT_KICK:
-            # Left leg kick
-            self.body_parts["left_leg"]["x"] = 45 * progress
+            # Left leg kick - INCREASED amplitude
+            self.body_parts["left_leg"]["x"] = 90 * progress  # Increased from 45 to 90
             
         elif self.current_action == HumanoidAction.KUNG_FU:
-            # Dynamic kung fu movements
-            self.body_parts["left_arm"]["z"] = 30 * math.sin(progress * 10)
-            self.body_parts["right_arm"]["z"] = -30 * math.sin(progress * 10)
-            self.body_parts["left_leg"]["x"] = 15 * math.sin(progress * 8)
-            self.body_parts["torso"]["y"] = 10 * math.sin(progress * 12)
+            # Dynamic kung fu movements - INCREASED amplitude
+            self.body_parts["left_arm"]["z"] = 60 * math.sin(progress * 10)   # Increased from 30 to 60
+            self.body_parts["right_arm"]["z"] = -60 * math.sin(progress * 10) # Increased from -30 to -60
+            self.body_parts["left_leg"]["x"] = 30 * math.sin(progress * 8)    # Increased from 15 to 30
+            self.body_parts["torso"]["y"] = 20 * math.sin(progress * 12)      # Increased from 10 to 20
             
         elif self.current_action == HumanoidAction.DANCE:
-            # Dance movements
-            self.body_parts["left_arm"]["z"] = 45 * math.sin(progress * 6)
-            self.body_parts["right_arm"]["z"] = -45 * math.sin(progress * 6 + math.pi)
-            self.body_parts["torso"]["y"] = 20 * math.sin(progress * 4)
-            self.body_parts["head"]["y"] = 15 * math.sin(progress * 8)
+            # Dance movements - INCREASED amplitude
+            self.body_parts["left_arm"]["z"] = 90 * math.sin(progress * 6)           # Increased from 45 to 90
+            self.body_parts["right_arm"]["z"] = -90 * math.sin(progress * 6 + math.pi) # Increased from -45 to -90
+            self.body_parts["torso"]["y"] = 40 * math.sin(progress * 4)              # Increased from 20 to 40
+            self.body_parts["head"]["y"] = 30 * math.sin(progress * 8)               # Increased from 15 to 30
             
         elif self.current_action == HumanoidAction.JUMP:
-            # Jumping motion
-            jump_height = 20 * math.sin(progress * math.pi)
+            # Jumping motion - INCREASED amplitude
+            jump_height = 40 * math.sin(progress * math.pi)  # Increased from 20 to 40
             self.position["y"] = jump_height
-            self.body_parts["left_arm"]["z"] = 30 * progress
-            self.body_parts["right_arm"]["z"] = -30 * progress
+            self.body_parts["left_arm"]["z"] = 60 * progress   # Increased from 30 to 60
+            self.body_parts["right_arm"]["z"] = -60 * progress # Increased from -30 to -60
             
         elif self.current_action == HumanoidAction.PUSH_UPS:
-            # Push-up position
+            # Push-up position - INCREASED amplitude
             self.body_parts["torso"]["x"] = -90
-            push_motion = 10 * math.sin(progress * 8)
+            push_motion = 20 * math.sin(progress * 8)  # Increased from 10 to 20
             self.body_parts["left_arm"]["x"] = -90 + push_motion
             self.body_parts["right_arm"]["x"] = -90 + push_motion
+            
+        # Add a test action with EXTREME movement for debugging
+        elif self.current_action.value == "test_extreme":
+            # Extreme movements that should be impossible to miss
+            self.body_parts["left_arm"]["z"] = 180 * math.sin(progress * 4)   # Full rotation
+            self.body_parts["right_arm"]["z"] = -180 * math.sin(progress * 4) # Full rotation opposite
+            self.body_parts["head"]["y"] = 90 * math.sin(progress * 6)        # Head spinning
+            self.body_parts["torso"]["x"] = 45 * math.sin(progress * 3)       # Torso bending
+            print(f"🔥 EXTREME TEST: Left arm: {self.body_parts['left_arm']['z']:.1f}°")
     
     def _update_movement(self, dt: float):
         """Update position for movement actions"""

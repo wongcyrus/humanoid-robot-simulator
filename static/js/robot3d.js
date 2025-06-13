@@ -262,6 +262,8 @@ class Robot3D {
             if (this.bodyParts.left_arm) {
                 const leftArm = this.bodyParts.left_arm;
                 if (Math.abs(leftArm.x) > 0.1 || Math.abs(leftArm.y) > 0.1 || Math.abs(leftArm.z) > 0.1) {
+                    // Apply rotation with proper order and pivot
+                    this.parts.leftArm.rotation.order = 'XYZ';
                     this.parts.leftArm.rotation.set(
                         THREE.MathUtils.degToRad(leftArm.x),
                         THREE.MathUtils.degToRad(leftArm.y),
@@ -275,6 +277,8 @@ class Robot3D {
             if (this.bodyParts.right_arm) {
                 const rightArm = this.bodyParts.right_arm;
                 if (Math.abs(rightArm.x) > 0.1 || Math.abs(rightArm.y) > 0.1 || Math.abs(rightArm.z) > 0.1) {
+                    // Apply rotation with proper order and pivot
+                    this.parts.rightArm.rotation.order = 'XYZ';
                     this.parts.rightArm.rotation.set(
                         THREE.MathUtils.degToRad(rightArm.x),
                         THREE.MathUtils.degToRad(rightArm.y),
@@ -314,7 +318,20 @@ class Robot3D {
             
             if (animatedParts > 0) {
                 console.log(`🎭 ${this.robotId}: Applied ${animatedParts} animations`);
+                
+                // Visual feedback: Change robot color when animating
+                this.parts.head.material.color.setHex(0xff0000); // Red when animating
+                
+                // Reset color after a short delay
+                setTimeout(() => {
+                    this.parts.head.material.color.setHex(this.color);
+                }, 100);
+            } else {
+                // Ensure normal color when not animating
+                this.parts.head.material.color.setHex(this.color);
             }
+        } else {
+            console.log(`❌ ${this.robotId}: No body parts data available`);
         }
         
         // Update label to show current action
