@@ -134,13 +134,6 @@ class Robot3D {
         this.parts.rightLeg.position.set(4, -5, 0);
         this.group.add(this.parts.rightLeg);
         
-        const rightHip = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
-        rightHip.castShadow = true;
-        this.parts.rightLeg.add(rightHip);
-        
-        this.parts.rightLeg.position.set(4, -5, 0);
-        this.group.add(this.parts.rightLeg);
-        
         // Feet
         const footGeometry = new THREE.BoxGeometry(6, 2, 10);
         const footMaterial = new THREE.MeshPhongMaterial({ 
