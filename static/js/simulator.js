@@ -58,6 +58,7 @@ class HumanoidSimulator {
         });
         
         this.socket.on('action_result', (result) => {
+            console.log('📨 Received action result:', result);
             this.handleActionResult(result);
         });
         
@@ -140,19 +141,27 @@ class HumanoidSimulator {
     sendAction(robotId, action) {
         if (!this.isConnected) {
             this.showNotification('❌ Not connected to server', 'error');
+            console.error('❌ WebSocket not connected');
             return;
         }
         
         console.log(`🎮 Sending action: ${robotId} -> ${action}`);
         
-        this.socket.emit('run_action', {
+        // Debug: Log the exact data being sent
+        const actionData = {
             robot_id: robotId,
             action: action
-        });
+        };
+        console.log('📡 WebSocket data:', actionData);
+        
+        this.socket.emit('run_action', actionData);
         
         // Visual feedback
         this.highlightActionButton(action);
         this.showNotification(`🤖 ${robotId}: ${action}`, 'info');
+        
+        // Debug: Confirm emission
+        console.log('✅ Action emitted via WebSocket');
     }
     
     updateRobotStates(robotStates) {

@@ -318,6 +318,10 @@ class WebHumanoidSimulator:
         def index():
             return render_template('index.html')
         
+        @self.app.route('/test')
+        def test_page():
+            return render_template('test.html')
+        
         @self.app.route('/static/<path:filename>')
         def static_files(filename):
             return send_from_directory('static', filename)
@@ -357,11 +361,15 @@ class WebHumanoidSimulator:
         @self.socketio.on('run_action')
         def handle_run_action(data):
             """Handle robot action requests via WebSocket"""
+            print(f"🎮 Received WebSocket action: {data}")
             try:
                 robot_id = data.get('robot_id')
                 action = data.get('action')
                 
+                print(f"🤖 Processing: robot_id={robot_id}, action={action}")
+                
                 if not robot_id or not action:
+                    print("❌ Missing robot_id or action")
                     emit('action_result', {
                         'success': False,
                         'error': 'Missing robot_id or action'
@@ -372,28 +380,35 @@ class WebHumanoidSimulator:
                 
                 # Handle 'all' robot ID
                 if robot_id.lower() == 'all':
+                    print(f"🎯 Executing action '{action}' on ALL robots")
                     for rid, robot in self.robots.items():
                         result = self._execute_action(rid, robot, action)
                         results.append(result)
+                        print(f"   ✅ {rid}: {result['success']}")
                 else:
                     # Handle individual robot
                     if robot_id not in self.robots:
+                        print(f"❌ Robot {robot_id} not found")
                         emit('action_result', {
                             'success': False,
                             'error': f'Robot {robot_id} not found'
                         })
                         return
                     
+                    print(f"🎯 Executing action '{action}' on {robot_id}")
                     robot = self.robots[robot_id]
                     result = self._execute_action(robot_id, robot, action)
                     results.append(result)
+                    print(f"   ✅ {robot_id}: {result['success']} - {result['message']}")
                 
                 emit('action_result', {
                     'success': True,
                     'results': results
                 })
+                print(f"📤 Action result sent: {len(results)} robot(s) processed")
                 
             except Exception as e:
+                print(f"❌ WebSocket action error: {e}")
                 emit('action_result', {
                     'success': False,
                     'error': str(e)
