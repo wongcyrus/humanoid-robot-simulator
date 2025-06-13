@@ -374,11 +374,12 @@ class WebHumanoidSimulator:
         
         @self.socketio.on('connect')
         def handle_connect():
-            print(f"🔌 Client connected: {id}")
-            # Send initial robot states
+            print(f"🔌 Client connected")
+            # Send initial robot states to the connecting client
             emit('robot_states', {
                 robot_id: robot.to_dict() for robot_id, robot in self.robots.items()
             })
+            print("📡 Initial robot states sent to new client")
         
         @self.socketio.on('disconnect')
         def handle_disconnect():
@@ -446,8 +447,9 @@ class WebHumanoidSimulator:
                 else:
                     print("😴 All robots idle after action")
                 
-                emit('robot_states', robot_states)
-                print("✅ Robot states broadcasted immediately to trigger frontend updates")
+                # BROADCAST to all clients, not just the sender
+                self.socketio.emit('robot_states', robot_states)
+                print("✅ Robot states broadcasted to ALL clients to trigger frontend updates")
                 
             except Exception as e:
                 print(f"❌ WebSocket action error: {e}")
