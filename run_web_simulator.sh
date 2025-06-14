@@ -11,7 +11,7 @@ if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
     python3 -m venv venv
     source venv/bin/activate
-    pip install pygame flask flask-cors flask-socketio requests python-socketio eventlet
+    pip install flask flask-cors flask-socketio requests python-socketio eventlet
 else
     source venv/bin/activate
 fi

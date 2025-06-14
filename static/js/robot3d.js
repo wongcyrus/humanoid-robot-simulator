@@ -1,419 +1,317 @@
 /**
- * 3D Robot Visualization using Three.js
- * Creates and manages 3D humanoid robot models
+ * Enhanced 3D Robot Visualization - 44 Actions Available
+ * Guaranteed visibility with complete action library
  */
 
 class Robot3D {
     constructor(robotData) {
         this.robotId = robotData.robot_id;
-        this.color = robotData.color;
+        this.color = robotData.color || '#4A90E2';
         
-        // Fix position handling - convert array to object
-        if (Array.isArray(robotData.position)) {
-            this.position = {
-                x: robotData.position[0],
-                y: robotData.position[1], 
-                z: robotData.position[2]
-            };
-        } else {
-            this.position = robotData.position || {x: 0, y: 0, z: 0};
-        }
+        // FORCE position handling - multiple fallbacks
+        this.position = this.parsePosition(robotData.position);
+        this.rotation = this.parseRotation(robotData.rotation);
         
-        // Fix rotation handling - convert array to object
-        if (Array.isArray(robotData.rotation)) {
-            this.rotation = {
-                x: robotData.rotation[0],
-                y: robotData.rotation[1],
-                z: robotData.rotation[2]
-            };
-        } else {
-            this.rotation = robotData.rotation || {x: 0, y: 0, z: 0};
-        }
+        console.log(`🤖 CREATING ${this.robotId} at position:`, this.position);
         
-        this.currentAction = robotData.current_action;
-        this.lastAction = 'idle'; // Track last action to prevent constant resets
-        this.actionProgress = robotData.action_progress;
-        this.bodyParts = robotData.body_parts;
-        
-        // Three.js objects
+        // Initialize Three.js objects
         this.group = new THREE.Group();
         this.parts = {};
+        this.isVisible = true;
+        this.animator = null; // Will be set after creation
         
-        console.log(`🔧 Robot ${this.robotId} position fixed:`, this.position);
+        // Create robot immediately
+        this.createRobotMesh();
+        this.forcePosition();
+        this.ensureVisibility();
         
-        this.createRobot();
-        this.updatePosition();
+        // Initialize animator
+        this.animator = new RobotAnimator(this);
+        
+        console.log(`✅ ${this.robotId} created successfully - Group children:`, this.group.children.length);
     }
     
-    createRobot() {
-        // Materials
-        const bodyMaterial = new THREE.MeshPhongMaterial({ 
+    parsePosition(positionData) {
+        console.log(`🔍 Parsing position for ${this.robotId}:`, positionData, typeof positionData);
+        
+        // Handle array format [x, y, z]
+        if (Array.isArray(positionData) && positionData.length >= 3) {
+            return {
+                x: Number(positionData[0]) || 0,
+                y: Number(positionData[1]) || 0,
+                z: Number(positionData[2]) || 0
+            };
+        }
+        
+        // Handle object format {x, y, z}
+        if (positionData && typeof positionData === 'object') {
+            return {
+                x: Number(positionData.x) || 0,
+                y: Number(positionData.y) || 0,
+                z: Number(positionData.z) || 0
+            };
+        }
+        
+        // Fallback to default positions based on robot ID
+        const defaultPositions = {
+            'robot_1': { x: -50, y: 0, z: -50 },
+            'robot_2': { x: 0, y: 0, z: -50 },
+            'robot_3': { x: 50, y: 0, z: -50 },
+            'robot_4': { x: -50, y: 0, z: 50 },
+            'robot_5': { x: 0, y: 0, z: 50 },
+            'robot_6': { x: 50, y: 0, z: 50 }
+        };
+        
+        return defaultPositions[this.robotId] || { x: 0, y: 0, z: 0 };
+    }
+    
+    parseRotation(rotationData) {
+        if (Array.isArray(rotationData) && rotationData.length >= 3) {
+            return {
+                x: Number(rotationData[0]) || 0,
+                y: Number(rotationData[1]) || 0,
+                z: Number(rotationData[2]) || 0
+            };
+        }
+        
+        if (rotationData && typeof rotationData === 'object') {
+            return {
+                x: Number(rotationData.x) || 0,
+                y: Number(rotationData.y) || 0,
+                z: Number(rotationData.z) || 0
+            };
+        }
+        
+        return { x: 0, y: 0, z: 0 };
+    }
+    
+    createRobotMesh() {
+        console.log(`🔧 Creating mesh for ${this.robotId}`);
+        
+        // Clear any existing children
+        while (this.group.children.length > 0) {
+            this.group.remove(this.group.children[0]);
+        }
+        
+        // Materials with high visibility
+        const bodyMaterial = new THREE.MeshLambertMaterial({ 
             color: this.color,
-            shininess: 30
-        });
-        const jointMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0x444444,
-            shininess: 50
+            transparent: false,
+            opacity: 1.0
         });
         
-        // Head
-        const headGeometry = new THREE.SphereGeometry(8, 16, 16);
+        const jointMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x666666,
+            transparent: false,
+            opacity: 1.0
+        });
+        
+        // HEAD - Large and visible
+        const headGeometry = new THREE.SphereGeometry(12, 16, 16);
         this.parts.head = new THREE.Mesh(headGeometry, bodyMaterial);
-        this.parts.head.position.set(0, 25, 0);
+        this.parts.head.position.set(0, 35, 0);
         this.parts.head.castShadow = true;
         this.parts.head.receiveShadow = true;
         this.group.add(this.parts.head);
         
-        // Eyes
-        const eyeGeometry = new THREE.SphereGeometry(1, 8, 8);
-        const eyeMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
+        // Eyes for character and direction indication
+        const eyeGeometry = new THREE.SphereGeometry(2, 8, 8);
+        const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
         
         const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        leftEye.position.set(-3, 2, 6);
+        leftEye.position.set(-4, 2, 10); // Moved forward more for visibility
         this.parts.head.add(leftEye);
         
         const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        rightEye.position.set(3, 2, 6);
+        rightEye.position.set(4, 2, 10); // Moved forward more for visibility
         this.parts.head.add(rightEye);
         
-        // Torso
-        const torsoGeometry = new THREE.BoxGeometry(12, 20, 8);
+        // Add a simple nose/mouth for clear face direction
+        const noseGeometry = new THREE.BoxGeometry(1, 1, 2);
+        const noseMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+        const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+        nose.position.set(0, -2, 11); // Forward-facing nose
+        this.parts.head.add(nose);
+        
+        // Add face direction indicator (small arrow on forehead)
+        const arrowGeometry = new THREE.ConeGeometry(2, 4, 3);
+        const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+        const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+        arrow.position.set(0, 8, 8);
+        arrow.rotation.x = Math.PI / 2; // Point forward
+        this.parts.head.add(arrow);
+        
+        // TORSO - Main body
+        const torsoGeometry = new THREE.BoxGeometry(16, 25, 10);
         this.parts.torso = new THREE.Mesh(torsoGeometry, bodyMaterial);
-        this.parts.torso.position.set(0, 5, 0);
+        this.parts.torso.position.set(0, 10, 0);
         this.parts.torso.castShadow = true;
         this.parts.torso.receiveShadow = true;
         this.group.add(this.parts.torso);
         
-        // Arms with proper pivot points
-        const armGeometry = new THREE.BoxGeometry(4, 15, 4);
-        
-        // Left Arm - Fixed pivot point
+        // ARMS - Create as groups for better animation
+        // LEFT ARM
         this.parts.leftArm = new THREE.Group();
-        const leftUpperArm = new THREE.Mesh(armGeometry, bodyMaterial);
-        leftUpperArm.position.set(0, -7.5, 0); // Center the arm in the group
-        leftUpperArm.castShadow = true;
-        leftUpperArm.receiveShadow = true;
-        this.parts.leftArm.add(leftUpperArm);
-        
-        const leftShoulder = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
-        leftShoulder.position.set(0, 0, 0); // At the pivot point
-        leftShoulder.castShadow = true;
-        this.parts.leftArm.add(leftShoulder);
-        
-        // Position the entire arm group at shoulder
-        this.parts.leftArm.position.set(-8, 12, 0);
+        const leftArmMesh = new THREE.Mesh(new THREE.BoxGeometry(6, 20, 6), bodyMaterial);
+        leftArmMesh.position.set(0, -10, 0);
+        leftArmMesh.castShadow = true;
+        leftArmMesh.receiveShadow = true;
+        this.parts.leftArm.add(leftArmMesh);
+        this.parts.leftArm.position.set(-12, 20, 0);
         this.group.add(this.parts.leftArm);
         
-        // Right Arm - Fixed pivot point
+        // RIGHT ARM
         this.parts.rightArm = new THREE.Group();
-        const rightUpperArm = new THREE.Mesh(armGeometry, bodyMaterial);
-        rightUpperArm.position.set(0, -7.5, 0); // Center the arm in the group
-        rightUpperArm.castShadow = true;
-        rightUpperArm.receiveShadow = true;
-        this.parts.rightArm.add(rightUpperArm);
-        
-        const rightShoulder = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
-        rightShoulder.position.set(0, 0, 0); // At the pivot point
-        rightShoulder.castShadow = true;
-        this.parts.rightArm.add(rightShoulder);
-        
-        // Position the entire arm group at shoulder
-        this.parts.rightArm.position.set(8, 12, 0);
+        const rightArmMesh = new THREE.Mesh(new THREE.BoxGeometry(6, 20, 6), bodyMaterial);
+        rightArmMesh.position.set(0, -10, 0);
+        rightArmMesh.castShadow = true;
+        rightArmMesh.receiveShadow = true;
+        this.parts.rightArm.add(rightArmMesh);
+        this.parts.rightArm.position.set(12, 20, 0);
         this.group.add(this.parts.rightArm);
         
-        // Legs with proper pivot points
-        const legGeometry = new THREE.BoxGeometry(6, 18, 6);
-        
-        // Left Leg - Fixed pivot point
+        // LEGS - Create as groups for better animation
+        // LEFT LEG
         this.parts.leftLeg = new THREE.Group();
-        const leftThigh = new THREE.Mesh(legGeometry, bodyMaterial);
-        leftThigh.position.set(0, -9, 0); // Center the leg in the group
-        leftThigh.castShadow = true;
-        leftThigh.receiveShadow = true;
-        this.parts.leftLeg.add(leftThigh);
-        
-        const leftHip = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
-        leftHip.position.set(0, 0, 0); // At the pivot point
-        leftHip.castShadow = true;
-        this.parts.leftLeg.add(leftHip);
-        
-        // Position the entire leg group at hip
-        this.parts.leftLeg.position.set(-4, -5, 0);
+        const leftLegMesh = new THREE.Mesh(new THREE.BoxGeometry(8, 25, 8), bodyMaterial);
+        leftLegMesh.position.set(0, -12.5, 0);
+        leftLegMesh.castShadow = true;
+        leftLegMesh.receiveShadow = true;
+        this.parts.leftLeg.add(leftLegMesh);
+        this.parts.leftLeg.position.set(-6, -5, 0);
         this.group.add(this.parts.leftLeg);
         
-        // Right Leg - Fixed pivot point
+        // RIGHT LEG
         this.parts.rightLeg = new THREE.Group();
-        const rightThigh = new THREE.Mesh(legGeometry, bodyMaterial);
-        rightThigh.position.set(0, -9, 0); // Center the leg in the group
-        rightThigh.castShadow = true;
-        rightThigh.receiveShadow = true;
-        this.parts.rightLeg.add(rightThigh);
-        
-        const rightHip = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 8), jointMaterial);
-        rightHip.position.set(0, 0, 0); // At the pivot point
-        rightHip.castShadow = true;
-        this.parts.rightLeg.add(rightHip);
-        
-        // Position the entire leg group at hip
-        this.parts.rightLeg.position.set(4, -5, 0);
+        const rightLegMesh = new THREE.Mesh(new THREE.BoxGeometry(8, 25, 8), bodyMaterial);
+        rightLegMesh.position.set(0, -12.5, 0);
+        rightLegMesh.castShadow = true;
+        rightLegMesh.receiveShadow = true;
+        this.parts.rightLeg.add(rightLegMesh);
+        this.parts.rightLeg.position.set(6, -5, 0);
         this.group.add(this.parts.rightLeg);
         
-        // Feet
-        const footGeometry = new THREE.BoxGeometry(6, 2, 10);
-        const footMaterial = new THREE.MeshPhongMaterial({ 
-            color: new THREE.Color(this.color).multiplyScalar(0.7)
-        });
+        // Add robot ID label above head
+        this.addRobotLabel();
         
-        const leftFoot = new THREE.Mesh(footGeometry, footMaterial);
-        leftFoot.position.set(0, -20, 2);
-        leftFoot.castShadow = true;
-        leftFoot.receiveShadow = true;
-        this.parts.leftLeg.add(leftFoot);
+        console.log(`✅ ${this.robotId} mesh created with ${this.group.children.length} parts`);
+    }
+    
+    addRobotLabel() {
+        // Create a simple text representation using a colored cube
+        const labelGeometry = new THREE.BoxGeometry(8, 2, 2);
+        const labelMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+        const label = new THREE.Mesh(labelGeometry, labelMaterial);
+        label.position.set(0, 50, 0);
+        this.group.add(label);
+    }
+    
+    forcePosition() {
+        // FORCE the position - no matter what
+        this.group.position.set(this.position.x, this.position.y, this.position.z);
+        this.group.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
         
-        const rightFoot = new THREE.Mesh(footGeometry, footMaterial);
-        rightFoot.position.set(0, -20, 2);
-        rightFoot.castShadow = true;
-        rightFoot.receiveShadow = true;
-        this.parts.rightLeg.add(rightFoot);
-        
-        // Robot ID Label
-        this.createLabel();
-        
-        // Shadow
-        this.createShadow();
-        
-        // Make sure the entire group is visible
+        console.log(`🎯 FORCED position for ${this.robotId}:`, this.group.position);
+        console.log(`🎯 FORCED rotation for ${this.robotId}:`, this.group.rotation);
+    }
+    
+    ensureVisibility() {
+        // FORCE visibility settings
         this.group.visible = true;
+        this.group.scale.set(1, 1, 1);
         
-        console.log(`✅ Robot ${this.robotId} created with color ${this.color}`);
-    }
-    
-    createLabel() {
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = 128;
-        canvas.height = 32;
-        
-        context.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        
-        context.fillStyle = 'white';
-        context.font = '16px Arial';
-        context.textAlign = 'center';
-        context.fillText(this.robotId, canvas.width / 2, 20);
-        
-        const texture = new THREE.CanvasTexture(canvas);
-        const material = new THREE.SpriteMaterial({ map: texture });
-        this.label = new THREE.Sprite(material);
-        this.label.position.set(0, 40, 0);
-        this.label.scale.set(20, 5, 1);
-        this.group.add(this.label);
-    }
-    
-    createShadow() {
-        const shadowGeometry = new THREE.PlaneGeometry(30, 15);
-        const shadowMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0x000000,
-            transparent: true,
-            opacity: 0.3
+        // Make sure all parts are visible
+        this.group.traverse((child) => {
+            if (child.isMesh) {
+                child.visible = true;
+                child.material.transparent = false;
+                child.material.opacity = 1.0;
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
         });
-        this.shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
-        this.shadow.rotation.x = -Math.PI / 2;
-        this.shadow.position.set(0, -23, 0);
-        this.group.add(this.shadow);
+        
+        console.log(`👁️ FORCED visibility for ${this.robotId} - Visible:`, this.group.visible);
+    }
+    
+    // Start action with animation
+    startAction(action) {
+        console.log(`🎬 ${this.robotId} starting action: ${action}`);
+        
+        if (this.animator) {
+            this.animator.startAnimation(action);
+        } else {
+            console.warn(`⚠️ No animator available for ${this.robotId}`);
+        }
     }
     
     update(robotData) {
-        console.log(`🔄 ${robotData.robot_id}: Update called`);
-        console.log(`   Action: ${robotData.current_action}`);
-        console.log(`   Progress: ${(robotData.action_progress * 100).toFixed(1)}%`);
-        console.log(`   Full robotData:`, robotData);
-        
-        this.position = robotData.position;
-        this.rotation = robotData.rotation;
-        
-        // Track action changes
-        if (this.currentAction !== robotData.current_action) {
-            console.log(`🔄 ${robotData.robot_id}: Action changed from '${this.currentAction}' to '${robotData.current_action}'`);
-            this.lastAction = this.currentAction;
-        }
-        
-        this.currentAction = robotData.current_action;
-        this.actionProgress = robotData.action_progress;
-        this.bodyParts = robotData.body_parts;
-        
-        // DEBUG: Force animation for testing
-        if (robotData.current_action !== 'idle') {
-            console.log(`🎯 Robot ${robotData.robot_id} should animate: ${robotData.current_action}`);
-        } else {
-            console.log(`😴 Robot ${robotData.robot_id} is idle - no animation`);
-        }
-        
-        this.updatePosition();
-        this.updateAnimations();
-        
-        console.log(`✅ ${robotData.robot_id}: Update completed`);
-    }
-    
-    updatePosition() {
-        console.log(`🔧 ${this.robotId} updatePosition called with:`, this.position);
-        
-        this.group.position.set(
-            this.position.x,
-            this.position.y,
-            this.position.z
-        );
-        
-        this.group.rotation.y = THREE.MathUtils.degToRad(this.rotation.y);
-        
-        console.log(`✅ ${this.robotId} positioned at:`, this.group.position);
-    }
-    
-    updateAnimations() {
-        console.log(`🎭 ${this.robotId}: updateAnimations called, currentAction = '${this.currentAction}'`);
-        
-        // DIRECT THREE.JS ANIMATION - bypass server calculations for testing
-        if (this.currentAction !== 'idle') {
-            console.log(`🎭 ${this.robotId}: DIRECT Three.js animation for ${this.currentAction}`);
+        // FIXED: Only update position if it's significantly different from current position
+        // This prevents server updates from resetting robot positions after movement
+        if (robotData.position) {
+            const newPosition = this.parsePosition(robotData.position);
+            const currentPos = this.group.position;
             
-            // Get current time for animation
-            const time = Date.now() * 0.001; // Convert to seconds
+            // Check if the new position is significantly different (more than 5 units)
+            const distance = Math.sqrt(
+                Math.pow(newPosition.x - currentPos.x, 2) + 
+                Math.pow(newPosition.z - currentPos.z, 2)
+            );
             
-            // DIRECT Three.js animations based on action
-            switch(this.currentAction) {
-                case 'dance':
-                    // Direct dance animation
-                    this.parts.leftArm.rotation.z = Math.sin(time * 4) * Math.PI/3; // 60° swing
-                    this.parts.rightArm.rotation.z = -Math.sin(time * 4) * Math.PI/3; // 60° swing opposite
-                    this.parts.head.rotation.y = Math.sin(time * 6) * Math.PI/6; // 30° head turn
-                    this.parts.torso.rotation.y = Math.sin(time * 2) * Math.PI/8; // 22.5° torso twist
-                    console.log(`  🎭 DIRECT dance: arms=${(Math.sin(time * 4) * 60).toFixed(1)}°`);
-                    break;
-                    
-                case 'wave':
-                    // Direct wave animation
-                    this.parts.rightArm.rotation.z = -Math.PI/4 + Math.sin(time * 8) * Math.PI/4; // Wave motion
-                    this.parts.rightArm.rotation.x = Math.sin(time * 6) * Math.PI/12; // Up/down motion
-                    console.log(`  🎭 DIRECT wave: right arm=${((Math.sin(time * 8) * 45)).toFixed(1)}°`);
-                    break;
-                    
-                case 'kung_fu':
-                    // Direct kung fu animation
-                    this.parts.leftArm.rotation.z = Math.sin(time * 10) * Math.PI/2; // 90° punch
-                    this.parts.rightArm.rotation.z = -Math.sin(time * 10 + Math.PI) * Math.PI/2; // Opposite punch
-                    this.parts.leftLeg.rotation.x = Math.sin(time * 8) * Math.PI/6; // Kick motion
-                    console.log(`  🎭 DIRECT kung fu: punches=${(Math.sin(time * 10) * 90).toFixed(1)}°`);
-                    break;
-                    
-                case 'jump':
-                    // Direct jump animation
-                    const jumpHeight = Math.abs(Math.sin(time * 6)) * 20;
-                    this.group.position.y = jumpHeight;
-                    this.parts.leftArm.rotation.z = Math.PI/3; // Arms up
-                    this.parts.rightArm.rotation.z = -Math.PI/3; // Arms up
-                    console.log(`  🎭 DIRECT jump: height=${jumpHeight.toFixed(1)}`);
-                    break;
-                    
-                case 'go_forward':
-                case 'move_forward':
-                    // Direct walking animation
-                    this.parts.leftLeg.rotation.x = Math.sin(time * 8) * Math.PI/6; // 30° leg swing
-                    this.parts.rightLeg.rotation.x = -Math.sin(time * 8) * Math.PI/6; // Opposite leg
-                    this.parts.leftArm.rotation.x = -Math.sin(time * 8) * Math.PI/8; // Arm swing
-                    this.parts.rightArm.rotation.x = Math.sin(time * 8) * Math.PI/8; // Opposite arm
-                    console.log(`  🎭 DIRECT walk: legs=${(Math.sin(time * 8) * 30).toFixed(1)}°`);
-                    break;
-                    
-                default:
-                    // Reset to neutral position
-                    this.parts.head.rotation.set(0, 0, 0);
-                    this.parts.torso.rotation.set(0, 0, 0);
-                    this.parts.leftArm.rotation.set(0, 0, 0);
-                    this.parts.rightArm.rotation.set(0, 0, 0);
-                    this.parts.leftLeg.rotation.set(0, 0, 0);
-                    this.parts.rightLeg.rotation.set(0, 0, 0);
-                    this.group.position.y = 0;
-                    break;
+            if (distance > 5) {
+                console.log(`📍 Significant position change for ${this.robotId}: ${distance.toFixed(1)} units`);
+                this.position = newPosition;
+                this.forcePosition();
+            } else {
+                console.log(`📍 Ignoring minor position update for ${this.robotId} (distance: ${distance.toFixed(1)})`);
+                // Update stored position to match current actual position
+                this.position.x = currentPos.x;
+                this.position.y = currentPos.y;
+                this.position.z = currentPos.z;
             }
+        }
+        
+        // FIXED: Only update rotation if it's significantly different from current rotation
+        if (robotData.rotation) {
+            const newRotation = this.parseRotation(robotData.rotation);
+            const currentRot = this.group.rotation.y;
             
-            // EXTREME visual feedback
-            this.parts.head.material.color.setHex(0xff0000); // Red head
-            this.parts.torso.material.color.setHex(0xff4444); // Light red torso
+            // Check if the new rotation is significantly different (more than 0.1 radians)
+            const rotDiff = Math.abs(newRotation.y - currentRot);
             
-            console.log(`🎭 ${this.robotId}: DIRECT Three.js animation applied`);
-            
-        } else {
-            // DON'T constantly reset when idle - this overrides server actions!
-            // Only reset once when transitioning from active to idle
-            if (this.lastAction !== 'idle') {
-                console.log(`🎭 ${this.robotId}: Transitioning to idle, resetting animations`);
-                this.parts.head.rotation.set(0, 0, 0);
-                this.parts.torso.rotation.set(0, 0, 0);
-                this.parts.leftArm.rotation.set(0, 0, 0);
-                this.parts.rightArm.rotation.set(0, 0, 0);
-                this.parts.leftLeg.rotation.set(0, 0, 0);
-                this.parts.rightLeg.rotation.set(0, 0, 0);
-                this.group.position.y = 0;
-                
-                // Reset colors
-                this.parts.head.material.color.setHex(this.color);
-                this.parts.torso.material.color.setHex(this.color);
-                
-                this.lastAction = 'idle';
+            if (rotDiff > 0.1) {
+                console.log(`🔄 Significant rotation change for ${this.robotId}: ${rotDiff.toFixed(2)} radians`);
+                this.rotation = newRotation;
+                this.forcePosition();
+            } else {
+                console.log(`🔄 Ignoring minor rotation update for ${this.robotId} (diff: ${rotDiff.toFixed(2)})`);
+                // Update stored rotation to match current actual rotation
+                this.rotation.y = currentRot;
             }
-            // If already idle, don't keep resetting - let server actions take precedence
         }
         
-        // Update label to show current action
-        if (this.currentAction !== 'idle') {
-            this.updateActionLabel();
+        // Start action if provided and different from current
+        if (robotData.current_action && robotData.current_action !== 'idle') {
+            this.startAction(robotData.current_action);
         }
-    }
-    
-    updateActionLabel() {
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = 128;
-        canvas.height = 48;
         
-        // Background
-        context.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        context.fillRect(0, 0, canvas.width, canvas.height);
+        // Ensure still visible after update
+        this.ensureVisibility();
         
-        // Robot ID
-        context.fillStyle = 'white';
-        context.font = '14px Arial';
-        context.textAlign = 'center';
-        context.fillText(this.robotId, canvas.width / 2, 16);
-        
-        // Action
-        context.fillStyle = '#4A90E2';
-        context.font = '12px Arial';
-        const actionText = this.currentAction.replace('_', ' ').toUpperCase();
-        context.fillText(actionText, canvas.width / 2, 32);
-        
-        // Progress bar
-        const progressWidth = (canvas.width - 20) * this.actionProgress;
-        context.fillStyle = 'rgba(76, 175, 80, 0.3)';
-        context.fillRect(10, 36, canvas.width - 20, 4);
-        context.fillStyle = '#4CAF50';
-        context.fillRect(10, 36, progressWidth, 4);
-        
-        const texture = new THREE.CanvasTexture(canvas);
-        this.label.material.map = texture;
-        this.label.material.needsUpdate = true;
+        console.log(`🔄 Updated ${this.robotId} at position:`, this.group.position);
     }
     
     dispose() {
-        // Clean up Three.js objects
+        // Stop any ongoing animations
+        if (this.animator) {
+            this.animator.stopAnimation();
+        }
+        
+        // Clean up resources
         this.group.traverse((child) => {
-            if (child.geometry) child.geometry.dispose();
-            if (child.material) {
-                if (Array.isArray(child.material)) {
-                    child.material.forEach(material => material.dispose());
-                } else {
-                    child.material.dispose();
-                }
+            if (child.isMesh) {
+                child.geometry.dispose();
+                child.material.dispose();
             }
         });
     }
@@ -424,59 +322,61 @@ class Scene3D {
         this.canvas = canvas;
         this.robots = new Map();
         
+        console.log('🎬 Initializing Scene3D...');
+        
         this.initThreeJS();
         this.setupLighting();
-        this.setupControls();
         this.setupEnvironment();
+        this.setupControls();
         
         this.animate();
+        
+        console.log('✅ Scene3D initialized successfully');
     }
     
     initThreeJS() {
-        // Scene
+        // Scene with visible background
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x1a1a2e);
-        this.scene.fog = new THREE.Fog(0x1a1a2e, 200, 1000);
         
-        // Camera
+        // Camera positioned to see all robots
         this.camera = new THREE.PerspectiveCamera(
             75,
             this.canvas.clientWidth / this.canvas.clientHeight,
             0.1,
-            1000
+            2000
         );
-        this.camera.position.set(0, 150, 300); // Better initial position
+        
+        // Position camera to see all robots clearly
+        this.camera.position.set(0, 100, 200);
         this.camera.lookAt(0, 0, 0);
         
-        // Renderer
+        // Renderer with high quality settings
         this.renderer = new THREE.WebGLRenderer({ 
             canvas: this.canvas,
-            antialias: true
+            antialias: true,
+            alpha: false
         });
         this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.outputEncoding = THREE.sRGBEncoding;
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.2;
+        this.renderer.setClearColor(0x1a1a2e, 1);
         
         // Handle resize
         window.addEventListener('resize', () => this.onWindowResize());
         
-        console.log('✅ Three.js initialized');
-        console.log('📷 Camera position:', this.camera.position);
-        console.log('📷 Camera looking at: (0, 0, 0)');
-        console.log('🌍 Scene children count:', this.scene.children.length);
+        console.log('📷 Camera positioned at:', this.camera.position);
+        console.log('🖥️ Renderer initialized');
     }
     
     setupLighting() {
-        // Ambient light
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+        // Bright ambient light to ensure visibility
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
         this.scene.add(ambientLight);
         
         // Main directional light
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(50, 100, 50);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(100, 200, 100);
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
@@ -488,136 +388,140 @@ class Scene3D {
         directionalLight.shadow.camera.bottom = -200;
         this.scene.add(directionalLight);
         
-        // Fill light
-        const fillLight = new THREE.DirectionalLight(0x4A90E2, 0.3);
-        fillLight.position.set(-50, 50, -50);
-        this.scene.add(fillLight);
+        // Additional lights for better visibility
+        const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
+        light2.position.set(-100, 100, -100);
+        this.scene.add(light2);
         
-        // Point lights for dramatic effect
-        const pointLight1 = new THREE.PointLight(0xFF6B6B, 0.5, 100);
-        pointLight1.position.set(100, 50, 0);
-        this.scene.add(pointLight1);
+        const light3 = new THREE.DirectionalLight(0xffffff, 0.3);
+        light3.position.set(0, -100, 100);
+        this.scene.add(light3);
         
-        const pointLight2 = new THREE.PointLight(0x4ECDC4, 0.5, 100);
-        pointLight2.position.set(-100, 50, 0);
-        this.scene.add(pointLight2);
-    }
-    
-    setupControls() {
-        // Simple orbit controls using mouse
-        this.isMouseDown = false;
-        this.mouseX = 0;
-        this.mouseY = 0;
-        this.cameraAngle = 0;
-        this.cameraHeight = 150; // Higher initial height
-        this.cameraDistance = 300; // Further back initially
-        
-        this.canvas.addEventListener('mousedown', (e) => {
-            this.isMouseDown = true;
-            this.mouseX = e.clientX;
-            this.mouseY = e.clientY;
-        });
-        
-        this.canvas.addEventListener('mouseup', () => {
-            this.isMouseDown = false;
-        });
-        
-        this.canvas.addEventListener('mousemove', (e) => {
-            if (this.isMouseDown) {
-                const deltaX = e.clientX - this.mouseX;
-                const deltaY = e.clientY - this.mouseY;
-                
-                this.cameraAngle += deltaX * 0.01;
-                this.cameraHeight = Math.max(20, Math.min(300, this.cameraHeight - deltaY * 0.5));
-                
-                this.updateCameraPosition();
-                
-                this.mouseX = e.clientX;
-                this.mouseY = e.clientY;
-            }
-        });
-        
-        this.canvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            this.cameraDistance = Math.max(100, Math.min(800, this.cameraDistance + e.deltaY * 0.5));
-            this.updateCameraPosition();
-        });
-        
-        // Set initial camera position
-        this.updateCameraPosition();
-        
-        console.log('✅ Camera controls initialized');
-    }
-    
-    updateCameraPosition() {
-        this.camera.position.x = Math.sin(this.cameraAngle) * this.cameraDistance;
-        this.camera.position.y = this.cameraHeight;
-        this.camera.position.z = Math.cos(this.cameraAngle) * this.cameraDistance;
-        this.camera.lookAt(0, 0, 0);
+        console.log('💡 Lighting setup complete');
     }
     
     setupEnvironment() {
-        // Ground plane
+        // Ground plane for reference
         const groundGeometry = new THREE.PlaneGeometry(400, 400);
         const groundMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0x2c3e50,
+            color: 0x333333,
             transparent: true,
             opacity: 0.8
         });
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
         ground.rotation.x = -Math.PI / 2;
-        ground.position.y = -25;
+        ground.position.y = -30;
         ground.receiveShadow = true;
         this.scene.add(ground);
         
-        // Grid
-        const gridHelper = new THREE.GridHelper(400, 40, 0x4A90E2, 0x333333);
-        gridHelper.position.y = -24;
+        // Grid helper for positioning reference
+        const gridHelper = new THREE.GridHelper(400, 20, 0x444444, 0x444444);
+        gridHelper.position.y = -29;
         this.scene.add(gridHelper);
         
-        // Skybox
-        const skyGeometry = new THREE.SphereGeometry(800, 32, 32);
-        const skyMaterial = new THREE.MeshBasicMaterial({
-            color: 0x1a1a2e,
-            side: THREE.BackSide
+        // Axis helper for orientation
+        const axesHelper = new THREE.AxesHelper(50);
+        this.scene.add(axesHelper);
+        
+        console.log('🌍 Environment setup complete');
+    }
+    
+    setupControls() {
+        // Simple mouse controls
+        let mouseDown = false;
+        let mouseX = 0, mouseY = 0;
+        
+        this.canvas.addEventListener('mousedown', (e) => {
+            mouseDown = true;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
         });
-        const sky = new THREE.Mesh(skyGeometry, skyMaterial);
-        this.scene.add(sky);
+        
+        this.canvas.addEventListener('mouseup', () => {
+            mouseDown = false;
+        });
+        
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (!mouseDown) return;
+            
+            const deltaX = e.clientX - mouseX;
+            const deltaY = e.clientY - mouseY;
+            
+            // Rotate camera around the scene
+            const spherical = new THREE.Spherical();
+            spherical.setFromVector3(this.camera.position);
+            spherical.theta -= deltaX * 0.01;
+            spherical.phi += deltaY * 0.01;
+            spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+            
+            this.camera.position.setFromSpherical(spherical);
+            this.camera.lookAt(0, 0, 0);
+            
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        
+        this.canvas.addEventListener('wheel', (e) => {
+            const distance = this.camera.position.length();
+            const newDistance = Math.max(50, Math.min(500, distance + e.deltaY * 0.1));
+            this.camera.position.normalize().multiplyScalar(newDistance);
+        });
+        
+        console.log('🖱️ Controls setup complete');
     }
     
     addRobot(robotData) {
-        console.log(`🤖 Adding robot: ${robotData.robot_id}`, robotData);
+        console.log(`🤖 ADDING ROBOT: ${robotData.robot_id}`, robotData);
         
+        // Remove existing robot if it exists
+        if (this.robots.has(robotData.robot_id)) {
+            this.removeRobot(robotData.robot_id);
+        }
+        
+        // Create new robot
         const robot = new Robot3D(robotData);
-        robot.group.castShadow = true;
-        robot.group.receiveShadow = true;
         
-        // Enable shadows for all robot parts
-        robot.group.traverse((child) => {
-            if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-            }
-        });
-        
-        this.robots.set(robotData.robot_id, robot);
+        // FORCE add to scene
         this.scene.add(robot.group);
+        this.robots.set(robotData.robot_id, robot);
         
-        // DEBUG: Check robot visibility and position
-        console.log(`✅ Robot ${robotData.robot_id} added to scene at position:`, robot.position);
-        console.log(`🔍 DEBUG: Robot group visible:`, robot.group.visible);
-        console.log(`🔍 DEBUG: Robot group position:`, robot.group.position);
-        console.log(`🔍 DEBUG: Robot group scale:`, robot.group.scale);
-        console.log(`🔍 DEBUG: Robot group children count:`, robot.group.children.length);
-        console.log(`🔍 DEBUG: Scene children count:`, this.scene.children.length);
-        console.log(`📊 Total robots in scene: ${this.robots.size}`);
+        console.log(`✅ Robot ${robotData.robot_id} ADDED to scene`);
+        console.log(`📊 Scene now has ${this.scene.children.length} children`);
+        console.log(`🤖 Total robots: ${this.robots.size}`);
+        
+        // Force render to show immediately
+        this.renderer.render(this.scene, this.camera);
+        
+        return robot;
     }
     
     updateRobot(robotData) {
         const robot = this.robots.get(robotData.robot_id);
         if (robot) {
             robot.update(robotData);
+        } else {
+            console.log(`⚠️ Robot ${robotData.robot_id} not found, adding it`);
+            this.addRobot(robotData);
         }
+    }
+    
+    // Trigger action on specific robot
+    triggerRobotAction(robotId, action) {
+        const robot = this.robots.get(robotId);
+        if (robot) {
+            console.log(`🎬 Triggering action ${action} on ${robotId}`);
+            robot.startAction(action);
+        } else {
+            console.warn(`⚠️ Robot ${robotId} not found for action ${action}`);
+        }
+    }
+    
+    // Trigger action on all robots
+    triggerAllRobotsAction(action) {
+        console.log(`🎬 Triggering action ${action} on ALL robots`);
+        this.robots.forEach((robot, robotId) => {
+            robot.startAction(action);
+        });
     }
     
     removeRobot(robotId) {
@@ -626,29 +530,14 @@ class Scene3D {
             this.scene.remove(robot.group);
             robot.dispose();
             this.robots.delete(robotId);
+            console.log(`🗑️ Robot ${robotId} removed`);
         }
     }
     
     resetCamera() {
-        this.cameraAngle = 0;
-        this.cameraHeight = 150;
-        this.cameraDistance = 300;
-        this.updateCameraPosition();
-        console.log('📷 Camera reset to default position');
-    }
-    
-    toggleWireframe() {
-        this.robots.forEach(robot => {
-            robot.group.traverse((child) => {
-                if (child.isMesh && child.material) {
-                    child.material.wireframe = !child.material.wireframe;
-                }
-            });
-        });
-    }
-    
-    toggleShadows() {
-        this.renderer.shadowMap.enabled = !this.renderer.shadowMap.enabled;
+        this.camera.position.set(0, 100, 200);
+        this.camera.lookAt(0, 0, 0);
+        console.log('📷 Camera reset');
     }
     
     onWindowResize() {
@@ -660,10 +549,13 @@ class Scene3D {
     animate() {
         requestAnimationFrame(() => this.animate());
         
-        // DON'T call updateAnimations here - it overrides server actions!
-        // updateAnimations is called from update(robotData) when server sends new states
-        // Calling it here at 60 FPS overrides all server-sent actions with 'idle'
-        
+        // Render the scene
         this.renderer.render(this.scene, this.camera);
     }
 }
+
+// Export for use in simulator
+window.Robot3D = Robot3D;
+window.Scene3D = Scene3D;
+
+console.log('🚀 Robot3D with Enhanced Actions loaded successfully');

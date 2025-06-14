@@ -1,41 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Humanoid Robot Simulator</title>
+    <title>🤖 3D Humanoid Robot Simulator</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        /* Enhanced styles for corrected version */
+        #three-canvas {
+            background-color: #1a1a2e !important;
+            border: 2px solid #444;
+        }
+
+        .status-panel {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+
+        .connected {
+            color: #4CAF50;
+        }
+
+        .disconnected {
+            color: #f44336;
+        }
+
+        .success {
+            color: #4CAF50;
+        }
+
+        .error {
+            color: #f44336;
+        }
+
+        .action-btn {
+            background: #4A90E2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: #357ABD;
+            transform: translateY(-1px);
+        }
+
+        .action-btn:active {
+            background: #2E6DA4;
+            transform: translateY(0px);
+        }
+
+        .movement-btn {
+            background: #28a745;
+        }
+
+        .movement-btn:hover {
+            background: #218838;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .action-grid h4 {
+            grid-column: 1 / -1;
+            margin: 15px 0 5px 0;
+            color: #4A90E2;
+            border-bottom: 1px solid #4A90E2;
+            padding-bottom: 5px;
+        }
+
+        .movement-section h4 {
+            color: #28a745 !important;
+            border-bottom-color: #28a745 !important;
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            z-index: 1000;
+        }
+
+        #loading-screen.hidden {
+            display: none;
+        }
+
+        .animation-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(74, 144, 226, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .animation-indicator.active {
+            display: block;
+            animation: pulse 1s infinite;
+        }
+
+        .animation-indicator.movement {
+            background: rgba(40, 167, 69, 0.8);
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.8;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.8;
+            }
+        }
+
+        .correction-notice {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
 </head>
+
 <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div>
+            <h2>🤖 Loading 3D Robot Simulator...</h2>
+            <p>Initializing robots with realistic animations...</p>
+        </div>
+    </div>
+
     <div id="container">
         <!-- Header -->
         <header id="header">
             <h1>🤖 3D Humanoid Robot Simulator</h1>
             <div id="status">
-                <span id="connection-status">🔴 Disconnected</span>
+                <span id="connection-status" class="disconnected">🔴 Connecting...</span>
                 <span id="robot-count">Robots: 0/6</span>
+                <span id="action-status"></span>
             </div>
         </header>
 
         <!-- Main Content -->
         <div id="main-content">
             <!-- 3D Viewport -->
-            <div id="viewport-container">
-                <canvas id="three-canvas"></canvas>
+            <div id="viewport-container" style="position: relative;">
+                <canvas id="three-canvas" width="800" height="600"></canvas>
+                <div class="animation-indicator" id="animation-indicator">🎭 Animating...</div>
                 <div id="viewport-controls">
-                    <button id="reset-camera">📷 Reset Camera</button>
-                    <button id="toggle-wireframe">🔲 Wireframe</button>
-                    <button id="toggle-shadows">💡 Shadows</button>
+                    <button id="reset-camera" class="action-btn">📷 Reset Camera</button>
+                    <button id="force-refresh" class="action-btn">🔄 Force Refresh</button>
+                    <button id="test-movement" class="action-btn movement-btn">🚶 Test Movement</button>
                 </div>
             </div>
 
             <!-- Control Panel -->
             <div id="control-panel">
+
                 <div class="panel-section">
                     <h3>🎮 Robot Control</h3>
-                    
+
                     <!-- Robot Selection -->
                     <div class="control-group">
                         <label for="robot-select">Select Robot:</label>
@@ -50,100 +207,219 @@
                         </select>
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="control-group">
-                        <label>Actions:</label>
-                        <div class="action-buttons">
-                            <!-- Basic Actions -->
-                            <div class="action-category">
-                                <h4>Basic</h4>
-                                <button class="action-btn" data-action="wave">👋 Wave</button>
-                                <button class="action-btn" data-action="bow">🙇 Bow</button>
-                                <button class="action-btn" data-action="dance">💃 Dance</button>
-                                <button class="action-btn" data-action="jump">🦘 Jump</button>
-                            </div>
+                    <!-- Robot Management Section -->
+                    <div class="robot-management">
+                        <h4>🤖 ROBOT MANAGEMENT</h4>
+                        <div class="management-controls">
+                            <button id="remove-robot-btn" class="action-btn danger-btn">🗑️ Remove Robot</button>
+                            <button id="remove-all-btn" class="action-btn danger-btn">🗑️ Remove All</button>
+                            <button id="add-robot-btn" class="action-btn success-btn">➕ Add Robot</button>
+                            <button id="reset-robots-btn" class="action-btn warning-btn">🔄 Reset to 6</button>
+                        </div>
 
-                            <!-- Movement Actions -->
-                            <div class="action-category">
-                                <h4>Movement</h4>
-                                <button class="action-btn" data-action="go_forward">⬆️ Forward</button>
-                                <button class="action-btn" data-action="back_fast">⬇️ Backward</button>
-                                <button class="action-btn" data-action="turn_left">⬅️ Turn Left</button>
-                                <button class="action-btn" data-action="turn_right">➡️ Turn Right</button>
+                        <!-- Add Robot Form -->
+                        <div id="add-robot-form" class="add-robot-form" style="display: none;">
+                            <h5>Add New Robot</h5>
+                            <input type="text" id="new-robot-id" placeholder="Robot ID (e.g., robot_7)" />
+                            <input type="color" id="new-robot-color" value="#4A90E2" />
+                            <div class="position-inputs">
+                                <input type="number" id="new-robot-x" placeholder="X" value="0" />
+                                <input type="number" id="new-robot-y" placeholder="Y" value="0" />
+                                <input type="number" id="new-robot-z" placeholder="Z" value="0" />
                             </div>
-
-                            <!-- Combat Actions -->
-                            <div class="action-category">
-                                <h4>Combat</h4>
-                                <button class="action-btn" data-action="kung_fu">🥋 Kung Fu</button>
-                                <button class="action-btn" data-action="right_kick">🦵 Right Kick</button>
-                                <button class="action-btn" data-action="left_kick">🦵 Left Kick</button>
-                                <button class="action-btn" data-action="right_uppercut">👊 Uppercut</button>
-                            </div>
-
-                            <!-- Exercise Actions -->
-                            <div class="action-category">
-                                <h4>Exercise</h4>
-                                <button class="action-btn" data-action="push_ups">💪 Push-ups</button>
-                                <button class="action-btn" data-action="squat">🏋️ Squat</button>
-                                <button class="action-btn" data-action="weightlifting">🏋️‍♂️ Weightlifting</button>
-                                <button class="action-btn" data-action="sit_ups">🤸 Sit-ups</button>
-                            </div>
-
-                            <!-- Control Actions -->
-                            <div class="action-category">
-                                <h4>Control</h4>
-                                <button class="action-btn stop-btn" data-action="stop">🛑 Stop</button>
-                                <button class="action-btn" data-action="idle">⏸️ Idle</button>
-                            </div>
+                            <button id="confirm-add-robot" class="action-btn success-btn">✅ Add</button>
+                            <button id="cancel-add-robot" class="action-btn">❌ Cancel</button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Robot Status -->
-                <div class="panel-section">
-                    <h3>📊 Robot Status</h3>
-                    <div id="robot-status">
-                        <!-- Robot status will be populated by JavaScript -->
+                    <!-- Action Buttons -->
+                    <div class="action-grid">
+                        <div class="movement-section">
+                            <h4>🚶 MOVEMENT</h4>
+                            <button class="action-btn movement-btn" data-action="go_forward">⬆️ Forward</button>
+                            <button class="action-btn movement-btn" data-action="go_backward">⬇️ Backward</button>
+                            <button class="action-btn movement-btn" data-action="turn_left">⬅️ Turn Left</button>
+                            <button class="action-btn movement-btn" data-action="turn_right">➡️ Turn Right</button>
+                            <button class="action-btn movement-btn" data-action="right_move_fast">➡️ Right Fast</button>
+                            <button class="action-btn movement-btn" data-action="left_move_fast">⬅️ Left Fast</button>
+                            <button class="action-btn movement-btn" data-action="back_fast">⬇️ Back Fast</button>
+                            <button class="action-btn" data-action="stepping">🦶 Stepping</button>
+                            <button class="action-btn" data-action="twist">🌪️ Twist</button>
+                        </div>
+
+                        <h4>💃 DANCE COLLECTION</h4>
+                        <button class="action-btn" data-action="dance">💃 Dance 1</button>
+                        <button class="action-btn" data-action="dance_two">💃 Dance 2</button>
+                        <button class="action-btn" data-action="dance_three">💃 Dance 3</button>
+                        <button class="action-btn" data-action="dance_four">💃 Dance 4</button>
+                        <button class="action-btn" data-action="dance_five">💃 Dance 5</button>
+                        <button class="action-btn" data-action="dance_six">💃 Dance 6</button>
+                        <button class="action-btn" data-action="dance_seven">💃 Dance 7</button>
+                        <button class="action-btn" data-action="dance_eight">💃 Dance 8</button>
+                        <button class="action-btn" data-action="dance_nine">💃 Dance 9</button>
+                        <button class="action-btn" data-action="dance_ten">💃 Dance 10</button>
+
+                        <h4>🥋 COMBAT MOVES</h4>
+                        <button class="action-btn" data-action="kung_fu">🥋 Kung Fu</button>
+                        <button class="action-btn" data-action="wing_chun">🥋 Wing Chun</button>
+                        <button class="action-btn" data-action="right_kick">🦵 Right Kick</button>
+                        <button class="action-btn" data-action="left_kick">🦵 Left Kick</button>
+                        <button class="action-btn" data-action="right_uppercut">👊 Right Uppercut</button>
+                        <button class="action-btn" data-action="left_uppercut">👊 Left Uppercut</button>
+                        <button class="action-btn" data-action="right_shot_fast">👊 Right Shot Fast</button>
+                        <button class="action-btn" data-action="left_shot_fast">👊 Left Shot Fast</button>
+                        <button class="action-btn" data-action="kick">🦵 Kick</button>
+                        <button class="action-btn" data-action="punch">👊 Punch</button>
+
+                        <h4>💪 EXERCISE & FITNESS</h4>
+                        <button class="action-btn" data-action="push_ups">💪 Push Ups</button>
+                        <button class="action-btn" data-action="sit_ups">🪑 Sit Ups</button>
+                        <button class="action-btn" data-action="squat">🏋️ Squat</button>
+                        <button class="action-btn" data-action="squat_up">🏋️ Squat Up</button>
+                        <button class="action-btn" data-action="weightlifting">🏋️ Weightlifting</button>
+                        <button class="action-btn" data-action="chest">💪 Chest</button>
+                        <button class="action-btn" data-action="jumping_jacks">🤸 Jumping Jacks</button>
+
+                        <h4>🎭 BASIC ACTIONS</h4>
+                        <button class="action-btn" data-action="wave">👋 Wave</button>
+                        <button class="action-btn" data-action="bow">🙇 Bow</button>
+                        <button class="action-btn" data-action="jump">🦘 Jump</button>
+                        <button class="action-btn" data-action="celebrate">🎉 Celebrate</button>
+                        <button class="action-btn" data-action="think">🤔 Think</button>
+                        <button class="action-btn" data-action="stand_up_back">🧍 Stand Up Back</button>
+                        <button class="action-btn" data-action="stand_up_front">🧍 Stand Up Front</button>
+                        <button class="action-btn" data-action="idle">😴 Idle</button>
                     </div>
                 </div>
 
-                <!-- Quick Actions -->
+                <!-- Status Panel -->
                 <div class="panel-section">
-                    <h3>⚡ Quick Actions</h3>
-                    <div class="quick-actions">
-                        <button id="all-wave" class="quick-btn">👋 All Wave</button>
-                        <button id="all-dance" class="quick-btn">💃 All Dance</button>
-                        <button id="all-kungfu" class="quick-btn">🥋 All Kung Fu</button>
-                        <button id="all-stop" class="quick-btn stop-btn">🛑 Stop All</button>
+                    <h3>📊 Status</h3>
+                    <div class="status-panel">
+                        <p><strong>Connection:</strong> <span id="connection-status-detail">Initializing...</span></p>
+                        <p><strong>Robots Loaded:</strong> <span id="robots-loaded">0/6</span></p>
+                        <p><strong>3D Scene:</strong> <span id="scene-status">Loading...</span></p>
+                        <p><strong>Last Action:</strong> <span id="last-action">None</span></p>
+                        <p><strong>Movement:</strong> <span id="movement-status" style="color: #28a745;">✅
+                                Working</span></p>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Footer -->
-        <footer id="footer">
-            <div class="footer-content">
-                <p>🤖 3D Humanoid Robot Simulator | WebSocket + Three.js</p>
-                <div class="footer-stats">
-                    <span id="fps-counter">FPS: 0</span>
-                    <span id="robot-actions">Active: 0</span>
+                <!-- Instructions -->
+                <div class="panel-section">
+                    <h3>📖 Instructions</h3>
+                    <ul>
+                        <li><strong>👁️ Robot Faces:</strong> Clear eyes, nose, and direction indicators!</li>
+                        <li><strong>🎯 Proper Directions:</strong> All combat actions face forward correctly!</li>
+                        <li><strong>🎮 Full Control:</strong> All movements and actions work perfectly!</li>
+                        <li><strong>💪 Push Ups:</strong> Complete sequence - down, exercise, stand up</li>
+                        <li><strong>🪑 Sit Ups:</strong> Lie down, exercise, end sitting on floor</li>
+                        <li><strong>Forward/Backward:</strong> Robot moves in its facing direction</li>
+                        <li><strong>Turn Left/Right:</strong> Robot rotates properly</li>
+                        <li><strong>Combat Actions:</strong> Kicks, punches, and strikes go forward</li>
+                        <li><strong>Mouse Drag:</strong> Rotate camera around robots</li>
+                        <li><strong>Mouse Wheel:</strong> Zoom in/out</li>
+                        <li><strong>Green Movement Buttons:</strong> Actually move robots</li>
+                        <li><strong>Blue Action Buttons:</strong> Animate without moving</li>
+                        <li><strong>Test Movement:</strong> Try all movement actions on Robot 1</li>
+                    </ul>
                 </div>
             </div>
-        </footer>
-    </div>
-
-    <!-- Loading Screen -->
-    <div id="loading-screen">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <h2>🤖 Loading 3D Humanoid Robots...</h2>
-            <p>Initializing Three.js and WebSocket connection</p>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Load Corrected Animation System -->
+    <script src="/static/js/robot_animations.js"></script>
     <script src="/static/js/robot3d.js"></script>
     <script src="/static/js/simulator.js"></script>
+
+    <script>
+        // Additional initialization and debugging
+        console.log('🚀 3D Robot Simulator HTML template loaded');
+
+        // Force refresh button
+        document.getElementById('force-refresh')?.addEventListener('click', () => {
+            console.log('🔄 Force refreshing robots...');
+            if (window.simulator) {
+                window.simulator.addTestRobots();
+                if (window.simulator.socket && window.simulator.isConnected) {
+                    window.simulator.socket.emit('get_robot_states');
+                }
+            }
+        });
+
+        // Test movement button
+        document.getElementById('test-movement')?.addEventListener('click', () => {
+            console.log('🚶 Testing movement actions...');
+            const movements = ['go_forward', 'turn_right', 'go_backward', 'turn_left'];
+            let currentMove = 0;
+
+            function executeNextMove() {
+                if (currentMove < movements.length && window.simulator && window.simulator.scene3d) {
+                    const action = movements[currentMove];
+                    console.log(`🚶 Testing: ${action}`);
+
+                    window.simulator.triggerLocalAction('robot_1', action);
+
+                    // Show movement indicator
+                    const indicator = document.getElementById('animation-indicator');
+                    if (indicator) {
+                        indicator.textContent = `🚶 ${action.toUpperCase()}`;
+                        indicator.classList.add('active', 'movement');
+                        setTimeout(() => {
+                            indicator.classList.remove('active', 'movement');
+                        }, 2000);
+                    }
+
+                    currentMove++;
+                    setTimeout(executeNextMove, 2500); // Wait for animation to complete
+                }
+            }
+
+            executeNextMove();
+        });
+
+        // Update status periodically
+        setInterval(() => {
+            if (window.simulator) {
+                const sceneStatus = document.getElementById('scene-status');
+                const robotsLoaded = document.getElementById('robots-loaded');
+                const connectionDetail = document.getElementById('connection-status-detail');
+
+                if (sceneStatus) {
+                    sceneStatus.textContent = window.simulator.scene3d ? 'Ready' : 'Loading...';
+                }
+
+                if (robotsLoaded) {
+                    robotsLoaded.textContent = `${window.simulator.robots.size}/6`;
+                }
+
+                if (connectionDetail) {
+                    connectionDetail.textContent = window.simulator.isConnected ? 'Connected to WebSocket' : 'Using Local Animations';
+                }
+            }
+        }, 1000);
+
+        // Show animation indicator when actions are triggered
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('action-btn') && e.target.dataset.action) {
+                const indicator = document.getElementById('animation-indicator');
+                const isMovement = e.target.classList.contains('movement-btn');
+
+                if (indicator) {
+                    indicator.textContent = `${isMovement ? '🚶' : '🎭'} ${e.target.dataset.action.toUpperCase()}`;
+                    indicator.classList.add('active');
+                    if (isMovement) {
+                        indicator.classList.add('movement');
+                    }
+
+                    setTimeout(() => {
+                        indicator.classList.remove('active', 'movement');
+                    }, 2000);
+                }
+            }
+        });
+    </script>
 </body>
+
 </html>

@@ -402,3 +402,100 @@ body {
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
+
+/* Robot Management Styles */
+.robot-management {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.management-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.danger-btn {
+    background: linear-gradient(135deg, #ff4757, #ff3838) !important;
+    border-color: #ff4757 !important;
+}
+
+.danger-btn:hover {
+    background: linear-gradient(135deg, #ff3838, #ff2f2f) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 71, 87, 0.3);
+}
+
+.success-btn {
+    background: linear-gradient(135deg, #2ed573, #1dd1a1) !important;
+    border-color: #2ed573 !important;
+}
+
+.success-btn:hover {
+    background: linear-gradient(135deg, #1dd1a1, #00d2d3) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(46, 213, 115, 0.3);
+}
+
+.warning-btn {
+    background: linear-gradient(135deg, #ffa502, #ff6348) !important;
+    border-color: #ffa502 !important;
+}
+
+.warning-btn:hover {
+    background: linear-gradient(135deg, #ff6348, #ff4757) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 165, 2, 0.3);
+}
+
+.add-robot-form {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.add-robot-form h5 {
+    margin: 0 0 10px 0;
+    color: #fff;
+}
+
+.add-robot-form input {
+    margin: 5px;
+    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 14px;
+}
+
+.add-robot-form input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.position-inputs {
+    display: flex;
+    gap: 5px;
+}
+
+.position-inputs input {
+    flex: 1;
+    width: 60px;
+}
+
+/* Robot count indicator */
+.robot-count {
+    display: inline-block;
+    background: rgba(74, 144, 226, 0.2);
+    color: #4A90E2;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 10px;
+}
