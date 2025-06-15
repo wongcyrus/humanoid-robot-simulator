@@ -48,4 +48,4 @@ echo "  ✅ Interactive 3D camera controls"
 echo ""
 
 # Run the web simulator
-python3 web_humanoid_simulator.py $PORT
+python3 app.py $PORT
