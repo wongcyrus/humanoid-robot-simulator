@@ -1,0 +1,43 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+server.log
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Test files
+test_*.py
+*_test.py
+
+# Documentation
+README.md
+*.md
+
+# Shell scripts (since we're using the Python entry point)
+*.sh

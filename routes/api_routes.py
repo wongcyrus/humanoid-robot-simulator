@@ -43,6 +43,10 @@ class APIRoutes:
         def static_files(filename):
             return send_from_directory('static', filename)
 
+        @self.app.route('/health')
+        def health_check():
+            return jsonify({'status': 'healthy', 'service': 'robot-simulator'}), 200
+
         @self.app.route('/api/robots')
         def get_robots():
             session_key = self.get_session_key_from_request()
