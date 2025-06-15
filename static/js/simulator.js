@@ -11,6 +11,7 @@ class HumanoidSimulator {
         this.isConnected = false;
         this.retryCount = 0;
         this.maxRetries = 5;
+        this.sessionKey = null;
 
         console.log('🚀 Starting Enhanced Humanoid Simulator...');
         this.init();
@@ -18,6 +19,15 @@ class HumanoidSimulator {
 
     init() {
         console.log('🔧 Initializing simulator components...');
+
+        // Get session key from URL or prompt user
+        this.sessionKey = this.getSessionKey();
+        if (!this.sessionKey) {
+            console.error('❌ No session key provided');
+            return;
+        }
+
+        console.log(`🔐 Using session key: ${this.sessionKey}`);
 
         // Initialize 3D scene first
         this.init3DScene();
@@ -42,6 +52,33 @@ class HumanoidSimulator {
         console.log('✅ Simulator initialization complete');
     }
 
+    getSessionKey() {
+        // Try to get session key from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionKey = urlParams.get('session_key');
+
+        if (sessionKey) {
+            return sessionKey;
+        }
+
+        // If no session key in URL, show error
+        console.error('❌ No session key found in URL');
+        document.body.innerHTML = `
+            <div style="padding: 20px; text-align: center;">
+                <h1>🔐 Session Key Required</h1>
+                <p>Please provide a session key to access the robot simulator.</p>
+                <p>Add <code>?session_key=YOUR_SESSION_ID</code> to the URL.</p>
+                <p>Example: <code>${window.location.origin}${window.location.pathname}?session_key=my_session</code></p>
+                <form onsubmit="window.location.href='/?session_key=' + document.getElementById('session_input').value; return false;">
+                    <label>Session Key: </label>
+                    <input type="text" id="session_input" placeholder="Enter your session ID" required>
+                    <button type="submit">Connect</button>
+                </form>
+            </div>
+        `;
+        return null;
+    }
+
     init3DScene() {
         console.log('🎬 Initializing 3D scene...');
         const canvas = document.getElementById('three-canvas');
@@ -59,7 +96,7 @@ class HumanoidSimulator {
         console.log('📡 Loading robots from server...');
 
         try {
-            const response = await fetch('/api/robots');
+            const response = await fetch(`/api/robots?session_key=${this.sessionKey}`);
             const data = await response.json();
 
             if (data.success && data.robots) {
@@ -134,9 +171,9 @@ class HumanoidSimulator {
                 this.retryCount = 0;
                 this.updateConnectionStatus(true);
 
-                // Request real robot states
-                console.log('📡 Requesting real robot states...');
-                this.socket.emit('get_robot_states');
+                // Join the session
+                console.log(`� Joining session: ${this.sessionKey}`);
+                this.socket.emit('join_session', { session_key: this.sessionKey });
             });
 
             this.socket.on('disconnect', () => {
@@ -160,6 +197,13 @@ class HumanoidSimulator {
                 console.error('❌ WebSocket connection error:', error);
                 this.updateConnectionStatus(false);
                 this.attemptReconnect();
+            });
+
+            this.socket.on('error', (error) => {
+                console.error('❌ WebSocket error:', error);
+                if (error.message && error.message.includes('Session key')) {
+                    alert(`Session Error: ${error.message}`);
+                }
             });
 
             // Server-side robot management handlers
@@ -334,10 +378,11 @@ class HumanoidSimulator {
     }
 
     sendAction(robotId, action) {
-        console.log(`📡 Sending action: ${action} to ${robotId}`);
+        console.log(`📡 Sending action: ${action} to ${robotId} in session: ${this.sessionKey}`);
 
         if (this.socket && this.isConnected) {
             this.socket.emit('robot_action', {
+                session_key: this.sessionKey,
                 robot_id: robotId,
                 action: action
             });

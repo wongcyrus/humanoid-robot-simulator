@@ -31,6 +31,11 @@
             color: #f44336;
         }
 
+        #session-info {
+            color: #9c27b0;
+            font-weight: bold;
+        }
+
         .success {
             color: #4CAF50;
         }
@@ -169,6 +174,7 @@
             <h1>🤖 3D Humanoid Robot Simulator</h1>
             <div id="status">
                 <span id="connection-status" class="disconnected">🔴 Connecting...</span>
+                <span id="session-info">🔐 Session: {{ session_key }}</span>
                 <span id="robot-count">Robots: 0/6</span>
                 <span id="action-status"></span>
             </div>
