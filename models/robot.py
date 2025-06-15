@@ -78,3 +78,13 @@ class Robot3D:
         self.is_animating = False
         if self.current_action != HumanoidAction.IDLE:
             self.current_action = HumanoidAction.IDLE
+
+    def reset_to_initial_state(self, initial_position):
+        """Reset robot to initial position and state"""
+        self.position = initial_position
+        self.rotation = [0, 0, 0]
+        self.current_action = HumanoidAction.IDLE
+        self.action_progress = 0.0
+        self.is_visible = True
+        self.is_animating = False
+        self.movement_count = 0

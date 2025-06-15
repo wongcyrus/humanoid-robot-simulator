@@ -28,3 +28,16 @@ class SessionManager:
 
     def get_session_robots(self, session_key):
         return self.get_or_create_session(session_key)['robots']
+
+    def reset_session(self, session_key):
+        """Reset all robots in a session to their initial positions and states"""
+        if session_key in self.sessions:
+            robots = self.sessions[session_key]['robots']
+            for robot_id, robot in robots.items():
+                # Find the default configuration for this robot
+                default_config = next((config for config in DEFAULT_ROBOTS
+                                       if config['id'] == robot_id), None)
+                if default_config:
+                    robot.reset_to_initial_state(
+                        default_config['position'].copy())
+        return self.get_session_robots(session_key)

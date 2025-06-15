@@ -84,3 +84,24 @@ class WebSocketHandlers:
 
             except Exception as e:
                 emit('action_result', {'status': 'error', 'message': str(e)})
+
+        @self.socketio.on('reset_session')
+        def handle_reset_session(data):
+            session_key = data.get('session_key')
+            if not session_key:
+                emit('error', {'message': 'Session key required'})
+                return
+
+            try:
+                robots = self.sessions_manager.reset_session(session_key)
+                robot_states = {robot_id: robot.to_dict()
+                                for robot_id, robot in robots.items()}
+
+                result = {'status': 'success',
+                          'message': 'Session reset successfully'}
+                emit('reset_result', result)
+                self.socketio.emit('robot_states', robot_states,
+                                   room=f"session_{session_key}")
+
+            except Exception as e:
+                emit('reset_result', {'status': 'error', 'message': str(e)})

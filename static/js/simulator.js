@@ -256,6 +256,11 @@ class HumanoidSimulator {
                 this.updateRobotCount();
             });
 
+            this.socket.on('reset_result', (result) => {
+                console.log('🔄 Reset session result:', result);
+                this.handleResetResult(result);
+            });
+
         } catch (error) {
             console.error('❌ WebSocket initialization failed:', error);
             this.updateConnectionStatus(false);
@@ -316,6 +321,14 @@ class HumanoidSimulator {
                 if (this.scene3d) {
                     this.scene3d.resetCamera();
                 }
+            });
+        }
+
+        // Reset session button
+        const resetSessionBtn = document.getElementById('reset-session');
+        if (resetSessionBtn) {
+            resetSessionBtn.addEventListener('click', () => {
+                this.resetSession();
             });
         }
 
@@ -391,6 +404,24 @@ class HumanoidSimulator {
         }
     }
 
+    resetSession() {
+        console.log(`🔄 Resetting session: ${this.sessionKey}`);
+
+        // Show confirmation dialog
+        if (!confirm('Are you sure you want to reset the session? This will move all robots back to their initial positions.')) {
+            return;
+        }
+
+        if (this.socket && this.isConnected) {
+            this.socket.emit('reset_session', {
+                session_key: this.sessionKey
+            });
+        } else {
+            console.log('⚠️ WebSocket not connected, cannot reset session');
+            this.showNotification('Cannot reset session - not connected to server', 'error');
+        }
+    }
+
     handleActionResult(result) {
         console.log('📨 Handling action result:', result);
 
@@ -404,10 +435,30 @@ class HumanoidSimulator {
                 statusElement.className = '';
             }, 3000);
         }
+    }
 
-        // If action was successful, trigger local animation as backup
+    handleResetResult(result) {
+        console.log('🔄 Handling reset result:', result);
+
+        // Show notification
         if (result.status === 'success') {
-            this.triggerLocalAction(result.robot_id, result.action);
+            this.showNotification('Session reset successfully! All robots moved to initial positions.', 'success');
+
+            // Update last action display
+            this.updateLastAction('all', 'reset');
+        } else {
+            this.showNotification(`Reset failed: ${result.message}`, 'error');
+        }
+
+        // Update status
+        const statusElement = document.getElementById('action-status');
+        if (statusElement) {
+            statusElement.textContent = `${result.status}: session reset`;
+            statusElement.className = result.status === 'success' ? 'success' : 'error';
+            setTimeout(() => {
+                statusElement.textContent = '';
+                statusElement.className = '';
+            }, 3000);
         }
     }
 
