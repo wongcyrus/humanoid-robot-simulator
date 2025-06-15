@@ -387,86 +387,136 @@ class RobotWebSocketServer:
                 'robot_rotations': {robot_id: robot.rotation for robot_id, robot in self.robots.items()}
             })
 
-        @self.app.route('/run_action/<robot_id>', methods=['POST'])
-        def run_action(robot_id):
-            """HTTP endpoint for running robot actions (compatible with curl)"""
+        @self.app.route('/api/add_robot/<robot_id>', methods=['POST'])
+        def add_robot(robot_id):
+            """Add a new robot to the simulation"""
             try:
                 data = request.json or {}
-                method = data.get("method", "RunAction")
-                action = data.get("action")
+                position = data.get('position', [0, 0, 0])
+                color = data.get('color', '#4A90E2')
 
-                if not action:
-                    return jsonify({"error": "Missing action parameter"}), 400
-
-                print(f"🎬 HTTP Action request: {action} for {robot_id}")
-
-                # Handle 'all' robot ID
-                if robot_id.lower() == "all":
-                    results = []
-                    for rid, robot in self.robots.items():
-                        result = self._execute_robot_action(rid, robot, action)
-                        results.append(result)
-
-                    # Broadcast to WebSocket clients
-                    self.socketio.emit('action_result', {
-                        'robot_id': 'all',
-                        'action': action,
-                        'status': 'success',
-                        'message': f'Action {action} executed on all robots'
-                    })
-
-                    return jsonify({"results": results})
-
-                # Handle individual robot
-                if robot_id not in self.robots:
+                if robot_id in self.robots:
                     return jsonify({
-                        "error": f"Robot {robot_id} not found. Available: {list(self.robots.keys())} or 'all'"
-                    }), 404
+                        'success': False,
+                        'error': f'Robot {robot_id} already exists'
+                    }), 400
 
-                robot = self.robots[robot_id]
-                result = self._execute_robot_action(robot_id, robot, action)
+                # Create new robot
+                robot = Robot3D(robot_id, position, color)
+                self.robots[robot_id] = robot
 
-                # Broadcast to WebSocket clients
-                self.socketio.emit('action_result', {
+                # Emit to all connected clients
+                self.socketio.emit('robot_added', {
                     'robot_id': robot_id,
-                    'action': action,
-                    'status': 'success' if result['success'] else 'error',
-                    'message': result['message']
+                    'robot_data': robot.to_dict()
                 })
 
-                return jsonify({"results": [result]})
+                return jsonify({
+                    'success': True,
+                    'robot_id': robot_id,
+                    'message': f'Robot {robot_id} added successfully',
+                    'robot_data': robot.to_dict()
+                })
 
             except Exception as e:
-                return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to add robot: {str(e)}'
+                }), 500
 
-    def _execute_robot_action(self, robot_id: str, robot, action: str):
-        """Execute action on a robot"""
-        result = {
-            "robot_id": robot_id,
-            "action": action,
-            "timestamp": time.time(),
-            "success": False,
-            "message": ""
-        }
-        try:
-            # Convert action string to HumanoidAction enum
-            action_enum = None
-            for enum_action in HumanoidAction:
-                if enum_action.value == action.lower():
-                    action_enum = enum_action
-                    break
-            if action_enum is None:
-                result["message"] = f"Unknown action: {action}. Available actions: {[a.value for a in HumanoidAction]}"
-                return result
-            # Execute the action
-            robot.start_action(action_enum)
-            result["success"] = True
-            result["message"] = f"Action '{action}' started for robot {robot_id}"
-            print(f"✅ Action {action} executed on {robot_id}")
-        except Exception as e:
-            result["message"] = f"Error executing action: {str(e)}"
-            print(f"❌ Error executing action {action} on {robot_id}: {e}")
-        return result
+        @self.app.route('/api/remove_robot/<robot_id>', methods=['DELETE'])
+        def remove_robot(robot_id):
+            """Remove a robot from the simulation"""
+            try:
+                if robot_id == 'all':
+                    # Remove all robots
+                    removed_robots = list(self.robots.keys())
+                    self.robots.clear()
+
+                    # Emit to all connected clients
+                    self.socketio.emit('robots_removed_all', {
+                        'removed_robots': removed_robots
+                    })
+
+                    return jsonify({
+                        'success': True,
+                        'message': 'All robots removed successfully',
+                        'removed_robots': removed_robots
+                    })
+
+                elif robot_id in self.robots:
+                    # Remove specific robot
+                    del self.robots[robot_id]
+
+                    # Emit to all connected clients
+                    self.socketio.emit('robot_removed', {
+                        'removed_robot': robot_id
+                    })
+
+                    return jsonify({
+                        'success': True,
+                        'robot_id': robot_id,
+                        'message': f'Robot {robot_id} removed successfully'
+                    })
+
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Robot {robot_id} not found'
+                    }), 404
+
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to remove robot: {str(e)}'
+                }), 500
+
+        @self.app.route('/api/reset_robots', methods=['POST'])
+        def reset_robots():
+            """Reset to the original 6 robots"""
+            try:
+                # Clear existing robots
+                self.robots.clear()
+
+                # Add original 6 robots
+                original_robots = [
+                    {'id': 'robot_1',
+                        'position': [-50, 0, -50], 'color': '#4A90E2'},
+                    {'id': 'robot_2', 'position': [
+                        0, 0, -50], 'color': '#E24A90'},
+                    {'id': 'robot_3', 'position': [
+                        50, 0, -50], 'color': '#90E24A'},
+                    {'id': 'robot_4',
+                        'position': [-50, 0, 50], 'color': '#E2904A'},
+                    {'id': 'robot_5', 'position': [
+                        0, 0, 50], 'color': '#904AE2'},
+                    {'id': 'robot_6', 'position': [
+                        50, 0, 50], 'color': '#4AE290'}
+                ]
+
+                for robot_data in original_robots:
+                    robot = Robot3D(
+                        robot_data['id'], robot_data['position'], robot_data['color'])
+                    self.robots[robot_data['id']] = robot
+
+                # Emit to all connected clients
+                robot_states = {robot_id: robot.to_dict()
+                                for robot_id, robot in self.robots.items()}
+                self.socketio.emit('robots_reset', {
+                    'robots': robot_states
+                })
+
+                return jsonify({
+                    'success': True,
+                    'message': 'Robots reset to original 6 successfully',
+                    'robots': robot_states
+                })
+
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to reset robots: {str(e)}'
+                }), 500
 
     def setup_websocket_handlers(self):
         @self.socketio.on('connect')

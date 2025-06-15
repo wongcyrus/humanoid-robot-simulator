@@ -22,17 +22,14 @@ class HumanoidSimulator {
         // Initialize 3D scene first
         this.init3DScene();
 
-        // Add test robots immediately (fallback)
-        this.addTestRobots();
+        // Load robots from server
+        this.loadRobotsFromServer();
 
         // Initialize WebSocket connection
         this.initWebSocket();
 
         // Setup UI event listeners
         this.setupUIEvents();
-
-        // Setup robot management
-        this.setupRobotManagement();
 
         // Hide loading screen
         setTimeout(() => {
@@ -56,6 +53,37 @@ class HumanoidSimulator {
 
         this.scene3d = new Scene3D(canvas);
         console.log('✅ 3D scene initialized');
+    }
+
+    async loadRobotsFromServer() {
+        console.log('📡 Loading robots from server...');
+
+        try {
+            const response = await fetch('/api/robots');
+            const data = await response.json();
+
+            if (data.success && data.robots) {
+                console.log(`📡 Loaded ${data.robot_count} robots from server`);
+
+                // Add robots to 3D scene
+                Object.values(data.robots).forEach(robotData => {
+                    if (this.scene3d) {
+                        this.scene3d.addRobot(robotData);
+                        this.robots.set(robotData.robot_id, robotData);
+                    }
+                });
+
+                this.updateRobotCount();
+                console.log('✅ Robots loaded from server successfully');
+            } else {
+                console.log('⚠️ No robots found on server, adding test robots as fallback');
+                this.addTestRobots();
+            }
+        } catch (error) {
+            console.error('❌ Failed to load robots from server:', error);
+            console.log('⚠️ Using test robots as fallback');
+            this.addTestRobots();
+        }
     }
 
     addTestRobots() {
@@ -134,52 +162,54 @@ class HumanoidSimulator {
                 this.attemptReconnect();
             });
 
-            // Robot management WebSocket handlers
-            this.socket.on('robot_removed', (data) => {
-                console.log('🗑️ Robot removed:', data);
+            // Server-side robot management handlers
+            this.socket.on('robot_added', (data) => {
+                console.log('➕ Robot added by server:', data);
+                if (this.scene3d && data.robot_data) {
+                    this.scene3d.addRobot(data.robot_data);
+                    this.robots.set(data.robot_id, data.robot_data);
+                }
+                this.updateRobotCount();
+            });
 
-                // Remove robot from 3D scene
+            this.socket.on('robot_removed', (data) => {
+                console.log('🗑️ Robot removed by server:', data);
                 if (this.scene3d && data.removed_robot) {
                     this.scene3d.removeRobot(data.removed_robot);
+                    this.robots.delete(data.removed_robot);
                 }
-
-                // Update robot selector
-                this.updateRobotSelectorFromList(data.remaining_robots);
-
-                // Show notification
-                this.showNotification(data.message, 'warning');
+                this.updateRobotCount();
             });
 
-            this.socket.on('robots_removed', (data) => {
-                console.log('🗑️ All robots removed:', data);
-
-                // Clear all robots from 3D scene
-                if (this.scene3d) {
+            this.socket.on('robots_removed_all', (data) => {
+                console.log('🗑️ All robots removed by server:', data);
+                if (this.scene3d && data.removed_robots) {
                     data.removed_robots.forEach(robotId => {
                         this.scene3d.removeRobot(robotId);
+                        this.robots.delete(robotId);
                     });
                 }
-
-                // Update robot selector
-                this.updateRobotSelectorFromList([]);
-
-                // Show notification
-                this.showNotification(data.message, 'warning');
+                this.updateRobotCount();
             });
 
-            this.socket.on('robot_added', (data) => {
-                console.log('➕ Robot added:', data);
-
-                // Add robot to 3D scene
+            this.socket.on('robots_reset', (data) => {
+                console.log('🔄 Robots reset by server:', data);
+                // Clear all robots first
+                this.robots.clear();
                 if (this.scene3d) {
-                    this.scene3d.addRobot(data.robot_id, data.position, data.color);
+                    this.scene3d.clearAllRobots();
                 }
 
-                // Update robot selector
-                this.updateRobotSelectorFromList(data.all_robots);
-
-                // Show notification
-                this.showNotification(data.message, 'success');
+                // Add new robots from server
+                if (data.robots) {
+                    Object.values(data.robots).forEach(robotData => {
+                        if (this.scene3d) {
+                            this.scene3d.addRobot(robotData);
+                            this.robots.set(robotData.robot_id, robotData);
+                        }
+                    });
+                }
+                this.updateRobotCount();
             });
 
         } catch (error) {
@@ -359,222 +389,6 @@ class HumanoidSimulator {
         }
     }
 
-    setupRobotManagement() {
-        console.log('🔧 Setting up robot management controls...');
-
-        const removeRobotBtn = document.getElementById('remove-robot-btn');
-        const removeAllBtn = document.getElementById('remove-all-btn');
-        const addRobotBtn = document.getElementById('add-robot-btn');
-        const resetRobotsBtn = document.getElementById('reset-robots-btn');
-        const addRobotForm = document.getElementById('add-robot-form');
-        const confirmAddBtn = document.getElementById('confirm-add-robot');
-        const cancelAddBtn = document.getElementById('cancel-add-robot');
-
-        // Remove selected robot
-        if (removeRobotBtn) {
-            removeRobotBtn.addEventListener('click', () => {
-                const selectedRobot = document.getElementById('robot-select').value;
-                if (selectedRobot && selectedRobot !== 'all') {
-                    this.removeRobot(selectedRobot);
-                } else {
-                    alert('Please select a specific robot to remove');
-                }
-            });
-        }
-
-        // Remove all robots
-        if (removeAllBtn) {
-            removeAllBtn.addEventListener('click', () => {
-                if (confirm('Are you sure you want to remove ALL robots?')) {
-                    this.removeRobot('all');
-                }
-            });
-        }
-
-        // Show add robot form
-        if (addRobotBtn) {
-            addRobotBtn.addEventListener('click', () => {
-                if (addRobotForm) {
-                    addRobotForm.style.display = addRobotForm.style.display === 'none' ? 'block' : 'none';
-                }
-            });
-        }
-
-        // Reset to 6 robots
-        if (resetRobotsBtn) {
-            resetRobotsBtn.addEventListener('click', () => {
-                if (confirm('Reset to original 6 robots? This will remove all current robots.')) {
-                    this.resetToSixRobots();
-                }
-            });
-        }
-
-        // Confirm add robot
-        if (confirmAddBtn) {
-            confirmAddBtn.addEventListener('click', () => {
-                this.addNewRobot();
-            });
-        }
-
-        // Cancel add robot
-        if (cancelAddBtn) {
-            cancelAddBtn.addEventListener('click', () => {
-                if (addRobotForm) {
-                    addRobotForm.style.display = 'none';
-                }
-            });
-        }
-    }
-
-    async removeRobot(robotId) {
-        try {
-            console.log(`🗑️ Removing robot: ${robotId}`);
-
-            const response = await fetch(`/api/remove_robot/${robotId}`, {
-                method: 'DELETE'
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                console.log(`✅ Robot removal successful:`, result);
-                this.showNotification(`Robot ${robotId} removed successfully`, 'success');
-
-                // Update robot count display
-                this.updateRobotCountDisplay();
-
-            } else {
-                console.error('❌ Robot removal failed:', result.error);
-                this.showNotification(`Failed to remove robot: ${result.error}`, 'error');
-            }
-
-        } catch (error) {
-            console.error('❌ Error removing robot:', error);
-            this.showNotification(`Error removing robot: ${error.message}`, 'error');
-        }
-    }
-
-    async addNewRobot() {
-        try {
-            const robotId = document.getElementById('new-robot-id').value.trim();
-            const color = document.getElementById('new-robot-color').value;
-            const x = parseFloat(document.getElementById('new-robot-x').value) || 0;
-            const y = parseFloat(document.getElementById('new-robot-y').value) || 0;
-            const z = parseFloat(document.getElementById('new-robot-z').value) || 0;
-
-            if (!robotId) {
-                alert('Please enter a robot ID');
-                return;
-            }
-
-            console.log(`➕ Adding robot: ${robotId} at [${x}, ${y}, ${z}] with color ${color}`);
-
-            const response = await fetch(`/api/add_robot/${robotId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    position: [x, y, z],
-                    color: color
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                console.log(`✅ Robot addition successful:`, result);
-                this.showNotification(`Robot ${robotId} added successfully`, 'success');
-
-                // Hide form
-                const addRobotForm = document.getElementById('add-robot-form');
-                if (addRobotForm) {
-                    addRobotForm.style.display = 'none';
-                }
-
-                // Clear form
-                document.getElementById('new-robot-id').value = '';
-                document.getElementById('new-robot-x').value = '0';
-                document.getElementById('new-robot-y').value = '0';
-                document.getElementById('new-robot-z').value = '0';
-
-                // Update robot count display
-                this.updateRobotCountDisplay();
-
-            } else {
-                console.error('❌ Robot addition failed:', result.error);
-                this.showNotification(`Failed to add robot: ${result.error}`, 'error');
-            }
-
-        } catch (error) {
-            console.error('❌ Error adding robot:', error);
-            this.showNotification(`Error adding robot: ${error.message}`, 'error');
-        }
-    }
-
-    async resetToSixRobots() {
-        try {
-            console.log('🔄 Resetting to 6 robots...');
-
-            // First remove all robots
-            await this.removeRobot('all');
-
-            // Wait a moment
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // Add the original 6 robots
-            const originalRobots = [
-                { id: 'robot_1', position: [-50, 0, -50], color: '#4A90E2' },
-                { id: 'robot_2', position: [0, 0, -50], color: '#E24A90' },
-                { id: 'robot_3', position: [50, 0, -50], color: '#90E24A' },
-                { id: 'robot_4', position: [-50, 0, 50], color: '#E2904A' },
-                { id: 'robot_5', position: [0, 0, 50], color: '#904AE2' },
-                { id: 'robot_6', position: [50, 0, 50], color: '#4AE290' }
-            ];
-
-            for (const robot of originalRobots) {
-                const response = await fetch(`/api/add_robot/${robot.id}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        position: robot.position,
-                        color: robot.color
-                    })
-                });
-
-                if (!response.ok) {
-                    console.error(`Failed to add ${robot.id}`);
-                }
-            }
-
-            this.showNotification('Reset to 6 robots completed', 'success');
-            this.updateRobotCountDisplay();
-
-        } catch (error) {
-            console.error('❌ Error resetting robots:', error);
-            this.showNotification(`Error resetting robots: ${error.message}`, 'error');
-        }
-    }
-
-    updateRobotCountDisplay() {
-        const robotSelect = document.getElementById('robot-select');
-        if (robotSelect) {
-            const robotCount = robotSelect.options.length - 1; // Subtract 1 for "all" option
-
-            // Update or create robot count indicator
-            let countIndicator = document.querySelector('.robot-count');
-            if (!countIndicator) {
-                countIndicator = document.createElement('span');
-                countIndicator.className = 'robot-count';
-                robotSelect.parentNode.appendChild(countIndicator);
-            }
-
-            countIndicator.textContent = `${robotCount} robots`;
-        }
-    }
-
     showNotification(message, type = 'info') {
         // Create notification element
         const notification = document.createElement('div');
@@ -646,7 +460,7 @@ class HumanoidSimulator {
         });
 
         // Update robot count
-        this.updateRobotCountDisplay();
+        this.updateRobotCount();
 
         console.log(`🔄 Robot selector updated with ${robotList.length} robots`);
     }

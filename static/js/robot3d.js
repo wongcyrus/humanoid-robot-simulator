@@ -517,6 +517,16 @@ class Scene3D {
         }
     }
 
+    clearAllRobots() {
+        console.log(`🗑️ Clearing all ${this.robots.size} robots`);
+        this.robots.forEach((robot, robotId) => {
+            this.scene.remove(robot.group);
+            robot.dispose();
+        });
+        this.robots.clear();
+        console.log('✅ All robots cleared');
+    }
+
     resetCamera() {
         this.camera.position.set(0, 100, 200);
         this.camera.lookAt(0, 0, 0);
