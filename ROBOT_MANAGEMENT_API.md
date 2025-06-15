@@ -285,4 +285,119 @@ This will test:
 5. **Development**: Test with different robot counts
 6. **Cleanup**: Remove all robots to start fresh
 
+## Robot Action Control
+
+### Individual Robot Control
+
+**POST** `/run_action/<robot_id>`
+
+Execute an action on a specific robot. The action will be broadcast to all connected clients via WebSocket.
+
+**Parameters:**
+- `robot_id`: Robot identifier (e.g., "robot_1")
+- `session_key`: Session ID as query parameter
+
+**Request Body:**
+```json
+{
+  "method": "RunAction",
+  "action": "dance_two"
+}
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:5000/run_action/robot_1?session_key=YOUR_SESSION_ID \
+  -H 'Content-Type: application/json' \
+  -d '{"method":"RunAction","action":"dance_two"}'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "robot_id": "robot_1",
+  "action": "dance_two",
+  "robot_data": {
+    "robot_id": "robot_1",
+    "position": [-50, 0, -50],
+    "rotation": [0, 0, 0],
+    "color": "#4A90E2",
+    "current_action": "dance_two",
+    "is_animating": true
+  },
+  "message": "Action \"dance_two\" executed on robot robot_1"
+}
+```
+
+### All Robots Control
+
+**POST** `/run_action/all`
+
+Execute an action on all robots in the session. The action will be broadcast to all connected clients via WebSocket.
+
+**Parameters:**
+- `session_key`: Session ID as query parameter
+
+**Request Body:**
+```json
+{
+  "method": "RunAction",
+  "action": "kung_fu"
+}
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:5000/run_action/all?session_key=YOUR_SESSION_ID \
+  -H 'Content-Type: application/json' \
+  -d '{"method":"RunAction","action":"kung_fu"}'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "robot_id": "all",
+  "action": "kung_fu",
+  "robots_affected": ["robot_1", "robot_2", "robot_3", "robot_4", "robot_5", "robot_6"],
+  "message": "Action \"kung_fu\" executed on all robots"
+}
+```
+
+### Available Actions
+
+The following actions are available for robot control:
+
+**Basic Actions:**
+- `idle`, `dance`, `wave`, `bow`, `kung_fu`, `kick`, `punch`, `jump`
+- `push_ups`, `sit_ups`, `jumping_jacks`, `celebrate`, `think`
+
+**Movement Actions:**
+- `go_forward`, `go_backward`, `turn_left`, `turn_right`, `stepping`, `twist`
+- `right_move_fast`, `left_move_fast`, `back_fast`
+
+**Dance Variations:**
+- `dance_two`, `dance_three`, `dance_four`, `dance_five`, `dance_six`
+- `dance_seven`, `dance_eight`, `dance_nine`, `dance_ten`
+
+**Combat & Exercise:**
+- `stand_up_back`, `stand_up_front`, `right_kick`, `left_kick`
+- `right_uppercut`, `left_uppercut`, `wing_chun`, `right_shot_fast`, `left_shot_fast`
+- `chest`, `squat_up`, `squat`, `weightlifting`
+
+## Real-time Updates
+
+All robot actions triggered via the API are automatically broadcast to connected clients through WebSocket events:
+
+- **Event**: `robot_states`
+- **Data**: Complete robot state for all robots in the session
+- **Trigger**: Whenever `/run_action` endpoints are called
+
+This ensures that all connected clients see the robot actions in real-time, making it perfect for:
+- Multi-user environments
+- Remote robot control
+- Live demonstrations
+- Synchronized robot shows
+
 The Robot Management API provides complete control over the robot population in your simulator, enabling dynamic and flexible robot management for any use case.

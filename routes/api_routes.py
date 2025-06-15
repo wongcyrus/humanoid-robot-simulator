@@ -156,3 +156,68 @@ class APIRoutes:
                 return jsonify({'success': True, 'robots': robot_states})
             except Exception as e:
                 return jsonify({'success': False, 'error': str(e)}), 500
+
+        @self.app.route('/run_action/<robot_id>', methods=['POST'])
+        def run_action(robot_id):
+            """Run action on a specific robot or all robots"""
+            try:
+                session_key = self.get_session_key_from_request()
+                is_valid, error_msg = self.validate_session_key(session_key)
+                if not is_valid:
+                    return jsonify({'success': False, 'error': error_msg}), 400
+
+                data = request.json or {}
+                action = data.get('action')
+
+                if not action:
+                    return jsonify({'success': False, 'error': 'Action is required'}), 400
+
+                robots = self.sessions_manager.get_session_robots(session_key)
+
+                if robot_id == 'all':
+                    # Control all robots
+                    if not robots:
+                        return jsonify({'success': False, 'error': 'No robots found in session'}), 404
+
+                    # Execute action on all robots
+                    for robot in robots.values():
+                        robot.start_action(action)
+
+                    # Emit to all connected clients in the session
+                    robot_states = {rid: robot.to_dict()
+                                    for rid, robot in robots.items()}
+                    self.socketio.emit(
+                        'robot_states', robot_states, room=f"session_{session_key}")
+
+                    return jsonify({
+                        'success': True,
+                        'robot_id': 'all',
+                        'action': action,
+                        'robots_affected': list(robots.keys()),
+                        'message': f'Action "{action}" executed on all robots'
+                    })
+
+                else:
+                    # Control individual robot
+                    if robot_id not in robots:
+                        return jsonify({'success': False, 'error': f'Robot {robot_id} not found'}), 404
+
+                    # Execute action on specific robot
+                    robots[robot_id].start_action(action)
+
+                    # Emit to all connected clients in the session
+                    robot_states = {rid: robot.to_dict()
+                                    for rid, robot in robots.items()}
+                    self.socketio.emit(
+                        'robot_states', robot_states, room=f"session_{session_key}")
+
+                    return jsonify({
+                        'success': True,
+                        'robot_id': robot_id,
+                        'action': action,
+                        'robot_data': robots[robot_id].to_dict(),
+                        'message': f'Action "{action}" executed on robot {robot_id}'
+                    })
+
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)}), 500

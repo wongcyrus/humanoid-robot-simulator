@@ -89,14 +89,14 @@ mock_robot_simulator/
 
 ### Individual Robot Control
 ```bash
-curl -X POST http://localhost:5000/run_action/robot_1 \
+curl -X POST http://localhost:5000/run_action/robot_1?session_key=YOUR_SESSION_ID \
   -H 'Content-Type: application/json' \
   -d '{"method":"RunAction","action":"dance_two"}'
 ```
 
 ### All Robots Control
 ```bash
-curl -X POST http://localhost:5000/run_action/all \
+curl -X POST http://localhost:5000/run_action/all?session_key=YOUR_SESSION_ID \
   -H 'Content-Type: application/json' \
   -d '{"method":"RunAction","action":"kung_fu"}'
 ```

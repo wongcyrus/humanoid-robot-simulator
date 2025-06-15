@@ -39,7 +39,7 @@ class WebSocketHandlers:
             emit('robot_states', robot_states)
 
         @self.socketio.on('get_robot_states')
-        def handle_get_robot_states(data):
+        def handle_get_robot_states(data=None):
             session_key = data.get('session_key') if data else None
             if not session_key:
                 emit('error', {'message': 'Session key required'})
