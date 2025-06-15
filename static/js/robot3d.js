@@ -246,48 +246,31 @@ class Robot3D {
     }
 
     update(robotData) {
-        // FIXED: Only update position if it's significantly different from current position
-        // This prevents server updates from resetting robot positions after movement
-        if (robotData.position) {
-            const newPosition = this.parsePosition(robotData.position);
-            const currentPos = this.group.position;
-
-            // Check if the new position is significantly different (more than 5 units)
-            const distance = Math.sqrt(
-                Math.pow(newPosition.x - currentPos.x, 2) +
-                Math.pow(newPosition.z - currentPos.z, 2)
-            );
-
-            if (distance > 5) {
-                console.log(`📍 Significant position change for ${this.robotId}: ${distance.toFixed(1)} units`);
-                this.position = newPosition;
-                this.forcePosition();
-            } else {
-                console.log(`📍 Ignoring minor position update for ${this.robotId} (distance: ${distance.toFixed(1)})`);
-                // Update stored position to match current actual position
-                this.position.x = currentPos.x;
-                this.position.y = currentPos.y;
-                this.position.z = currentPos.z;
-            }
+        // CRITICAL FIX: Don't update position/rotation during animations
+        // This prevents server updates from interfering with ongoing movement animations
+        if (this.animator && this.animator.isAnimating) {
+            console.log(`🎭 ${this.robotId} is animating - ignoring server position update`);
+            return;
         }
 
-        // FIXED: Only update rotation if it's significantly different from current rotation
+        // Update position only when not animating
+        if (robotData.position) {
+            const newPosition = this.parsePosition(robotData.position);
+            console.log(`📍 Server position update for ${this.robotId}:`, newPosition);
+
+            // Always trust server position when not animating
+            this.position = newPosition;
+            this.group.position.set(this.position.x, this.position.y, this.position.z);
+        }
+
+        // Update rotation only when not animating
         if (robotData.rotation) {
             const newRotation = this.parseRotation(robotData.rotation);
-            const currentRot = this.group.rotation.y;
+            console.log(`🔄 Server rotation update for ${this.robotId}:`, newRotation);
 
-            // Check if the new rotation is significantly different (more than 0.1 radians)
-            const rotDiff = Math.abs(newRotation.y - currentRot);
-
-            if (rotDiff > 0.1) {
-                console.log(`🔄 Significant rotation change for ${this.robotId}: ${rotDiff.toFixed(2)} radians`);
-                this.rotation = newRotation;
-                this.forcePosition();
-            } else {
-                console.log(`🔄 Ignoring minor rotation update for ${this.robotId} (diff: ${rotDiff.toFixed(2)})`);
-                // Update stored rotation to match current actual rotation
-                this.rotation.y = currentRot;
-            }
+            // Always trust server rotation when not animating
+            this.rotation = newRotation;
+            this.group.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
         }
 
         // Start action if provided and different from current

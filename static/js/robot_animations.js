@@ -36,8 +36,7 @@ class RobotAnimator {
         this.isAnimating = true;
         this.animationStartTime = Date.now();
 
-        // Reset to original positions first
-        this.resetToOriginalPositions();
+
 
         // Start the animation loop
         this.animateAction(action);
@@ -654,7 +653,7 @@ class RobotAnimator {
         this.isAnimating = false;
 
         // For movement actions, update the robot's base position and rotation
-        if (['go_forward', 'go_backward', 'turn_left', 'turn_right'].includes(this.currentAnimation)) {
+        if (['go_forward', 'go_backward', 'turn_left', 'turn_right', 'right_move_fast', 'left_move_fast', 'back_fast', 'stepping'].includes(this.currentAnimation)) {
             console.log(`🔄 Updating base position/rotation for ${this.robot.robotId} after ${this.currentAnimation}`);
 
             // Update the robot's stored position to match current position
