@@ -60,12 +60,12 @@ class HumanoidAction(Enum):
 
 # Configuration constants
 DEFAULT_ROBOTS = [
-    {'id': 'robot_1', 'position': [-50, 0, -50], 'color': '#4A90E2'},
-    {'id': 'robot_2', 'position': [0, 0, -50], 'color': '#E24A90'},
-    {'id': 'robot_3', 'position': [50, 0, -50], 'color': '#90E24A'},
-    {'id': 'robot_4', 'position': [-50, 0, 50], 'color': '#E2904A'},
-    {'id': 'robot_5', 'position': [0, 0, 50], 'color': '#904AE2'},
-    {'id': 'robot_6', 'position': [50, 0, 50], 'color': '#4AE290'},
+    {'id': 'robot_1', 'position': [-50, 0, 50], 'color': '#4A90E2'},
+    {'id': 'robot_2', 'position': [0, 0, 50], 'color': '#E24A90'},
+    {'id': 'robot_3', 'position': [50, 0, 50], 'color': '#90E24A'},
+    {'id': 'robot_4', 'position': [-50, 0, -50], 'color': '#E2904A'},
+    {'id': 'robot_5', 'position': [0, 0, -50], 'color': '#904AE2'},
+    {'id': 'robot_6', 'position': [50, 0, -50], 'color': '#4AE290'},
 ]
 
 ACTION_DURATIONS = {

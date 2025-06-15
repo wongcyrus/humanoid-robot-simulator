@@ -54,12 +54,12 @@ class Robot3D {
 
         // Fallback to default positions based on robot ID
         const defaultPositions = {
-            'robot_1': { x: -50, y: 0, z: -50 },
-            'robot_2': { x: 0, y: 0, z: -50 },
-            'robot_3': { x: 50, y: 0, z: -50 },
-            'robot_4': { x: -50, y: 0, z: 50 },
-            'robot_5': { x: 0, y: 0, z: 50 },
-            'robot_6': { x: 50, y: 0, z: 50 }
+            'robot_1': { x: -50, y: 0, z: 50 },
+            'robot_2': { x: 0, y: 0, z: 50 },
+            'robot_3': { x: 50, y: 0, z: 50 },
+            'robot_4': { x: -50, y: 0, z: -50 },
+            'robot_5': { x: 0, y: 0, z: -50 },
+            'robot_6': { x: 50, y: 0, z: -50 }
         };
 
         return defaultPositions[this.robotId] || { x: 0, y: 0, z: 0 };
@@ -198,12 +198,126 @@ class Robot3D {
     }
 
     addRobotLabel() {
-        // Create a simple text representation using a colored cube
-        const labelGeometry = new THREE.BoxGeometry(8, 2, 2);
-        const labelMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+        // Get a unique word for this robot
+        const robotWords = {
+            'robot_1': '雲',
+            'robot_2': '端',
+            'robot_3': '系',
+            'robot_4': '統',
+            'robot_5': '數',
+            'robot_6': '據'
+        };
+
+        const robotWord = robotWords[this.robotId] || 'ROBOT';
+
+        // Create a canvas-based text label
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 256;
+        canvas.height = 64;
+
+        // Clear canvas with transparent background
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Add background with robot color
+        context.fillStyle = this.color;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Add border
+        context.strokeStyle = '#FFFFFF';
+        context.lineWidth = 3;
+        context.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+
+        // Configure text style
+        context.font = 'bold 24px Arial';
+        context.fillStyle = '#FFFFFF';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+
+        // Add robot word
+        context.fillText(robotWord, canvas.width / 2, canvas.height / 2);
+
+        // Create texture from canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+
+        // Create label material
+        const labelMaterial = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            alphaTest: 0.1
+        });
+
+        // Create label geometry and mesh
+        const labelGeometry = new THREE.PlaneGeometry(20, 5);
         const label = new THREE.Mesh(labelGeometry, labelMaterial);
         label.position.set(0, 50, 0);
+
+        // Make label always face the camera
+        label.lookAt(0, 50, 100);
+
         this.group.add(label);
+
+        // Also add text directly on the torso
+        this.addTorsoText();
+    }
+
+    addTorsoText() {
+        // Get a unique word for this robot
+        const robotWords = {
+            'robot_1': '雲',
+            'robot_2': '端',
+            'robot_3': '系',
+            'robot_4': '統',
+            'robot_5': '數',
+            'robot_6': '據',
+
+        };
+
+        const robotWord = robotWords[this.robotId] || 'ROBOT';
+
+        // Create a canvas for torso text
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 128;
+        canvas.height = 128;
+
+        // Clear canvas with semi-transparent black background
+        context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Add border
+        context.strokeStyle = '#FFFFFF';
+        context.lineWidth = 2;
+        context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+
+        // Configure text style
+        context.font = 'bold 80px Arial';
+        context.fillStyle = '#FFFFFF';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+
+        // Add robot word
+        context.fillText(robotWord, canvas.width / 2, canvas.height / 2);
+
+        // Create texture from canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+
+        // Create material for torso text
+        const textMaterial = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            alphaTest: 0.1
+        });
+
+        // Create text plane and position it on the torso front
+        const textGeometry = new THREE.PlaneGeometry(12, 12);
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        textMesh.position.set(0, 0, 6); // Position on front of torso
+
+        // Add to torso
+        this.parts.torso.add(textMesh);
     }
 
     forcePosition() {
