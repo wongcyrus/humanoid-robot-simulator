@@ -56,6 +56,9 @@ class Robot3D:
     def _handle_movement(self, action):
         rotation_y = self.rotation[1]
 
+        # Ensure rotation is within 0-2π range for consistency
+        rotation_y = rotation_y % (2 * math.pi)
+
         movement_map = {
             HumanoidAction.GO_FORWARD: (math.sin(rotation_y) * 30, math.cos(rotation_y) * 30),
             HumanoidAction.GO_BACKWARD: (-math.sin(rotation_y) * 20, -math.cos(rotation_y) * 20),
@@ -68,10 +71,17 @@ class Robot3D:
             dx, dz = movement_map[action]
             self.position[0] += dx
             self.position[2] += dz
+            # Ensure position values stay within reasonable bounds
+            self.position[0] = max(-200, min(200, self.position[0]))
+            self.position[2] = max(-200, min(200, self.position[2]))
         elif action == HumanoidAction.TURN_LEFT:
             self.rotation[1] += math.pi / 2
+            self.rotation[1] = self.rotation[1] % (
+                2 * math.pi)  # Normalize rotation
         elif action == HumanoidAction.TURN_RIGHT:
             self.rotation[1] -= math.pi / 2
+            self.rotation[1] = self.rotation[1] % (
+                2 * math.pi)  # Normalize rotation
 
     def _complete_action(self, duration):
         time.sleep(duration)
@@ -82,6 +92,7 @@ class Robot3D:
     def reset_to_initial_state(self, initial_position):
         """Reset robot to initial position and state"""
         self.position = initial_position
+        # Reset rotation to face forward (default orientation)
         self.rotation = [0, 0, 0]
         self.current_action = HumanoidAction.IDLE
         self.action_progress = 0.0

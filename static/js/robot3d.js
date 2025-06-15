@@ -31,6 +31,23 @@ class Robot3D {
         console.log(`✅ ${this.robotId} created successfully - Group children:`, this.group.children.length);
     }
 
+    debugPosition() {
+        console.log(`🔍 Debug ${this.robotId}:`, {
+            position: this.position,
+            rotation: this.rotation,
+            groupPosition: {
+                x: this.group.position.x,
+                y: this.group.position.y,
+                z: this.group.position.z
+            },
+            groupRotation: {
+                x: this.group.rotation.x,
+                y: this.group.rotation.y,
+                z: this.group.rotation.z
+            }
+        });
+    }
+
     parsePosition(positionData) {
         console.log(`🔍 Parsing position for ${this.robotId}:`, positionData, typeof positionData);
 
@@ -321,12 +338,21 @@ class Robot3D {
     }
 
     forcePosition() {
-        // FORCE the position - no matter what
+        // FORCE the position and rotation - no matter what
         this.group.position.set(this.position.x, this.position.y, this.position.z);
         this.group.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
 
+        // Ensure position and rotation are properly normalized
+        // Normalize rotation values to prevent accumulation issues
+        this.group.rotation.x = this.group.rotation.x % (2 * Math.PI);
+        this.group.rotation.y = this.group.rotation.y % (2 * Math.PI);
+        this.group.rotation.z = this.group.rotation.z % (2 * Math.PI);
+
         console.log(`🎯 FORCED position for ${this.robotId}:`, this.group.position);
         console.log(`🎯 FORCED rotation for ${this.robotId}:`, this.group.rotation);
+
+        // Mark for update
+        this.group.updateMatrixWorld(true);
     }
 
     ensureVisibility() {
