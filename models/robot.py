@@ -3,7 +3,6 @@
 
 import time
 import threading
-import math
 from constants import HumanoidAction, ACTION_DURATIONS, MOVEMENT_ACTIONS
 
 
@@ -46,42 +45,12 @@ class Robot3D:
         self.is_animating = True
         duration = ACTION_DURATIONS.get(action.value, 2)
 
+        # Movement calculations removed - let client handle all positioning/rotation
         if action in MOVEMENT_ACTIONS:
-            self._handle_movement(action)
             self.movement_count += 1
 
         threading.Thread(target=self._complete_action,
                          args=(duration,), daemon=True).start()
-
-    def _handle_movement(self, action):
-        rotation_y = self.rotation[1]
-
-        # Ensure rotation is within 0-2π range for consistency
-        rotation_y = rotation_y % (2 * math.pi)
-
-        movement_map = {
-            HumanoidAction.GO_FORWARD: (math.sin(rotation_y) * 30, math.cos(rotation_y) * 30),
-            HumanoidAction.GO_BACKWARD: (-math.sin(rotation_y) * 20, -math.cos(rotation_y) * 20),
-            HumanoidAction.BACK_FAST: (-math.sin(rotation_y) * 35, -math.cos(rotation_y) * 35),
-            HumanoidAction.RIGHT_MOVE_FAST: (math.cos(rotation_y) * 25, -math.sin(rotation_y) * 25),
-            HumanoidAction.LEFT_MOVE_FAST: (-math.cos(rotation_y) * 25, math.sin(rotation_y) * 25),
-        }
-
-        if action in movement_map:
-            dx, dz = movement_map[action]
-            self.position[0] += dx
-            self.position[2] += dz
-            # Ensure position values stay within reasonable bounds
-            self.position[0] = max(-200, min(200, self.position[0]))
-            self.position[2] = max(-200, min(200, self.position[2]))
-        elif action == HumanoidAction.TURN_LEFT:
-            self.rotation[1] += math.pi / 2
-            self.rotation[1] = self.rotation[1] % (
-                2 * math.pi)  # Normalize rotation
-        elif action == HumanoidAction.TURN_RIGHT:
-            self.rotation[1] -= math.pi / 2
-            self.rotation[1] = self.rotation[1] % (
-                2 * math.pi)  # Normalize rotation
 
     def _complete_action(self, duration):
         time.sleep(duration)

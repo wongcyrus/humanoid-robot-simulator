@@ -110,6 +110,79 @@ class WebSocketHandlers:
                     f"❌ Emitting 'action_result' error event: {error_result}")
                 emit('action_result', error_result)
 
+        @self.socketio.on('actions')
+        def handle_actions(data):
+            logger.debug(f"🎬 Handling actions event with data: {data}")
+            session_key = data.get('session_key')
+            if not session_key:
+                logger.debug("❌ Emitting 'error' event: Session key required")
+                emit(
+                    'error', {'message': 'Session key required for actions event'})
+                return
+
+            action_name = data.get('action_name', 'idle')
+            robot_id = data.get('robot_id', 'all')  # Default to all robots
+
+            try:
+                robots = self.sessions_manager.get_session_robots(session_key)
+
+                if not robots:
+                    result = {'status': 'error',
+                              'message': 'No robots found in session'}
+                    logger.debug(
+                        f"❌ Emitting 'action_result' error event: {result}")
+                    emit('action_result', result)
+                    return
+
+                if robot_id == 'all':
+                    # Run action on all robots
+                    for robot in robots.values():
+                        robot.start_action(action_name)
+                    result = {
+                        'status': 'success',
+                        'action_name': action_name,
+                        'robot_id': 'all',
+                        'message': f'Action "{action_name}" started on all robots'
+                    }
+                elif robot_id in robots:
+                    # Run action on specific robot
+                    robots[robot_id].start_action(action_name)
+                    result = {
+                        'status': 'success',
+                        'action_name': action_name,
+                        'robot_id': robot_id,
+                        'message': f'Action "{action_name}" started on robot {robot_id}'
+                    }
+                else:
+                    result = {
+                        'status': 'error',
+                        'robot_id': robot_id,
+                        'action_name': action_name,
+                        'message': f'Robot {robot_id} not found'
+                    }
+
+                logger.debug(f"✅ Emitting 'action_result' event: {result}")
+                emit('action_result', result)
+
+                # Broadcast updated robot states to all clients in the session
+                robot_states = {robot_id: robot.to_dict()
+                                for robot_id, robot in robots.items()}
+                logger.debug(
+                    f"📡 Broadcasting 'robot_states' event to session_{session_key} with {len(robot_states)} robots")
+                self.socketio.emit('robot_states', robot_states,
+                                   room=f"session_{session_key}")
+
+            except Exception as e:
+                error_result = {
+                    'status': 'error',
+                    'action_name': action_name,
+                    'robot_id': robot_id,
+                    'message': f'Error executing action: {str(e)}'
+                }
+                logger.debug(
+                    f"❌ Emitting 'action_result' error event: {error_result}")
+                emit('action_result', error_result)
+
         @self.socketio.on('reset_session')
         def handle_reset_session(data):
             logger.debug(f"🔄 Handling reset_session event with data: {data}")

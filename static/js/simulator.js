@@ -333,6 +333,12 @@ class HumanoidSimulator {
                 this.handleResetResult(result);
             });
 
+            // Action execution handler for server-initiated actions
+            this.socket.on('actions', (data) => {
+                console.log('🎬 Server requested action execution:', data);
+                this.handleServerActionRequest(data);
+            });
+
         } catch (error) {
             console.error('❌ WebSocket initialization failed:', error);
             this.updateConnectionStatus(false);
@@ -487,6 +493,31 @@ class HumanoidSimulator {
             // Trigger action on specific robot
             this.scene3d.triggerRobotAction(robotId, action);
         }
+    }
+
+    sendActionByName(actionName, robotId = 'all') {
+        console.log(`📡 Sending action by name: ${actionName} to ${robotId} in session: ${this.sessionKey}`);
+
+        if (this.socket && this.isConnected) {
+            this.socket.emit('actions', {
+                session_key: this.sessionKey,
+                action_name: actionName,
+                robot_id: robotId
+            });
+        } else {
+            console.log('⚠️ WebSocket not connected, cannot send action by name');
+            this.showNotification('Cannot send action: WebSocket not connected', 'error');
+        }
+    }
+
+    executeAction(actionName, robotId = 'all') {
+        console.log(`🎬 Executing action: ${actionName} on ${robotId}`);
+
+        // Send action to server using the new actions event
+        this.sendActionByName(actionName, robotId);
+
+        // Also update local UI immediately for responsiveness
+        this.updateLastAction(robotId, actionName);
     }
 
     sendAction(robotId, action) {
@@ -677,6 +708,24 @@ class HumanoidSimulator {
                 statusElement.className = '';
             }, 3000);
         }
+    }
+
+    handleServerActionRequest(data) {
+        console.log('🎬 Handling server action request:', data);
+
+        const actionName = data.action_name || 'idle';
+        const robotId = data.robot_id || 'all';
+
+        // Execute the action LOCALLY only - don't send back to server to avoid loop
+        this.triggerLocalAction(robotId, actionName);
+
+        // Show notification about server-initiated action
+        this.showNotification(`Server executed "${actionName}" on ${robotId}`, 'info');
+
+        // Update last action display
+        this.updateLastAction(robotId, actionName);
+
+        console.log(`✅ Server action "${actionName}" executed locally on ${robotId}`);
     }
 
     updateLastAction(robotId, action) {

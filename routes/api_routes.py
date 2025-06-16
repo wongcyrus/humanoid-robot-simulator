@@ -187,6 +187,13 @@ class APIRoutes:
                     for robot in robots.values():
                         robot.start_action(action)
 
+                    self.socketio.emit(
+                        'actions', {
+                            'session_key': session_key,
+                            'action_name': action,
+                            'robot_id': 'all'
+                        }, room=f"session_{session_key}")
+
                     # Emit to all connected clients in the session
                     robot_states = {rid: robot.to_dict()
                                     for rid, robot in robots.items()}
@@ -208,6 +215,13 @@ class APIRoutes:
 
                     # Execute action on specific robot
                     robots[robot_id].start_action(action)
+
+                    self.socketio.emit(
+                        'actions', {
+                            'session_key': session_key,
+                            'action_name': action,
+                            'robot_id': robot_id
+                        }, room=f"session_{session_key}")
 
                     # Emit to all connected clients in the session
                     robot_states = {rid: robot.to_dict()
