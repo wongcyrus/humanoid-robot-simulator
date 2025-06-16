@@ -13,6 +13,66 @@ class HumanoidSimulator {
         this.maxRetries = 5;
         this.sessionKey = null;
 
+        // Action queue system for sequential processing
+        this.actionQueue = [];
+        this.isProcessingQueue = false;
+
+        // Action duration mapping (exact timing as specified)
+        this.actionDurations = {
+            // Dance actions (long durations)
+            'dance': 2,
+            'dance_two': 52,
+            'dance_three': 70,
+            'dance_four': 83,
+            'dance_five': 59,
+            'dance_six': 69,
+            'dance_seven': 67,
+            'dance_eight': 85,
+            'dance_nine': 84,
+            'dance_ten': 85,
+
+            // Movement actions
+            'stepping': 3,
+            'twist': 4,
+            'stand_up_back': 5,
+            'stand_up_front': 5,
+            'right_kick': 2,
+            'left_kick': 2,
+            'right_uppercut': 2,
+            'left_uppercut': 2,
+            'wing_chun': 2,
+            'right_shot_fast': 4,
+            'left_shot_fast': 4,
+            'chest': 9,
+            'squat_up': 6,
+            'squat': 1,
+            'bow': 4,
+            'wave': 3.5,
+            'turn_right': 4,
+            'turn_left': 4,
+            'sit_ups': 12,
+            'right_move_fast': 3,
+            'left_move_fast': 3,
+            'back_fast': 4.5,
+            'go_forward': 3.5,
+            'push_ups': 9,
+            'weightlifting': 9,
+            'kung_fu': 2,
+
+            // Additional actions
+            'go_backward': 3.5,
+            'jumping_jacks': 3,
+            'jump': 2,
+            'celebrate': 3,
+            'think': 2,
+            'idle': 1,
+            'kick': 2,
+            'punch': 2,
+
+            // Default duration for unlisted actions
+            'default': 2
+        };
+
         console.log('🚀 Starting Enhanced Humanoid Simulator...');
         this.init();
     }
@@ -350,8 +410,8 @@ class HumanoidSimulator {
                     e.target.style.background = e.target.classList.contains('movement-btn') ? '#28a745' : '#4A90E2';
                 }, 200);
 
-                // Trigger action immediately (local animation)
-                this.triggerLocalAction(robotId, action);
+                // Add action to queue instead of triggering immediately
+                this.queueAction(robotId, action);
 
                 // Also send to server if connected
                 this.sendAction(robotId, action);
@@ -559,6 +619,211 @@ class HumanoidSimulator {
         this.updateRobotCount();
 
         console.log(`🔄 Robot selector updated with ${robotList.length} robots`);
+    }
+
+    // Action Queue Management Methods
+    queueAction(robotId, action) {
+        const queueItem = {
+            robotId: robotId,
+            action: action,
+            timestamp: Date.now()
+        };
+
+        this.actionQueue.push(queueItem);
+        console.log(`📋 Action queued: ${action} for ${robotId}. Queue length: ${this.actionQueue.length}`);
+
+        // Start processing if not already processing
+        if (!this.isProcessingQueue) {
+            this.processActionQueue();
+        }
+    }
+
+    async processActionQueue() {
+        if (this.isProcessingQueue || this.actionQueue.length === 0) {
+            return;
+        }
+
+        this.isProcessingQueue = true;
+        console.log('🏃 Starting action queue processing...');
+
+        while (this.actionQueue.length > 0) {
+            const queueItem = this.actionQueue.shift();
+            const { robotId, action } = queueItem;
+
+            console.log(`⚡ Processing action: ${action} for ${robotId}`);
+
+            // Trigger the action
+            this.triggerLocalAction(robotId, action);
+
+            // Update last action display
+            this.updateLastAction(robotId, action);
+
+            // Get action duration
+            const duration = this.getActionDuration(action);
+            console.log(`⏱️ Waiting ${duration} seconds for action: ${action}`);
+
+            // Wait for the action to complete
+            await this.sleep(duration * 1000);
+
+            console.log(`✅ Action completed: ${action} for ${robotId}`);
+        }
+
+        this.isProcessingQueue = false;
+        console.log('🏁 Action queue processing completed');
+    }
+
+    getActionDuration(action) {
+        const actionKey = action.toLowerCase();
+        return this.actionDurations[actionKey] || this.actionDurations['default'];
+    }
+
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    clearActionQueue() {
+        this.actionQueue = [];
+        console.log('🗑️ Action queue cleared');
+    }
+
+    getQueueStatus() {
+        return {
+            queueLength: this.actionQueue.length,
+            isProcessing: this.isProcessingQueue,
+            nextAction: this.actionQueue.length > 0 ? this.actionQueue[0] : null
+        };
+    }
+
+    // Helper function to queue multiple actions in sequence
+    queueMultipleActions(robotId, actions) {
+        if (!Array.isArray(actions)) {
+            console.error('❌ Actions must be an array');
+            return;
+        }
+
+        console.log(`📋 Queuing ${actions.length} actions for ${robotId}:`, actions);
+
+        actions.forEach(action => {
+            this.queueAction(robotId, action);
+        });
+
+        // Calculate total duration
+        let totalDuration = 0;
+        actions.forEach(action => {
+            totalDuration += this.getActionDuration(action);
+        });
+
+        console.log(`⏱️ Total sequence duration: ${totalDuration} seconds`);
+        return totalDuration;
+    }
+
+    // Predefined action sequences based on action types
+    queueDanceSequence(robotId) {
+        const danceActions = [
+            'dance_two',    // 52 seconds
+            'dance_three',  // 70 seconds 
+            'dance_four',   // 83 seconds
+            'dance_five',   // 59 seconds
+            'dance_six',    // 69 seconds
+            'dance_seven',  // 67 seconds
+            'dance_eight',  // 85 seconds
+            'dance_nine',   // 84 seconds
+            'dance_ten'     // 85 seconds
+        ];
+        return this.queueMultipleActions(robotId, danceActions);
+    }
+
+    queueCombatSequence(robotId) {
+        const combatActions = [
+            'right_kick',     // 2 seconds
+            'left_kick',      // 2 seconds
+            'right_uppercut', // 2 seconds
+            'left_uppercut',  // 2 seconds
+            'wing_chun',      // 2 seconds
+            'right_shot_fast', // 4 seconds
+            'left_shot_fast', // 4 seconds
+            'kung_fu'         // 2 seconds
+        ];
+        return this.queueMultipleActions(robotId, combatActions);
+    }
+
+    queueExerciseSequence(robotId) {
+        const exerciseActions = [
+            'chest',        // 9 seconds
+            'squat_up',     // 6 seconds
+            'squat',        // 1 second
+            'push_ups',     // 9 seconds
+            'sit_ups',      // 12 seconds
+            'weightlifting' // 9 seconds
+        ];
+        return this.queueMultipleActions(robotId, exerciseActions);
+    }
+
+    queueMovementSequence(robotId) {
+        const movementActions = [
+            'stepping',        // 3 seconds
+            'twist',          // 4 seconds
+            'go_forward',     // 3.5 seconds
+            'turn_right',     // 4 seconds
+            'go_forward',     // 3.5 seconds
+            'turn_left',      // 4 seconds
+            'back_fast',      // 4.5 seconds
+            'right_move_fast', // 3 seconds
+            'left_move_fast'   // 3 seconds
+        ];
+        return this.queueMultipleActions(robotId, movementActions);
+    }
+
+    // Function to demonstrate exact timing according to your requirements
+    demonstrateTimingSequence(robotId) {
+        console.log('🎭 Starting demonstration of exact timing sequence...');
+
+        const allActions = [
+            // Long dance sequences
+            'dance_two',       // 52 seconds
+            'dance_three',     // 70 seconds
+            'dance_four',      // 83 seconds
+            'dance_five',      // 59 seconds
+            'dance_six',       // 69 seconds
+            'dance_seven',     // 67 seconds
+            'dance_eight',     // 85 seconds
+            'dance_nine',      // 84 seconds
+            'dance_ten',       // 85 seconds
+
+            // Quick movements
+            'stepping',        // 3 seconds
+            'twist',          // 4 seconds
+            'stand_up_back',  // 5 seconds
+            'stand_up_front', // 5 seconds
+
+            // Combat moves
+            'right_kick',     // 2 seconds
+            'left_kick',      // 2 seconds
+            'right_uppercut', // 2 seconds
+            'left_uppercut',  // 2 seconds
+            'wing_chun',      // 2 seconds
+            'right_shot_fast', // 4 seconds
+            'left_shot_fast', // 4 seconds
+
+            // Exercises
+            'chest',          // 9 seconds
+            'squat_up',       // 6 seconds
+            'squat',          // 1 second
+            'bow',            // 4 seconds
+            'wave',           // 3.5 seconds
+            'turn_right',     // 4 seconds
+            'turn_left',      // 4 seconds
+            'sit_ups',        // 12 seconds
+            'right_move_fast', // 3 seconds
+            'left_move_fast', // 3 seconds
+            'back_fast',      // 4.5 seconds
+            'go_forward',     // 3.5 seconds
+            'push_ups',       // 9 seconds
+            'weightlifting',  // 9 seconds
+            'kung_fu'         // 2 seconds
+        ];
+
+        return this.queueMultipleActions(robotId, allActions);
     }
 }
 

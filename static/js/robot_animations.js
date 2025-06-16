@@ -8,8 +8,70 @@ class RobotAnimator {
         this.robot = robot3d;
         this.isAnimating = false;
         this.animationStartTime = 0;
-        this.animationDuration = 2000; // 2 seconds
+        this.animationDuration = 2000; // Default 2 seconds
         this.currentAnimation = null;
+
+        // Action duration mapping (exact timing as specified)
+        this.actionDurations = {
+            // Dance actions (long durations)
+            'dance': 2 * 1000, // Original dance action
+            'dance_two': 52 * 1000,
+            'dance_three': 70 * 1000,
+            'dance_four': 83 * 1000,
+            'dance_five': 59 * 1000,
+            'dance_six': 69 * 1000,
+            'dance_seven': 67 * 1000,
+            'dance_eight': 85 * 1000,
+            'dance_nine': 84 * 1000,
+            'dance_ten': 85 * 1000,
+
+            // Movement actions
+            'stepping': 3 * 1000,
+            'twist': 4 * 1000,
+            'right_move_fast': 3 * 1000,
+            'left_move_fast': 3 * 1000,
+            'back_fast': 4.5 * 1000,
+            'go_forward': 3.5 * 1000,
+            'go_backward': 3.5 * 1000,
+            'turn_right': 4 * 1000,
+            'turn_left': 4 * 1000,
+
+            // Standing actions
+            'stand_up_back': 5 * 1000,
+            'stand_up_front': 5 * 1000,
+
+            // Combat actions
+            'right_kick': 2 * 1000,
+            'left_kick': 2 * 1000,
+            'right_uppercut': 2 * 1000,
+            'left_uppercut': 2 * 1000,
+            'wing_chun': 2 * 1000,
+            'right_shot_fast': 4 * 1000,
+            'left_shot_fast': 4 * 1000,
+            'kung_fu': 2 * 1000,
+            'kick': 2 * 1000,
+            'punch': 2 * 1000,
+
+            // Exercise actions
+            'chest': 9 * 1000,
+            'squat_up': 6 * 1000,
+            'squat': 1 * 1000,
+            'push_ups': 9 * 1000,
+            'sit_ups': 12 * 1000,
+            'weightlifting': 9 * 1000,
+            'jumping_jacks': 3 * 1000,
+
+            // Basic actions
+            'bow': 4 * 1000,
+            'wave': 3.5 * 1000,
+            'jump': 2 * 1000,
+            'celebrate': 3 * 1000,
+            'think': 2 * 1000,
+            'idle': 1 * 1000,
+
+            // Default duration for unlisted actions
+            'default': 2 * 1000
+        };
 
         // Store original positions for reset
         this.originalPositions = {};
@@ -35,6 +97,12 @@ class RobotAnimator {
         this.currentAnimation = action;
         this.isAnimating = true;
         this.animationStartTime = Date.now();
+
+        // Set the correct duration for this action
+        const actionKey = action.toLowerCase();
+        this.animationDuration = this.actionDurations[actionKey] || this.actionDurations['default'];
+
+        console.log(`⏱️ Animation duration: ${this.animationDuration / 1000} seconds for ${action}`);
 
         // Store the robot's current facing direction at animation start
         this.animationStartRotation = this.robot.rotation.y || this.robot.group.rotation.y || 0;
