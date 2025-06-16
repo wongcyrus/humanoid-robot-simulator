@@ -406,7 +406,7 @@ class Scene3D {
         );
 
         // Position camera to see all robots clearly
-        this.camera.position.set(0, 100, 200);
+        this.camera.position.set(0, 100, 150);
         this.camera.lookAt(0, 0, 0);
 
         // Renderer with high quality settings
@@ -459,12 +459,22 @@ class Scene3D {
     }
 
     setupEnvironment() {
-        // Ground plane for reference
+        // Ground plane with HKIIT logo texture
         const groundGeometry = new THREE.PlaneGeometry(400, 400);
+
+        // Load the HKIIT logo texture
+        const textureLoader = new THREE.TextureLoader();
+        const logoTexture = textureLoader.load('/static/img/HKIIT_logo.jpg');
+
+        // Configure texture properties for better appearance
+        logoTexture.wrapS = THREE.RepeatWrapping;
+        logoTexture.wrapT = THREE.RepeatWrapping;
+        logoTexture.repeat.set(2, 2); // Tile the logo 2x2 across the floor
+
         const groundMaterial = new THREE.MeshLambertMaterial({
-            color: 0x333333,
+            map: logoTexture,
             transparent: true,
-            opacity: 0.8
+            opacity: 0.9
         });
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
         ground.rotation.x = -Math.PI / 2;
@@ -472,14 +482,14 @@ class Scene3D {
         ground.receiveShadow = true;
         this.scene.add(ground);
 
-        // Grid helper for positioning reference
-        const gridHelper = new THREE.GridHelper(400, 20, 0x444444, 0x444444);
-        gridHelper.position.y = -29;
-        this.scene.add(gridHelper);
+        // Grid helper for positioning reference (hidden)
+        // const gridHelper = new THREE.GridHelper(400, 20, 0x444444, 0x444444);
+        // gridHelper.position.y = -29;
+        // this.scene.add(gridHelper);
 
-        // Axis helper for orientation
-        const axesHelper = new THREE.AxesHelper(50);
-        this.scene.add(axesHelper);
+        // Axis helper for orientation (hidden)
+        // const axesHelper = new THREE.AxesHelper(50);
+        // this.scene.add(axesHelper);
 
         console.log('🌍 Environment setup complete');
     }
