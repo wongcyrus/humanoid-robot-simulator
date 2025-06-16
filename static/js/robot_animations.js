@@ -36,7 +36,8 @@ class RobotAnimator {
         this.isAnimating = true;
         this.animationStartTime = Date.now();
 
-
+        // Store the robot's current facing direction at animation start
+        this.animationStartRotation = this.robot.rotation.y || this.robot.group.rotation.y || 0;
 
         // Start the animation loop
         this.animateAction(action);
@@ -321,6 +322,20 @@ class RobotAnimator {
 
         if (torso && leftArm && rightArm && leftLeg && rightLeg && head) {
             // COMPLETE PUSH-UP SEQUENCE: Get down -> Do push-ups -> Stand up
+            // WITH FORWARD MOVEMENT IN FACING DIRECTION
+
+            // Get robot's current facing direction (use stored rotation from animation start)
+            const currentRotation = this.animationStartRotation;
+            const moveDistance = 20; // Total distance to move during push-ups
+            const currentMove = progress * moveDistance;
+
+            // Calculate forward direction based on rotation
+            const forwardX = Math.sin(currentRotation) * currentMove;
+            const forwardZ = Math.cos(currentRotation) * currentMove;
+
+            // Apply movement in the facing direction throughout the animation
+            this.robot.group.position.x = this.robot.position.x + forwardX;
+            this.robot.group.position.z = this.robot.position.z + forwardZ;
 
             if (progress < 0.2) {
                 // Phase 1: Getting down to push-up position (0-20%)
@@ -386,7 +401,7 @@ class RobotAnimator {
                 head.rotation.x = (-Math.PI / 6) * reverseProgress;
             }
 
-            console.log(`💪 ${this.robot.robotId} push-up phase: ${progress < 0.2 ? 'Getting Down' : progress < 0.8 ? 'Push-ups' : 'Standing Up'}`);
+            console.log(`💪 ${this.robot.robotId} push-up phase: ${progress < 0.2 ? 'Getting Down' : progress < 0.8 ? 'Push-ups' : 'Standing Up'} - moving forward: x=${this.robot.group.position.x}, z=${this.robot.group.position.z}, rotation=${currentRotation}`);
         }
     }
 

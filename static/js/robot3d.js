@@ -208,75 +208,10 @@ class Robot3D {
         this.parts.rightLeg.position.set(6, -5, 0);
         this.group.add(this.parts.rightLeg);
 
-        // Add robot ID label above head
-        this.addRobotLabel();
+        // Add text on the torso
+        this.addTorsoText();
 
         console.log(`✅ ${this.robotId} mesh created with ${this.group.children.length} parts`);
-    }
-
-    addRobotLabel() {
-        // Get a unique word for this robot
-        const robotWords = {
-            'robot_1': '雲',
-            'robot_2': '端',
-            'robot_3': '系',
-            'robot_4': '統',
-            'robot_5': '數',
-            'robot_6': '據'
-        };
-
-        const robotWord = robotWords[this.robotId] || 'ROBOT';
-
-        // Create a canvas-based text label
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = 256;
-        canvas.height = 64;
-
-        // Clear canvas with transparent background
-        context.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Add background with robot color
-        context.fillStyle = this.color;
-        context.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Add border
-        context.strokeStyle = '#FFFFFF';
-        context.lineWidth = 3;
-        context.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
-
-        // Configure text style
-        context.font = 'bold 24px Arial';
-        context.fillStyle = '#FFFFFF';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-
-        // Add robot word
-        context.fillText(robotWord, canvas.width / 2, canvas.height / 2);
-
-        // Create texture from canvas
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.needsUpdate = true;
-
-        // Create label material
-        const labelMaterial = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            alphaTest: 0.1
-        });
-
-        // Create label geometry and mesh
-        const labelGeometry = new THREE.PlaneGeometry(20, 5);
-        const label = new THREE.Mesh(labelGeometry, labelMaterial);
-        label.position.set(0, 50, 0);
-
-        // Make label always face the camera
-        label.lookAt(0, 50, 100);
-
-        this.group.add(label);
-
-        // Also add text directly on the torso
-        this.addTorsoText();
     }
 
     addTorsoText() {
@@ -665,6 +600,24 @@ class Scene3D {
         });
         this.robots.clear();
         console.log('✅ All robots cleared');
+    }
+
+    focusOnRobot(robotId) {
+        const robot = this.robots.get(robotId);
+        if (robot) {
+            // Focus camera on the robot's position
+            const robotPosition = robot.group.position;
+            const distance = this.camera.position.length();
+
+            // Position camera to look at the robot from a good angle
+            const offset = new THREE.Vector3(50, 50, 50);
+            this.camera.position.copy(robotPosition).add(offset);
+            this.camera.lookAt(robotPosition);
+
+            console.log(`📷 Camera focused on robot ${robotId} at position:`, robotPosition);
+        } else {
+            console.warn(`⚠️ Cannot focus on robot ${robotId} - robot not found`);
+        }
     }
 
     resetCamera() {
