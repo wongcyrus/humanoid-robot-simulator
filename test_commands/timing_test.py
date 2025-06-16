@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/en#!/usr/bin/env python3
 """
 Robot Simulator Timing Test Script
 Tests the exact timing requirements for all robot actions
@@ -21,6 +21,12 @@ ACTION_TIMINGS = {
     'dance_eight': 85,
     'dance_nine': 84,
     'dance_ten': 85,
+    'dance_five': 9,
+    'dance_six': 10,
+    'dance_seven': 11,
+    'dance_eight': 13,
+    'dance_nine': 12,
+    'dance_ten': 13,
 
     # Movement actions
     'stepping': 3,
@@ -158,9 +164,9 @@ class RobotTimingTester:
         print("=" * 60)
 
         dance_actions = [
-            'dance_two',     # 52s
-            'dance_three',   # 70s
-            'dance_four'     # 83s (shortened for demo)
+            'dance_two',     # 8s - Energetic multi-phase
+            'dance_three',   # 10s - Complex flowing
+            'dance_four'     # 12s - Dynamic hip-hop (shortened for demo)
         ]
 
         return self.test_sequence_timing(dance_actions, "Dance Test")
@@ -205,7 +211,7 @@ class RobotTimingTester:
         print("=" * 60)
 
         categories = {
-            "Dance Actions (Long Duration)": [
+            "Dance Actions (Enhanced Duration)": [
                 'dance_two', 'dance_three', 'dance_four', 'dance_five',
                 'dance_six', 'dance_seven', 'dance_eight', 'dance_nine', 'dance_ten'
             ],

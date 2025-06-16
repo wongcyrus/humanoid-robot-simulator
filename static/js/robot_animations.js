@@ -834,166 +834,490 @@ class RobotAnimator {
 
     // NEW DANCE ANIMATIONS
     animateDanceTwo(progress) {
-        // Energetic dance with arm swings and body movement
+        // Energetic multi-phase dance with 4 distinct sections
         const leftArm = this.robot.parts.leftArm;
         const rightArm = this.robot.parts.rightArm;
         const torso = this.robot.parts.torso;
         const head = this.robot.parts.head;
+        const leftLeg = this.robot.parts.leftLeg;
+        const rightLeg = this.robot.parts.rightLeg;
 
-        if (leftArm && rightArm && torso && head) {
-            const danceTime = progress * Math.PI * 8;
+        if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
+            // Create 4 distinct dance phases
+            const phase = Math.floor(progress * 4) / 4;
+            const phaseProgress = (progress * 4) % 1;
+            const danceTime = phaseProgress * Math.PI * 12; // Increased frequency
 
-            leftArm.rotation.z = Math.sin(danceTime) * 0.8;
-            rightArm.rotation.z = -Math.sin(danceTime + Math.PI / 4) * 0.8;
-            torso.rotation.y = Math.sin(danceTime * 0.5) * 0.3;
-            head.rotation.y = Math.sin(danceTime * 0.3) * 0.2;
+            if (phase < 0.25) {
+                // Phase 1: Fast arm swings
+                leftArm.rotation.z = Math.sin(danceTime * 3) * 0.8;
+                rightArm.rotation.z = -Math.sin(danceTime * 3 + Math.PI / 4) * 0.8;
+                torso.rotation.y = Math.sin(danceTime * 2) * 0.2;
+            } else if (phase < 0.5) {
+                // Phase 2: Rapid body waves
+                leftArm.rotation.x = Math.sin(danceTime * 2.5) * 0.6;
+                rightArm.rotation.x = Math.sin(danceTime * 2.5 + Math.PI) * 0.6;
+                torso.rotation.x = Math.sin(danceTime * 1.5) * 0.3;
+                this.robot.group.position.y = this.robot.position.y + Math.sin(danceTime * 4) * 5;
+            } else if (phase < 0.75) {
+                // Phase 3: Fast jumping and spinning
+                leftArm.rotation.z = Math.PI / 3;
+                rightArm.rotation.z = -Math.PI / 3;
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(danceTime * 5)) * 15;
+                this.robot.group.rotation.y += Math.sin(danceTime * 2) * 0.2;
+            } else {
+                // Phase 4: Quick leg work finale
+                leftLeg.rotation.x = Math.sin(danceTime * 4) * 0.4;
+                rightLeg.rotation.x = -Math.sin(danceTime * 4) * 0.4;
+                leftArm.rotation.z = Math.sin(danceTime * 6) * 0.5;
+                rightArm.rotation.z = -Math.sin(danceTime * 6) * 0.5;
+                torso.rotation.z = Math.sin(danceTime * 3) * 0.3;
+            }
 
-            this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(danceTime * 3)) * 8;
+            head.rotation.y = Math.sin(danceTime * 2.5) * 0.2;
         }
     }
 
     animateDanceThree(progress) {
-        // Smooth flowing dance
+        // Complex flowing dance with 5 distinct movements
         const leftArm = this.robot.parts.leftArm;
         const rightArm = this.robot.parts.rightArm;
         const torso = this.robot.parts.torso;
+        const head = this.robot.parts.head;
+        const leftLeg = this.robot.parts.leftLeg;
+        const rightLeg = this.robot.parts.rightLeg;
 
-        if (leftArm && rightArm && torso) {
-            const flowTime = progress * Math.PI * 6;
+        if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
+            // Create 5 flowing phases
+            const phase = Math.floor(progress * 5) / 5;
+            const phaseProgress = (progress * 5) % 1;
+            const flowTime = phaseProgress * Math.PI * 10; // Increased frequency
 
-            leftArm.rotation.x = Math.sin(flowTime) * 0.6;
-            rightArm.rotation.x = Math.sin(flowTime + Math.PI) * 0.6;
-            leftArm.rotation.z = Math.cos(flowTime) * 0.4;
-            rightArm.rotation.z = -Math.cos(flowTime) * 0.4;
-            torso.rotation.z = Math.sin(flowTime * 0.5) * 0.2;
+            if (phase < 0.2) {
+                // Phase 1: Fast graceful arm waves
+                leftArm.rotation.x = Math.sin(flowTime * 2.5) * 0.7;
+                rightArm.rotation.x = Math.sin(flowTime * 2.5 + Math.PI / 2) * 0.7;
+                leftArm.rotation.z = Math.cos(flowTime * 2) * 0.5;
+                rightArm.rotation.z = -Math.cos(flowTime * 2) * 0.5;
+            } else if (phase < 0.4) {
+                // Phase 2: Rapid torso undulations
+                torso.rotation.x = Math.sin(flowTime * 3) * 0.4;
+                torso.rotation.z = Math.sin(flowTime * 2.5) * 0.3;
+                leftArm.rotation.y = Math.sin(flowTime * 2) * 0.6;
+                rightArm.rotation.y = -Math.sin(flowTime * 2) * 0.6;
+            } else if (phase < 0.6) {
+                // Phase 3: Fast leg extensions
+                leftLeg.rotation.x = Math.sin(flowTime * 3) * 0.5;
+                rightLeg.rotation.x = Math.sin(flowTime * 3 + Math.PI) * 0.5;
+                leftLeg.rotation.z = Math.sin(flowTime * 2) * 0.3;
+                rightLeg.rotation.z = -Math.sin(flowTime * 2) * 0.3;
+            } else if (phase < 0.8) {
+                // Phase 4: Quick full body flow
+                leftArm.rotation.x = Math.sin(flowTime * 4) * 0.8;
+                rightArm.rotation.x = Math.cos(flowTime * 4) * 0.8;
+                torso.rotation.y = Math.sin(flowTime * 2.5) * 0.4;
+                this.robot.group.position.y = this.robot.position.y + Math.sin(flowTime * 3) * 8;
+            } else {
+                // Phase 5: Fast spinning finale
+                leftArm.rotation.z = Math.PI / 4 + Math.sin(flowTime * 8) * 0.3;
+                rightArm.rotation.z = -Math.PI / 4 - Math.sin(flowTime * 8) * 0.3;
+                this.robot.group.rotation.y += 0.25; // Faster rotation
+                head.rotation.x = Math.sin(flowTime * 4) * 0.2;
+            }
         }
     }
 
     animateDanceFour(progress) {
-        // Hip-hop style dance
+        // Dynamic hip-hop dance with 6 distinct moves
         const leftArm = this.robot.parts.leftArm;
         const rightArm = this.robot.parts.rightArm;
         const leftLeg = this.robot.parts.leftLeg;
         const rightLeg = this.robot.parts.rightLeg;
+        const torso = this.robot.parts.torso;
+        const head = this.robot.parts.head;
 
-        if (leftArm && rightArm && leftLeg && rightLeg) {
-            const hipHopTime = progress * Math.PI * 10;
+        if (leftArm && rightArm && leftLeg && rightLeg && torso && head) {
+            // Create 6 hip-hop phases
+            const phase = Math.floor(progress * 6) / 6;
+            const phaseProgress = (progress * 6) % 1;
+            const hipHopTime = phaseProgress * Math.PI * 15; // Much higher frequency
 
-            leftArm.rotation.x = Math.sin(hipHopTime) * 0.7;
-            rightArm.rotation.x = Math.sin(hipHopTime + Math.PI / 2) * 0.7;
-            leftLeg.rotation.x = Math.sin(hipHopTime * 0.5) * 0.3;
-            rightLeg.rotation.x = -Math.sin(hipHopTime * 0.5) * 0.3;
-
-            this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(hipHopTime * 2)) * 6;
+            if (phase < 0.166) {
+                // Phase 1: Fast sharp arm movements
+                leftArm.rotation.x = Math.sin(hipHopTime * 4) * 0.8;
+                rightArm.rotation.x = Math.sin(hipHopTime * 4 + Math.PI) * 0.8;
+                torso.rotation.z = Math.sin(hipHopTime * 2) * 0.2;
+            } else if (phase < 0.333) {
+                // Phase 2: Rapid popping movements
+                const popTime = Math.floor(hipHopTime * 3) % 2;
+                leftArm.rotation.z = popTime * 0.5;
+                rightArm.rotation.z = -popTime * 0.5;
+                torso.rotation.y = popTime * 0.3;
+            } else if (phase < 0.5) {
+                // Phase 3: Fast breakdance prep
+                leftArm.rotation.x = Math.sin(hipHopTime * 3) * 0.9;
+                rightArm.rotation.x = Math.sin(hipHopTime * 3 + Math.PI / 2) * 0.9;
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(hipHopTime * 5)) * 12;
+            } else if (phase < 0.666) {
+                // Phase 4: Rapid leg work
+                leftLeg.rotation.x = Math.sin(hipHopTime * 4) * 0.6;
+                rightLeg.rotation.x = -Math.sin(hipHopTime * 4) * 0.6;
+                leftLeg.rotation.z = Math.sin(hipHopTime * 3) * 0.3;
+                rightLeg.rotation.z = -Math.sin(hipHopTime * 3) * 0.3;
+            } else if (phase < 0.833) {
+                // Phase 5: Fast head spins and arm crosses
+                head.rotation.y += 0.4; // Faster head movement
+                leftArm.rotation.z = Math.sin(hipHopTime * 6) * 0.7;
+                rightArm.rotation.z = -Math.sin(hipHopTime * 6) * 0.7;
+                torso.rotation.x = Math.sin(hipHopTime * 2) * 0.2;
+            } else {
+                // Phase 6: High-energy finale
+                leftArm.rotation.x = Math.sin(hipHopTime * 8) * 1.0;
+                rightArm.rotation.x = Math.sin(hipHopTime * 8 + Math.PI) * 1.0;
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(hipHopTime * 6)) * 15;
+                this.robot.group.rotation.y += Math.sin(hipHopTime * 2) * 0.15;
+            }
         }
     }
 
     animateDanceFive(progress) {
-        // Ballet-inspired graceful dance
+        // Elegant ballet-inspired dance with 4 graceful phases
         const leftArm = this.robot.parts.leftArm;
         const rightArm = this.robot.parts.rightArm;
         const torso = this.robot.parts.torso;
+        const head = this.robot.parts.head;
+        const leftLeg = this.robot.parts.leftLeg;
+        const rightLeg = this.robot.parts.rightLeg;
 
-        if (leftArm && rightArm && torso) {
-            const balletTime = progress * Math.PI * 4;
+        if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
+            // Create 4 ballet phases
+            const phase = Math.floor(progress * 4) / 4;
+            const phaseProgress = (progress * 4) % 1;
+            const balletTime = phaseProgress * Math.PI * 2;
 
-            leftArm.rotation.z = Math.PI / 3 + Math.sin(balletTime) * 0.3;
-            rightArm.rotation.z = -Math.PI / 3 - Math.sin(balletTime) * 0.3;
-            leftArm.rotation.y = Math.sin(balletTime * 0.7) * 0.4;
-            rightArm.rotation.y = -Math.sin(balletTime * 0.7) * 0.4;
-            torso.rotation.y = Math.sin(balletTime * 0.3) * 0.2;
+            if (phase < 0.25) {
+                // Phase 1: Port de bras (arm positions)
+                leftArm.rotation.z = Math.PI / 3 + Math.sin(balletTime) * 0.4;
+                rightArm.rotation.z = -Math.PI / 3 - Math.sin(balletTime) * 0.4;
+                leftArm.rotation.y = Math.sin(balletTime * 0.8) * 0.5;
+                rightArm.rotation.y = -Math.sin(balletTime * 0.8) * 0.5;
+            } else if (phase < 0.5) {
+                // Phase 2: Arabesque-inspired leg extensions
+                leftLeg.rotation.x = Math.sin(balletTime) * 0.6;
+                rightLeg.rotation.x = Math.sin(balletTime + Math.PI) * 0.3;
+                torso.rotation.x = Math.sin(balletTime) * 0.2;
+                leftArm.rotation.x = Math.sin(balletTime) * 0.4;
+                rightArm.rotation.x = -Math.sin(balletTime) * 0.4;
+            } else if (phase < 0.75) {
+                // Phase 3: Pirouette-inspired turns
+                this.robot.group.rotation.y += 0.2;
+                leftArm.rotation.z = Math.PI / 2;
+                rightArm.rotation.z = -Math.PI / 2;
+                head.rotation.y = Math.sin(balletTime * 2) * 0.3;
+                this.robot.group.position.y = this.robot.position.y + Math.sin(balletTime * 3) * 5;
+            } else {
+                // Phase 4: Grand finale with flowing movements
+                leftArm.rotation.x = Math.sin(balletTime * 2) * 0.8;
+                rightArm.rotation.x = Math.cos(balletTime * 2) * 0.8;
+                leftArm.rotation.z = Math.sin(balletTime) * 0.6;
+                rightArm.rotation.z = -Math.sin(balletTime) * 0.6;
+                torso.rotation.y = Math.sin(balletTime * 0.5) * 0.3;
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(balletTime * 2)) * 8;
+            }
         }
     }
 
     animateDanceSix(progress) {
-        // Robotic dance with sharp movements
+        // Precise robotic dance with 5 mechanical phases
         const leftArm = this.robot.parts.leftArm;
         const rightArm = this.robot.parts.rightArm;
         const head = this.robot.parts.head;
+        const torso = this.robot.parts.torso;
+        const leftLeg = this.robot.parts.leftLeg;
+        const rightLeg = this.robot.parts.rightLeg;
 
-        if (leftArm && rightArm && head) {
-            const robotTime = progress * Math.PI * 8;
-            const sharpMove = Math.floor(robotTime) % 2 === 0 ? 1 : -1;
+        if (leftArm && rightArm && head && torso && leftLeg && rightLeg) {
+            // Create 5 robotic phases with precise movements
+            const phase = Math.floor(progress * 5) / 5;
+            const phaseProgress = (progress * 5) % 1;
+            const robotTime = phaseProgress * Math.PI * 16; // Much higher frequency
+            const stepFunction = Math.floor(robotTime * 4) % 2; // Faster sharp steps
 
-            leftArm.rotation.x = sharpMove * 0.5;
-            rightArm.rotation.x = -sharpMove * 0.5;
-            leftArm.rotation.z = sharpMove * 0.3;
-            rightArm.rotation.z = -sharpMove * 0.3;
-            head.rotation.y = sharpMove * 0.3;
+            if (phase < 0.2) {
+                // Phase 1: Fast angular arm movements
+                leftArm.rotation.x = stepFunction * 0.7;
+                rightArm.rotation.x = -stepFunction * 0.7;
+                leftArm.rotation.z = stepFunction * 0.4;
+                rightArm.rotation.z = -stepFunction * 0.4;
+            } else if (phase < 0.4) {
+                // Phase 2: Rapid head scanning movements
+                head.rotation.y = stepFunction * 0.5;
+                head.rotation.x = Math.floor(robotTime * 6) % 2 * 0.3;
+                torso.rotation.y = stepFunction * 0.2;
+            } else if (phase < 0.6) {
+                // Phase 3: Fast geometric leg positions
+                leftLeg.rotation.x = stepFunction * 0.6;
+                rightLeg.rotation.x = -stepFunction * 0.6;
+                leftLeg.rotation.z = Math.floor(robotTime * 8) % 2 * 0.3;
+                rightLeg.rotation.z = -Math.floor(robotTime * 8) % 2 * 0.3;
+            } else if (phase < 0.8) {
+                // Phase 4: Rapid synchronized robotic motions
+                const syncStep = Math.floor(robotTime * 8) % 2;
+                leftArm.rotation.z = syncStep * 0.8;
+                rightArm.rotation.z = -syncStep * 0.8;
+                torso.rotation.z = syncStep * 0.2;
+                this.robot.group.position.y = this.robot.position.y + syncStep * 8;
+            } else {
+                // Phase 5: Fast Matrix-style freeze and unfreeze
+                const freezeStep = Math.floor(robotTime * 12) % 2;
+                if (freezeStep === 0) {
+                    // Freeze in dramatic pose
+                    leftArm.rotation.x = -Math.PI / 3;
+                    rightArm.rotation.x = Math.PI / 3;
+                    leftArm.rotation.z = Math.PI / 4;
+                    rightArm.rotation.z = -Math.PI / 4;
+                    head.rotation.y = 0.3;
+                } else {
+                    // Quick movement burst
+                    leftArm.rotation.x = Math.sin(robotTime * 16) * 0.5;
+                    rightArm.rotation.x = -Math.sin(robotTime * 16) * 0.5;
+                    this.robot.group.rotation.y += 0.15;
+                }
+            }
         }
     }
 
     animateDanceSeven(progress) {
-        // Salsa-style dance
+        // Passionate salsa dance with 5 dynamic phases
         const leftArm = this.robot.parts.leftArm;
         const rightArm = this.robot.parts.rightArm;
         const torso = this.robot.parts.torso;
         const leftLeg = this.robot.parts.leftLeg;
         const rightLeg = this.robot.parts.rightLeg;
+        const head = this.robot.parts.head;
 
-        if (leftArm && rightArm && torso && leftLeg && rightLeg) {
-            const salsaTime = progress * Math.PI * 6;
+        if (leftArm && rightArm && torso && leftLeg && rightLeg && head) {
+            // Create 5 salsa phases
+            const phase = Math.floor(progress * 5) / 5;
+            const phaseProgress = (progress * 5) % 1;
+            const salsaTime = phaseProgress * Math.PI * 3;
 
-            leftArm.rotation.z = Math.sin(salsaTime) * 0.6;
-            rightArm.rotation.z = -Math.sin(salsaTime + Math.PI / 3) * 0.6;
-            torso.rotation.y = Math.sin(salsaTime * 0.8) * 0.4;
-            leftLeg.rotation.x = Math.sin(salsaTime * 2) * 0.2;
-            rightLeg.rotation.x = -Math.sin(salsaTime * 2) * 0.2;
+            if (phase < 0.2) {
+                // Phase 1: Basic salsa steps
+                leftArm.rotation.z = Math.sin(salsaTime * 2) * 0.6;
+                rightArm.rotation.z = -Math.sin(salsaTime * 2 + Math.PI / 3) * 0.6;
+                leftLeg.rotation.x = Math.sin(salsaTime * 3) * 0.3;
+                rightLeg.rotation.x = -Math.sin(salsaTime * 3) * 0.3;
+                torso.rotation.y = Math.sin(salsaTime) * 0.2;
+            } else if (phase < 0.4) {
+                // Phase 2: Hip movements
+                torso.rotation.y = Math.sin(salsaTime * 2) * 0.5;
+                torso.rotation.z = Math.sin(salsaTime * 1.5) * 0.3;
+                leftArm.rotation.y = Math.sin(salsaTime) * 0.4;
+                rightArm.rotation.y = -Math.sin(salsaTime) * 0.4;
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(salsaTime * 2)) * 4;
+            } else if (phase < 0.6) {
+                // Phase 3: Cross body lead
+                leftArm.rotation.x = Math.sin(salsaTime * 2) * 0.7;
+                rightArm.rotation.x = Math.sin(salsaTime * 2 + Math.PI) * 0.7;
+                leftLeg.rotation.z = Math.sin(salsaTime) * 0.4;
+                rightLeg.rotation.z = -Math.sin(salsaTime) * 0.4;
+                head.rotation.y = Math.sin(salsaTime * 1.5) * 0.3;
+            } else if (phase < 0.8) {
+                // Phase 4: Spins and turns
+                this.robot.group.rotation.y += 0.15;
+                leftArm.rotation.z = Math.PI / 3 + Math.sin(salsaTime * 3) * 0.3;
+                rightArm.rotation.z = -Math.PI / 3 - Math.sin(salsaTime * 3) * 0.3;
+                torso.rotation.x = Math.sin(salsaTime) * 0.2;
+                this.robot.group.position.y = this.robot.position.y + Math.sin(salsaTime * 2) * 6;
+            } else {
+                // Phase 5: Dramatic dip finale
+                torso.rotation.x = -0.4; // Lean back
+                leftArm.rotation.x = -Math.PI / 3;
+                rightArm.rotation.x = Math.PI / 3;
+                leftLeg.rotation.x = Math.sin(salsaTime * 4) * 0.5;
+                rightLeg.rotation.x = 0.3; // Support leg
+                head.rotation.x = -0.3;
+            }
         }
     }
 
     animateDanceEight(progress) {
-        // Breakdance-inspired moves
-        const leftArm = this.robot.parts.leftArm;
-        const rightArm = this.robot.parts.rightArm;
-        const torso = this.robot.parts.torso;
-
-        if (leftArm && rightArm && torso) {
-            const breakTime = progress * Math.PI * 12;
-
-            leftArm.rotation.x = Math.sin(breakTime) * 0.8;
-            rightArm.rotation.x = Math.sin(breakTime + Math.PI) * 0.8;
-            torso.rotation.z = Math.sin(breakTime * 0.5) * 0.5;
-
-            this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(breakTime * 4)) * 12;
-        }
-    }
-
-    animateDanceNine(progress) {
-        // Contemporary dance
+        // High-energy breakdance with 6 power moves
         const leftArm = this.robot.parts.leftArm;
         const rightArm = this.robot.parts.rightArm;
         const torso = this.robot.parts.torso;
         const head = this.robot.parts.head;
+        const leftLeg = this.robot.parts.leftLeg;
+        const rightLeg = this.robot.parts.rightLeg;
 
-        if (leftArm && rightArm && torso && head) {
-            const contempoTime = progress * Math.PI * 5;
+        if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
+            // Create 6 breakdance phases
+            const phase = Math.floor(progress * 6) / 6;
+            const phaseProgress = (progress * 6) % 1;
+            const breakTime = phaseProgress * Math.PI * 20; // Very high frequency for breakdance
 
-            leftArm.rotation.x = Math.sin(contempoTime) * 0.7;
-            rightArm.rotation.x = Math.cos(contempoTime) * 0.7;
-            leftArm.rotation.z = Math.sin(contempoTime * 0.7) * 0.5;
-            rightArm.rotation.z = -Math.sin(contempoTime * 0.7) * 0.5;
-            torso.rotation.x = Math.sin(contempoTime * 0.3) * 0.2;
-            head.rotation.x = Math.sin(contempoTime * 0.4) * 0.1;
+            if (phase < 0.166) {
+                // Phase 1: Fast top rock
+                leftArm.rotation.x = Math.sin(breakTime * 5) * 0.8;
+                rightArm.rotation.x = Math.sin(breakTime * 5 + Math.PI) * 0.8;
+                leftLeg.rotation.x = Math.sin(breakTime * 3) * 0.4;
+                rightLeg.rotation.x = -Math.sin(breakTime * 3) * 0.4;
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(breakTime * 4)) * 8;
+            } else if (phase < 0.333) {
+                // Phase 2: Rapid footwork
+                leftLeg.rotation.x = Math.sin(breakTime * 8) * 0.7;
+                rightLeg.rotation.x = Math.sin(breakTime * 8 + Math.PI / 2) * 0.7;
+                leftLeg.rotation.z = Math.sin(breakTime * 6) * 0.5;
+                rightLeg.rotation.z = -Math.sin(breakTime * 6) * 0.5;
+                torso.rotation.z = Math.sin(breakTime * 3) * 0.3;
+            } else if (phase < 0.5) {
+                // Phase 3: Power freeze
+                leftArm.rotation.x = -Math.PI / 2;
+                rightArm.rotation.x = -Math.PI / 2;
+                leftArm.rotation.z = Math.PI / 4;
+                rightArm.rotation.z = -Math.PI / 4;
+                this.robot.group.position.y = this.robot.position.y + 15;
+                head.rotation.x = -0.5;
+            } else if (phase < 0.666) {
+                // Phase 4: Fast windmill simulation
+                leftArm.rotation.x = Math.sin(breakTime * 10) * 1.2;
+                rightArm.rotation.x = Math.sin(breakTime * 10 + Math.PI) * 1.2;
+                torso.rotation.z = Math.sin(breakTime * 6) * 0.8;
+                this.robot.group.rotation.y += 0.35; // Faster rotation
+            } else if (phase < 0.833) {
+                // Phase 5: Rapid head spins
+                head.rotation.y += 0.6; // Much faster head spins
+                leftArm.rotation.z = Math.sin(breakTime * 8) * 0.6;
+                rightArm.rotation.z = -Math.sin(breakTime * 8) * 0.6;
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(breakTime * 6)) * 10;
+            } else {
+                // Phase 6: Explosive freeze pose
+                leftArm.rotation.x = Math.PI / 2;
+                rightArm.rotation.x = Math.PI / 2;
+                leftArm.rotation.z = Math.PI / 3;
+                rightArm.rotation.z = -Math.PI / 3;
+                leftLeg.rotation.x = Math.sin(breakTime * 10) * 0.8;
+                rightLeg.rotation.x = -Math.sin(breakTime * 10) * 0.8;
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(breakTime * 8)) * 18;
+            }
         }
     }
 
-    animateDanceTen(progress) {
-        // Disco dance with spins
+    animateDanceNine(progress) {
+        // Expressive contemporary dance with 6 artistic phases
         const leftArm = this.robot.parts.leftArm;
         const rightArm = this.robot.parts.rightArm;
         const torso = this.robot.parts.torso;
+        const head = this.robot.parts.head;
+        const leftLeg = this.robot.parts.leftLeg;
+        const rightLeg = this.robot.parts.rightLeg;
 
-        if (leftArm && rightArm && torso) {
-            const discoTime = progress * Math.PI * 10;
+        if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
+            // Create 6 contemporary phases
+            const phase = Math.floor(progress * 6) / 6;
+            const phaseProgress = (progress * 6) % 1;
+            const contempoTime = phaseProgress * Math.PI * 2.5;
 
-            leftArm.rotation.z = Math.PI / 4 + Math.sin(discoTime) * 0.5;
-            rightArm.rotation.z = -Math.PI / 4 - Math.sin(discoTime) * 0.5;
-            leftArm.rotation.y = Math.sin(discoTime * 0.8) * 0.3;
-            rightArm.rotation.y = -Math.sin(discoTime * 0.8) * 0.3;
+            if (phase < 0.166) {
+                // Phase 1: Reaching movements
+                leftArm.rotation.x = Math.sin(contempoTime) * 0.8;
+                rightArm.rotation.x = Math.cos(contempoTime) * 0.8;
+                leftArm.rotation.z = Math.sin(contempoTime * 0.7) * 0.5;
+                rightArm.rotation.z = -Math.sin(contempoTime * 0.7) * 0.5;
+                torso.rotation.x = Math.sin(contempoTime * 0.5) * 0.3;
+            } else if (phase < 0.333) {
+                // Phase 2: Floor work simulation
+                torso.rotation.x = Math.sin(contempoTime) * 0.6;
+                leftArm.rotation.y = Math.sin(contempoTime * 1.5) * 0.7;
+                rightArm.rotation.y = -Math.sin(contempoTime * 1.5) * 0.7;
+                this.robot.group.position.y = this.robot.position.y + Math.sin(contempoTime) * 8;
+            } else if (phase < 0.5) {
+                // Phase 3: Contractions and releases
+                torso.rotation.z = Math.sin(contempoTime * 2) * 0.4;
+                leftArm.rotation.x = Math.sin(contempoTime * 3) * 0.9;
+                rightArm.rotation.x = Math.sin(contempoTime * 3 + Math.PI) * 0.9;
+                head.rotation.x = Math.sin(contempoTime) * 0.3;
+            } else if (phase < 0.666) {
+                // Phase 4: Spirals and curves
+                leftArm.rotation.y = Math.sin(contempoTime * 2) * 0.8;
+                rightArm.rotation.y = Math.cos(contempoTime * 2) * 0.8;
+                torso.rotation.y = Math.sin(contempoTime * 1.2) * 0.5;
+                leftLeg.rotation.x = Math.sin(contempoTime) * 0.4;
+                rightLeg.rotation.x = Math.cos(contempoTime) * 0.4;
+                this.robot.group.rotation.y += Math.sin(contempoTime) * 0.05;
+            } else if (phase < 0.833) {
+                // Phase 5: Jump and suspension
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(contempoTime * 2)) * 15;
+                leftArm.rotation.z = Math.PI / 2 + Math.sin(contempoTime) * 0.3;
+                rightArm.rotation.z = -Math.PI / 2 - Math.sin(contempoTime) * 0.3;
+                leftLeg.rotation.x = Math.sin(contempoTime * 3) * 0.6;
+                rightLeg.rotation.x = -Math.sin(contempoTime * 3) * 0.6;
+            } else {
+                // Phase 6: Emotional release finale
+                leftArm.rotation.x = Math.sin(contempoTime * 4) * 1.0;
+                rightArm.rotation.x = Math.cos(contempoTime * 4) * 1.0;
+                torso.rotation.x = Math.sin(contempoTime * 0.8) * 0.4;
+                head.rotation.y = Math.sin(contempoTime * 2) * 0.4;
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(contempoTime * 3)) * 10;
+            }
+        }
+    } animateDanceTen(progress) {
+        // Energetic disco dance with 5 flashy phases
+        const leftArm = this.robot.parts.leftArm;
+        const rightArm = this.robot.parts.rightArm;
+        const torso = this.robot.parts.torso;
+        const head = this.robot.parts.head;
+        const leftLeg = this.robot.parts.leftLeg;
+        const rightLeg = this.robot.parts.rightLeg;
 
-            // Disco spin
-            this.robot.group.rotation.y += 0.1;
+        if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
+            // Create 5 disco phases
+            const phase = Math.floor(progress * 5) / 5;
+            const phaseProgress = (progress * 5) % 1;
+            const discoTime = phaseProgress * Math.PI * 18; // High frequency for disco energy
+
+            if (phase < 0.2) {
+                // Phase 1: Fast disco point
+                leftArm.rotation.z = Math.PI / 4 + Math.sin(discoTime * 4) * 0.3;
+                rightArm.rotation.z = -Math.PI / 4 - Math.sin(discoTime * 4) * 0.3;
+                rightArm.rotation.x = -Math.PI / 3; // Point to the sky
+                leftArm.rotation.y = Math.sin(discoTime * 3) * 0.4;
+                rightArm.rotation.y = -Math.sin(discoTime * 3) * 0.4;
+            } else if (phase < 0.4) {
+                // Phase 2: Fast Travolta moves
+                leftArm.rotation.x = Math.sin(discoTime * 5) * 0.6;
+                rightArm.rotation.x = Math.sin(discoTime * 5 + Math.PI) * 0.6;
+                leftLeg.rotation.x = Math.sin(discoTime * 4) * 0.4;
+                rightLeg.rotation.x = -Math.sin(discoTime * 4) * 0.4;
+                torso.rotation.y = Math.sin(discoTime * 3) * 0.3;
+            } else if (phase < 0.6) {
+                // Phase 3: Rapid disco spins
+                this.robot.group.rotation.y += 0.3; // Faster spins
+                leftArm.rotation.z = Math.PI / 2;
+                rightArm.rotation.z = -Math.PI / 2;
+                leftArm.rotation.x = Math.sin(discoTime * 6) * 0.5;
+                rightArm.rotation.x = -Math.sin(discoTime * 6) * 0.5;
+                this.robot.group.position.y = this.robot.position.y + Math.sin(discoTime * 4) * 6;
+            } else if (phase < 0.8) {
+                // Phase 4: Fast hustle moves
+                leftArm.rotation.y = Math.sin(discoTime * 5) * 0.7;
+                rightArm.rotation.y = -Math.sin(discoTime * 5) * 0.7;
+                leftLeg.rotation.z = Math.sin(discoTime * 3) * 0.3;
+                rightLeg.rotation.z = -Math.sin(discoTime * 3) * 0.3;
+                head.rotation.y = Math.sin(discoTime * 4) * 0.4;
+            } else {
+                // Phase 5: High-energy Saturday Night Fever finale
+                leftArm.rotation.x = -Math.PI / 2; // Point up
+                rightArm.rotation.z = -Math.PI / 2; // Point to side
+                leftArm.rotation.z = Math.sin(discoTime * 8) * 0.3;
+                this.robot.group.rotation.y += 0.25; // Even faster spins
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(discoTime * 6)) * 12;
+
+                // Add extra disco flair
+                torso.rotation.z = Math.sin(discoTime * 5) * 0.2;
+                head.rotation.x = Math.sin(discoTime * 3) * 0.2;
+            }
         }
     }
 
