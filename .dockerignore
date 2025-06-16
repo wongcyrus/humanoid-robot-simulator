@@ -41,3 +41,4 @@ README.md
 
 # Shell scripts (since we're using the Python entry point)
 *.sh
+test_commands/*

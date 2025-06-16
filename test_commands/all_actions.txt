@@ -1,0 +1,130 @@
+# Complete List of Available Robot Actions
+
+## Basic Actions
+- idle
+- dance
+- wave
+- bow
+- kung_fu
+- kick
+- punch
+- jump
+- push_ups
+- sit_ups
+- jumping_jacks
+- celebrate
+- think
+
+## Movement Actions
+- go_forward
+- go_backward
+- turn_left
+- turn_right
+- stepping
+- twist
+- right_move_fast
+- left_move_fast
+- back_fast
+
+## Dance Variations
+- dance_two
+- dance_three
+- dance_four
+- dance_five
+- dance_six
+- dance_seven
+- dance_eight
+- dance_nine
+- dance_ten
+
+## Standing Actions
+- stand_up_back
+- stand_up_front
+
+## Combat Actions
+- right_kick
+- left_kick
+- right_uppercut
+- left_uppercut
+- wing_chun
+- right_shot_fast
+- left_shot_fast
+
+## Exercise Actions
+- chest
+- squat_up
+- squat
+- weightlifting
+
+## Action Durations (approximate)
+
+### Long Duration Actions (Dance)
+- dance_two: 52 seconds
+- dance_three: 70 seconds
+- dance_four: 83 seconds
+- dance_five: 59 seconds
+- dance_six: 69 seconds
+- dance_seven: 67 seconds
+- dance_eight: 85 seconds
+- dance_nine: 84 seconds
+- dance_ten: 85 seconds
+
+### Medium Duration Actions (Exercise)
+- chest: 9 seconds
+- sit_ups: 12 seconds
+- push_ups: 9 seconds
+- weightlifting: 9 seconds
+- squat_up: 6 seconds
+
+### Short Duration Actions (Movement)
+- stepping: 3 seconds
+- twist: 4 seconds
+- right_move_fast: 3 seconds
+- left_move_fast: 3 seconds
+- back_fast: 4.5 seconds
+- go_forward: 3.5 seconds
+- turn_right: 4 seconds
+- turn_left: 4 seconds
+
+### Very Short Duration Actions (Combat)
+- right_kick: 2 seconds
+- left_kick: 2 seconds
+- right_uppercut: 2 seconds
+- left_uppercut: 2 seconds
+- wing_chun: 2 seconds
+- kung_fu: 2 seconds
+- squat: 1 second
+
+### Special Actions
+- stand_up_back: 5 seconds
+- stand_up_front: 5 seconds
+- right_shot_fast: 4 seconds
+- left_shot_fast: 4 seconds
+- bow: 4 seconds
+- wave: 3.5 seconds
+- default (for unlisted actions): 2 seconds
+
+## Usage Examples
+
+### Individual Robot Control
+```bash
+curl -X POST "http://localhost:5000/run_action/robot_1?session_key=YOUR_SESSION" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "ACTION_NAME"}'
+```
+
+### All Robots Control
+```bash
+curl -X POST "http://localhost:5000/run_action/all?session_key=YOUR_SESSION" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "ACTION_NAME"}'
+```
+
+Replace `ACTION_NAME` with any action from the list above.
+Replace `YOUR_SESSION` with your actual session key (e.g., cywong@vtc.edu.hk).
+
+## Tips
+- Wait for long duration actions (dances) to complete before sending new commands
+- Use "idle" action to stop any ongoing animation
+- Actions are case-sensitive - use exactly as listed above
+- All robots will perform the action simultaneously when using "/all" endpoint
