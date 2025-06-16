@@ -555,7 +555,7 @@ class HumanoidSimulator {
 
     resizeCanvas() {
         if (this.scene3d) {
-            console.log('🖼️ Resizing 3D canvas to fit new viewport dimensions');
+            // console.log('🖼️ Resizing 3D canvas to fit new viewport dimensions');
 
             // Get the canvas element and its container to check dimensions
             const canvas = document.getElementById('three-canvas');
@@ -566,8 +566,8 @@ class HumanoidSimulator {
                 const containerWidth = viewportContainer.clientWidth;
                 const containerHeight = viewportContainer.clientHeight;
 
-                console.log(`📏 Viewport container size: ${containerWidth}x${containerHeight}`);
-                console.log(`📏 Canvas current size: ${canvas.clientWidth}x${canvas.clientHeight}`);
+                // console.log(`📏 Viewport container size: ${containerWidth}x${containerHeight}`);
+                // console.log(`📏 Canvas current size: ${canvas.clientWidth}x${canvas.clientHeight}`);
 
                 // Force the canvas to match container dimensions
                 canvas.style.width = containerWidth + 'px';
@@ -576,7 +576,7 @@ class HumanoidSimulator {
                 // Wait a frame for the DOM to update, then resize the 3D scene
                 requestAnimationFrame(() => {
                     this.scene3d.onWindowResize();
-                    console.log(`✅ Canvas resized to: ${canvas.clientWidth}x${canvas.clientHeight}`);
+                    // console.log(`✅ Canvas resized to: ${canvas.clientWidth}x${canvas.clientHeight}`);
                 });
             }
         } else {
@@ -586,7 +586,7 @@ class HumanoidSimulator {
 
     forceCanvasResize() {
         // Force a canvas resize by triggering it multiple times if needed
-        console.log('🔄 Forcing canvas resize...');
+        // console.log('🔄 Forcing canvas resize...');
 
         // Immediate resize
         this.resizeCanvas();

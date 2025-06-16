@@ -423,8 +423,8 @@ class Scene3D {
         // Handle resize
         window.addEventListener('resize', () => this.onWindowResize());
 
-        console.log('📷 Camera positioned at:', this.camera.position);
-        console.log('🖥️ Renderer initialized');
+        // console.log('📷 Camera positioned at:', this.camera.position);
+        // console.log('🖥️ Renderer initialized');
     }
 
     setupLighting() {
@@ -640,7 +640,7 @@ class Scene3D {
         const width = this.canvas.clientWidth;
         const height = this.canvas.clientHeight;
 
-        console.log(`🔧 Robot3D resize: ${width}x${height}`);
+        // console.log(`🔧 Robot3D resize: ${width}x${height}`);
 
         // Update camera aspect ratio
         this.camera.aspect = width / height;
