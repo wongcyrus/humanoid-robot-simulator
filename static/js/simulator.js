@@ -392,6 +392,14 @@ class HumanoidSimulator {
             });
         }
 
+        // Panel toggle button
+        const togglePanelBtn = document.getElementById('toggle-panel');
+        if (togglePanelBtn) {
+            togglePanelBtn.addEventListener('click', () => {
+                this.toggleControlPanel();
+            });
+        }
+
         // Action buttons - ENHANCED with immediate visual feedback
         const actionButtons = document.querySelectorAll('.action-btn');
         actionButtons.forEach(button => {
@@ -479,6 +487,33 @@ class HumanoidSimulator {
         } else {
             console.log('⚠️ WebSocket not connected, cannot reset session');
             this.showNotification('Cannot reset session - not connected to server', 'error');
+        }
+    }
+
+    toggleControlPanel() {
+        const controlPanel = document.getElementById('control-panel');
+        const viewportContainer = document.getElementById('viewport-container');
+        const toggleBtn = document.getElementById('toggle-panel');
+
+        if (!controlPanel || !viewportContainer || !toggleBtn) {
+            console.error('❌ Required elements not found for panel toggle');
+            return;
+        }
+
+        const isHidden = controlPanel.classList.contains('hidden');
+
+        if (isHidden) {
+            // Show the panel
+            controlPanel.classList.remove('hidden');
+            viewportContainer.classList.remove('panel-hidden');
+            toggleBtn.textContent = '📋 Hide Panel';
+            console.log('👁️ Control panel shown');
+        } else {
+            // Hide the panel
+            controlPanel.classList.add('hidden');
+            viewportContainer.classList.add('panel-hidden');
+            toggleBtn.textContent = '📋 Show Panel';
+            console.log('🙈 Control panel hidden');
         }
     }
 
