@@ -3,6 +3,11 @@
 
 from flask_socketio import emit, disconnect, join_room, leave_room
 from flask import request
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class WebSocketHandlers:
@@ -14,17 +19,20 @@ class WebSocketHandlers:
     def setup_handlers(self):
         @self.socketio.on('connect')
         def handle_connect():
-            pass
+            logger.debug(f"🔌 Client connected: {request.sid}")
 
         @self.socketio.on('disconnect')
         def handle_disconnect():
-            pass
+            logger.debug(f"🔌 Client disconnected: {request.sid}")
 
         @self.socketio.on('join_session')
         def handle_join_session(data):
+            logger.debug(f"🔌 Handling join_session event with data: {data}")
             session_key = data.get('session_key')
             if not session_key:
-                emit('error', {'message': 'Session key required'})
+                logger.debug("❌ Emitting 'error' event: Session key required")
+                emit(
+                    'error', {'message': 'Session key required for join_session event'})
                 disconnect()
                 return
 
@@ -36,25 +44,36 @@ class WebSocketHandlers:
             robots = self.sessions_manager.get_session_robots(session_key)
             robot_states = {robot_id: robot.to_dict()
                             for robot_id, robot in robots.items()}
+            logger.debug(
+                f"✅ Emitting 'robot_states' event with {len(robot_states)} robots")
             emit('robot_states', robot_states)
 
         @self.socketio.on('get_robot_states')
         def handle_get_robot_states(data=None):
+            logger.debug(
+                f"📡 Handling get_robot_states event with data: {data}")
             session_key = data.get('session_key') if data else None
             if not session_key:
-                emit('error', {'message': 'Session key required'})
+                logger.debug("❌ Emitting 'error' event: Session key required")
+                emit(
+                    'error', {'message': 'Session key required for get_robot_states event'})
                 return
 
             robots = self.sessions_manager.get_session_robots(session_key)
             robot_states = {robot_id: robot.to_dict()
                             for robot_id, robot in robots.items()}
+            logger.debug(
+                f"✅ Emitting 'robot_states' event with {len(robot_states)} robots")
             emit('robot_states', robot_states)
 
         @self.socketio.on('robot_action')
         def handle_robot_action(data):
+            logger.debug(f"🤖 Handling robot_action event with data: {data}")
             session_key = data.get('session_key')
             if not session_key:
-                emit('error', {'message': 'Session key required'})
+                logger.debug("❌ Emitting 'error' event: Session key required")
+                emit(
+                    'error', {'message': 'Session key required for robot_action event'})
                 return
 
             robot_id = data.get('robot_id', 'all')
@@ -76,20 +95,29 @@ class WebSocketHandlers:
                     result = {'status': 'error', 'robot_id': robot_id,
                               'message': f'Robot {robot_id} not found'}
 
+                logger.debug(f"✅ Emitting 'action_result' event: {result}")
                 emit('action_result', result)
                 robot_states = {robot_id: robot.to_dict()
                                 for robot_id, robot in robots.items()}
+                logger.debug(
+                    f"📡 Broadcasting 'robot_states' event to session_{session_key} with {len(robot_states)} robots")
                 self.socketio.emit('robot_states', robot_states,
                                    room=f"session_{session_key}")
 
             except Exception as e:
-                emit('action_result', {'status': 'error', 'message': str(e)})
+                error_result = {'status': 'error', 'message': str(e)}
+                logger.debug(
+                    f"❌ Emitting 'action_result' error event: {error_result}")
+                emit('action_result', error_result)
 
         @self.socketio.on('reset_session')
         def handle_reset_session(data):
+            logger.debug(f"🔄 Handling reset_session event with data: {data}")
             session_key = data.get('session_key')
             if not session_key:
-                emit('error', {'message': 'Session key required'})
+                logger.debug("❌ Emitting 'error' event: Session key required")
+                emit(
+                    'error', {'message': 'Session key required for reset_session event'})
                 return
 
             try:
@@ -99,9 +127,15 @@ class WebSocketHandlers:
 
                 result = {'status': 'success',
                           'message': 'Session reset successfully'}
+                logger.debug(f"✅ Emitting 'reset_result' event: {result}")
                 emit('reset_result', result)
+                logger.debug(
+                    f"📡 Broadcasting 'robot_states' event to session_{session_key} with {len(robot_states)} robots")
                 self.socketio.emit('robot_states', robot_states,
                                    room=f"session_{session_key}")
 
             except Exception as e:
-                emit('reset_result', {'status': 'error', 'message': str(e)})
+                error_result = {'status': 'error', 'message': str(e)}
+                logger.debug(
+                    f"❌ Emitting 'reset_result' error event: {error_result}")
+                emit('reset_result', error_result)

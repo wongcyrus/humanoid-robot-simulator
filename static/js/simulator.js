@@ -994,8 +994,10 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden && window.simulator) {
         console.log('👁️ Page visible, refreshing robots...');
-        if (window.simulator.socket && window.simulator.isConnected) {
-            window.simulator.socket.emit('get_robot_states');
+        if (window.simulator.socket && window.simulator.isConnected && window.simulator.sessionKey) {
+            window.simulator.socket.emit('get_robot_states', {
+                session_key: window.simulator.sessionKey
+            });
         }
     }
 });

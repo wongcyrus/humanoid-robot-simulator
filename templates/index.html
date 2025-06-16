@@ -389,8 +389,10 @@
             console.log('🔄 Force refreshing robots...');
             if (window.simulator) {
                 window.simulator.addTestRobots();
-                if (window.simulator.socket && window.simulator.isConnected) {
-                    window.simulator.socket.emit('get_robot_states');
+                if (window.simulator.socket && window.simulator.isConnected && window.simulator.sessionKey) {
+                    window.simulator.socket.emit('get_robot_states', {
+                        session_key: window.simulator.sessionKey
+                    });
                 }
             }
         });
