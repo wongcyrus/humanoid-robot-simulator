@@ -627,9 +627,20 @@ class Scene3D {
     }
 
     onWindowResize() {
-        this.camera.aspect = this.canvas.clientWidth / this.canvas.clientHeight;
+        const width = this.canvas.clientWidth;
+        const height = this.canvas.clientHeight;
+
+        console.log(`🔧 Robot3D resize: ${width}x${height}`);
+
+        // Update camera aspect ratio
+        this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
+
+        // Resize renderer - this is crucial for proper scaling
+        this.renderer.setSize(width, height, false);
+
+        // Force a render to see the changes immediately
+        this.renderer.render(this.scene, this.camera);
     }
 
     animate() {

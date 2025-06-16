@@ -17,6 +17,9 @@ class HumanoidSimulator {
         this.actionQueue = [];
         this.isProcessingQueue = false;
 
+        // Resize debouncing
+        this.resizeTimeout = null;
+
         // Action duration mapping (exact timing as specified)
         this.actionDurations = {
             // Dance actions (long durations)
@@ -101,6 +104,9 @@ class HumanoidSimulator {
         // Setup UI event listeners
         this.setupUIEvents();
 
+        // Start periodic canvas size checking
+        this.startCanvasSizeMonitoring();
+
         // Hide loading screen
         setTimeout(() => {
             const loadingScreen = document.getElementById('loading-screen');
@@ -149,6 +155,12 @@ class HumanoidSimulator {
         }
 
         this.scene3d = new Scene3D(canvas);
+
+        // Initial canvas resize to ensure proper dimensions
+        setTimeout(() => {
+            this.resizeCanvas();
+        }, 100);
+
         console.log('✅ 3D scene initialized');
     }
 
@@ -437,6 +449,25 @@ class HumanoidSimulator {
             });
         }
 
+        // Window resize event listener with debouncing
+        window.addEventListener('resize', () => {
+            if (this.resizeTimeout) {
+                clearTimeout(this.resizeTimeout);
+            }
+            this.resizeTimeout = setTimeout(() => {
+                console.log('🖼️ Window resized, updating canvas dimensions');
+                this.resizeCanvas();
+            }, 150); // Debounce resize events
+        });
+
+        // Handle orientation change on mobile devices
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                console.log('📱 Orientation changed, updating canvas dimensions');
+                this.resizeCanvas();
+            }, 500); // Delay for orientation change to complete
+        });
+
         console.log('✅ UI events setup complete');
     }
 
@@ -515,6 +546,97 @@ class HumanoidSimulator {
             toggleBtn.textContent = '📋 Show Panel';
             console.log('🙈 Control panel hidden');
         }
+
+        // Trigger canvas resize after animation completes
+        setTimeout(() => {
+            this.forceCanvasResize();
+        }, 300); // Match the CSS transition duration
+    }
+
+    resizeCanvas() {
+        if (this.scene3d) {
+            console.log('🖼️ Resizing 3D canvas to fit new viewport dimensions');
+
+            // Get the canvas element and its container to check dimensions
+            const canvas = document.getElementById('three-canvas');
+            const viewportContainer = document.getElementById('viewport-container');
+
+            if (canvas && viewportContainer) {
+                // Get the actual container dimensions
+                const containerWidth = viewportContainer.clientWidth;
+                const containerHeight = viewportContainer.clientHeight;
+
+                console.log(`📏 Viewport container size: ${containerWidth}x${containerHeight}`);
+                console.log(`📏 Canvas current size: ${canvas.clientWidth}x${canvas.clientHeight}`);
+
+                // Force the canvas to match container dimensions
+                canvas.style.width = containerWidth + 'px';
+                canvas.style.height = containerHeight + 'px';
+
+                // Wait a frame for the DOM to update, then resize the 3D scene
+                requestAnimationFrame(() => {
+                    this.scene3d.onWindowResize();
+                    console.log(`✅ Canvas resized to: ${canvas.clientWidth}x${canvas.clientHeight}`);
+                });
+            }
+        } else {
+            console.warn('⚠️ Scene3D not available for resize');
+        }
+    }
+
+    forceCanvasResize() {
+        // Force a canvas resize by triggering it multiple times if needed
+        console.log('🔄 Forcing canvas resize...');
+
+        // Immediate resize
+        this.resizeCanvas();
+
+        // Additional resize calls with increasing delays to handle CSS transitions
+        setTimeout(() => {
+            this.resizeCanvas();
+        }, 50);
+
+        setTimeout(() => {
+            this.resizeCanvas();
+        }, 150);
+
+        // Final resize after transition should be complete
+        setTimeout(() => {
+            this.resizeCanvas();
+        }, 350);
+    }
+
+    checkAndFixCanvasSize() {
+        // Utility method to check if canvas size matches container and fix if needed
+        const canvas = document.getElementById('three-canvas');
+        const viewportContainer = document.getElementById('viewport-container');
+
+        if (!canvas || !viewportContainer) return;
+
+        const containerWidth = viewportContainer.clientWidth;
+        const containerHeight = viewportContainer.clientHeight;
+        const canvasWidth = canvas.clientWidth;
+        const canvasHeight = canvas.clientHeight;
+
+        // Check if sizes don't match (with small tolerance for rounding)
+        if (Math.abs(containerWidth - canvasWidth) > 2 || Math.abs(containerHeight - canvasHeight) > 2) {
+            console.log(`🔧 Canvas size mismatch detected. Container: ${containerWidth}x${containerHeight}, Canvas: ${canvasWidth}x${canvasHeight}`);
+            this.forceCanvasResize();
+            return true; // Resize was needed
+        }
+
+        return false; // No resize needed
+    }
+
+    startCanvasSizeMonitoring() {
+        // Periodically check if canvas size matches container and fix if needed
+        setInterval(() => {
+            if (this.scene3d) {
+                this.checkAndFixCanvasSize();
+            }
+        }, 1000); // Check every second
+
+        console.log('📏 Canvas size monitoring started');
     }
 
     handleActionResult(result) {
