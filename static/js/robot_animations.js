@@ -324,25 +324,39 @@ class RobotAnimator {
             // COMPLETE PUSH-UP SEQUENCE: Get down -> Do push-ups -> Stand up
             // WITH FORWARD MOVEMENT IN FACING DIRECTION
 
-            // Get robot's current facing direction (use stored rotation from animation start)
-            const currentRotation = this.animationStartRotation;
+            // Get robot's current facing direction (use current rotation, not initial)
+            const currentRotation = this.robot.group.rotation.y;
             const moveDistance = 20; // Total distance to move during push-ups
-            const currentMove = progress * moveDistance;
-
-            // Calculate forward direction based on rotation
-            const forwardX = Math.sin(currentRotation) * currentMove;
-            const forwardZ = Math.cos(currentRotation) * currentMove;
-
-            // Apply movement in the facing direction throughout the animation
-            this.robot.group.position.x = this.robot.position.x + forwardX;
-            this.robot.group.position.z = this.robot.position.z + forwardZ;
 
             if (progress < 0.2) {
                 // Phase 1: Getting down to push-up position (0-20%)
+                // Move forward while getting down - this is the "getting down direction"
                 const getDownProgress = progress / 0.2;
+                const currentMove = getDownProgress * moveDistance;
+
+                // Calculate forward direction based on current rotation
+                const forwardX = Math.sin(currentRotation) * currentMove;
+                const forwardZ = Math.cos(currentRotation) * currentMove;
+
+                // Apply movement in the facing direction during getting down
+                this.robot.group.position.x = this.robot.position.x + forwardX;
+                this.robot.group.position.z = this.robot.position.z + forwardZ;
 
                 this.robot.group.position.y = this.robot.position.y - (25 * getDownProgress);
+
+                // CORRECTED: Proper laying down in facing direction
+                // The key insight: we need to apply rotations in the correct order
+                // and use the robot's local coordinate system
+
+                // First maintain the facing direction (Y rotation)
+                this.robot.group.rotation.y = currentRotation;
+
+                // Then apply the forward pitch in the robot's local coordinate system
+                // When facing different directions, the "forward tilt" needs to be
+                // applied after the Y rotation is set
+                this.robot.group.rotation.order = 'YXZ'; // Apply Y first, then X, then Z
                 this.robot.group.rotation.x = (Math.PI / 2) * getDownProgress;
+                this.robot.group.rotation.z = 0;
 
                 // Arms moving to support position
                 leftArm.rotation.x = (-Math.PI / 3) * getDownProgress;
@@ -354,9 +368,20 @@ class RobotAnimator {
                 // Phase 2: Doing push-ups (20-80%)
                 const pushUpProgress = (progress - 0.2) / 0.6;
 
+                // Maintain the position reached at the end of Phase 1
+                const forwardX = Math.sin(currentRotation) * moveDistance;
+                const forwardZ = Math.cos(currentRotation) * moveDistance;
+                this.robot.group.position.x = this.robot.position.x + forwardX;
+                this.robot.group.position.z = this.robot.position.z + forwardZ;
+
                 // Robot in full push-up position
                 this.robot.group.position.y = this.robot.position.y - 25;
+
+                // Apply same rotation order as Phase 1
+                this.robot.group.rotation.order = 'YXZ';
+                this.robot.group.rotation.y = currentRotation; // Maintain facing direction  
                 this.robot.group.rotation.x = Math.PI / 2;
+                this.robot.group.rotation.z = 0;
 
                 // Push-up motion - up and down
                 const pushUpCycle = pushUpProgress * Math.PI * 4; // 4 push-ups
@@ -383,9 +408,20 @@ class RobotAnimator {
                 const standUpProgress = (progress - 0.8) / 0.2;
                 const reverseProgress = 1 - standUpProgress;
 
+                // Maintain the forward position reached during Phase 1
+                const forwardX = Math.sin(currentRotation) * moveDistance;
+                const forwardZ = Math.cos(currentRotation) * moveDistance;
+                this.robot.group.position.x = this.robot.position.x + forwardX;
+                this.robot.group.position.z = this.robot.position.z + forwardZ;
+
                 // Gradually return to standing position
                 this.robot.group.position.y = this.robot.position.y - (25 * reverseProgress);
+
+                // Apply same rotation order as other phases
+                this.robot.group.rotation.order = 'YXZ';
+                this.robot.group.rotation.y = currentRotation; // Maintain facing direction
                 this.robot.group.rotation.x = (Math.PI / 2) * reverseProgress;
+                this.robot.group.rotation.z = 0;
 
                 // Arms returning to normal position
                 leftArm.rotation.x = (-Math.PI / 3) * reverseProgress;
