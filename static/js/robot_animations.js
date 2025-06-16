@@ -608,15 +608,14 @@ class RobotAnimator {
             torso.rotation.z = Math.sin(progress * Math.PI) * 0.2; // Lean left
         }
 
-        // CORRECTED: Turn left (counterclockwise = positive Y rotation)
-        const turnAngle = Math.PI / 2; // 90 degrees counterclockwise
+        // Turn left 90 degrees (counterclockwise = positive Y rotation)
+        const turnAngle = Math.PI / 2; // 90 degrees only
         const currentTurn = progress * turnAngle;
 
-        // Add to existing rotation instead of replacing
-        const startRotation = this.robot.rotation.y || 0;
-        this.robot.group.rotation.y = startRotation + currentTurn;
+        // Use the animation start rotation as base
+        this.robot.group.rotation.y = this.animationStartRotation + currentTurn;
 
-        console.log(`🔄 ${this.robot.robotId} turn left: rotation=${this.robot.group.rotation.y}`);
+        console.log(`🔄 ${this.robot.robotId} turn left: start=${this.animationStartRotation}, current=${this.robot.group.rotation.y}, progress=${progress}`);
     }
 
     animateTurnRight(progress) {
@@ -628,15 +627,14 @@ class RobotAnimator {
             torso.rotation.z = -Math.sin(progress * Math.PI) * 0.2; // Lean right
         }
 
-        // CORRECTED: Turn right (clockwise = negative Y rotation)
-        const turnAngle = -Math.PI / 2; // 90 degrees clockwise
+        // Turn right 90 degrees (clockwise = negative Y rotation)
+        const turnAngle = -Math.PI / 2; // 90 degrees only
         const currentTurn = progress * turnAngle;
 
-        // Add to existing rotation instead of replacing
-        const startRotation = this.robot.rotation.y || 0;
-        this.robot.group.rotation.y = startRotation + currentTurn;
+        // Use the animation start rotation as base
+        this.robot.group.rotation.y = this.animationStartRotation + currentTurn;
 
-        console.log(`🔄 ${this.robot.robotId} turn right: rotation=${this.robot.group.rotation.y}`);
+        console.log(`🔄 ${this.robot.robotId} turn right: start=${this.animationStartRotation}, current=${this.robot.group.rotation.y}, progress=${progress}`);
     }
 
     animateSitUps(progress) {
