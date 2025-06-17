@@ -167,7 +167,7 @@ class Robot3D {
         this.group.add(this.parts.torso);
 
         // ARMS - Create as groups for better animation
-        // LEFT ARM
+        // LEFT ARM (robot's anatomical left)
         this.parts.leftArm = new THREE.Group();
         const leftArmMesh = new THREE.Mesh(new THREE.BoxGeometry(6, 20, 6), bodyMaterial);
         leftArmMesh.position.set(0, -10, 0);
@@ -177,7 +177,7 @@ class Robot3D {
         this.parts.leftArm.position.set(-12, 20, 0);
         this.group.add(this.parts.leftArm);
 
-        // RIGHT ARM
+        // RIGHT ARM (robot's anatomical right)
         this.parts.rightArm = new THREE.Group();
         const rightArmMesh = new THREE.Mesh(new THREE.BoxGeometry(6, 20, 6), bodyMaterial);
         rightArmMesh.position.set(0, -10, 0);
@@ -188,7 +188,7 @@ class Robot3D {
         this.group.add(this.parts.rightArm);
 
         // LEGS - Create as groups for better animation
-        // LEFT LEG
+        // LEFT LEG (robot's anatomical left)
         this.parts.leftLeg = new THREE.Group();
         const leftLegMesh = new THREE.Mesh(new THREE.BoxGeometry(8, 25, 8), bodyMaterial);
         leftLegMesh.position.set(0, -12.5, 0);
@@ -198,7 +198,7 @@ class Robot3D {
         this.parts.leftLeg.position.set(-6, -5, 0);
         this.group.add(this.parts.leftLeg);
 
-        // RIGHT LEG
+        // RIGHT LEG (robot's anatomical right)
         this.parts.rightLeg = new THREE.Group();
         const rightLegMesh = new THREE.Mesh(new THREE.BoxGeometry(8, 25, 8), bodyMaterial);
         rightLegMesh.position.set(0, -12.5, 0);

@@ -1,6 +1,11 @@
 /**
- * Robot Animation System - CORRECTED MOVEMENT
- * Fixed turn right and forward movement directions
+ * Robot Animation System - CORRECTED MOVEMENT AND USER PERSPECTIVE
+ * Fixed all movement and turning directions to be relative to robot's facing direction
+ * Fixed left/right actions to match user's viewing perspective (as if controlling from behind robot)
+ * - Turn left: negative Y rotation (clockwise)
+ * - Turn right: positive Y rotation (counterclockwise)
+ * - Left/right movements: properly calculated relative to facing direction
+ * - Left/right body actions: mapped to user's perspective (user's left = robot's right, etc.)
  */
 
 class RobotAnimator {
@@ -219,10 +224,10 @@ class RobotAnimator {
                 this.animateTwist(progress);
                 break;
             case 'right_move_fast':
-                this.animateRightMoveFast(progress);
+                this.animateLeftMoveFast(progress); // User's right = robot's left
                 break;
             case 'left_move_fast':
-                this.animateLeftMoveFast(progress);
+                this.animateRightMoveFast(progress); // User's left = robot's right
                 break;
             case 'back_fast':
                 this.animateBackFast(progress);
@@ -236,27 +241,27 @@ class RobotAnimator {
                 this.animateStandUpFront(progress);
                 break;
 
-            // NEW COMBAT ACTIONS
+            // NEW COMBAT ACTIONS (swapped for user perspective)
             case 'right_kick':
-                this.animateRightKick(progress);
+                this.animateLeftKick(progress); // User's right = robot's left
                 break;
             case 'left_kick':
-                this.animateLeftKick(progress);
+                this.animateRightKick(progress); // User's left = robot's right
                 break;
             case 'right_uppercut':
-                this.animateRightUppercut(progress);
+                this.animateLeftUppercut(progress); // User's right = robot's left
                 break;
             case 'left_uppercut':
-                this.animateLeftUppercut(progress);
+                this.animateRightUppercut(progress); // User's left = robot's right
                 break;
             case 'wing_chun':
                 this.animateWingChun(progress);
                 break;
             case 'right_shot_fast':
-                this.animateRightShotFast(progress);
+                this.animateLeftShotFast(progress); // User's right = robot's left
                 break;
             case 'left_shot_fast':
-                this.animateLeftShotFast(progress);
+                this.animateRightShotFast(progress); // User's left = robot's right
                 break;
 
             // NEW EXERCISE ACTIONS
@@ -608,8 +613,8 @@ class RobotAnimator {
             torso.rotation.z = Math.sin(progress * Math.PI) * 0.2; // Lean left
         }
 
-        // Turn left 90 degrees (counterclockwise = positive Y rotation)
-        const turnAngle = Math.PI / 2; // 90 degrees only
+        // Turn left 90 degrees (clockwise = negative Y rotation)
+        const turnAngle = -Math.PI / 2; // 90 degrees only
         const currentTurn = progress * turnAngle;
 
         // Use the animation start rotation as base
@@ -627,8 +632,8 @@ class RobotAnimator {
             torso.rotation.z = -Math.sin(progress * Math.PI) * 0.2; // Lean right
         }
 
-        // Turn right 90 degrees (clockwise = negative Y rotation)
-        const turnAngle = -Math.PI / 2; // 90 degrees only
+        // Turn right 90 degrees (counterclockwise = positive Y rotation)
+        const turnAngle = Math.PI / 2; // 90 degrees only
         const currentTurn = progress * turnAngle;
 
         // Use the animation start rotation as base
@@ -654,7 +659,11 @@ class RobotAnimator {
                 // Phase 1: Getting down to lying position (0-15%)
                 const lieDownProgress = progress / 0.15;
 
-                this.robot.group.position.y = this.robot.position.y - (30 * lieDownProgress);
+                // Lower robot to lie on floor (not penetrate it)
+                this.robot.group.position.y = this.robot.position.y - (15 * lieDownProgress);
+
+                // Rotate robot to lie flat on back (facing ceiling)
+                this.robot.group.rotation.x = (-Math.PI / 2) * lieDownProgress;
 
                 // Arms moving to behind head position
                 leftArm.rotation.x = (-Math.PI / 2) * lieDownProgress;
@@ -662,57 +671,62 @@ class RobotAnimator {
                 leftArm.rotation.z = (Math.PI / 4) * lieDownProgress;
                 rightArm.rotation.z = (-Math.PI / 4) * lieDownProgress;
 
-                // Legs bending
-                leftLeg.rotation.x = (Math.PI / 3) * lieDownProgress;
-                rightLeg.rotation.x = (Math.PI / 3) * lieDownProgress;
+                // Legs flat for lying position
+                leftLeg.rotation.x = (Math.PI / 6) * lieDownProgress;
+                rightLeg.rotation.x = (Math.PI / 6) * lieDownProgress;
 
             } else if (progress < 0.85) {
-                // Phase 2: Doing sit-ups (15-85%)
+                // Phase 2: Doing sit-ups while lying on floor (15-85%)
                 const sitUpProgress = (progress - 0.15) / 0.7;
 
-                // Robot lying on floor
-                this.robot.group.position.y = this.robot.position.y - 30;
-                this.robot.group.rotation.x = 0;
+                // Robot lying on floor (not penetrating, facing ceiling)
+                this.robot.group.position.y = this.robot.position.y - 15;
+                this.robot.group.rotation.x = -Math.PI / 2; // Lying flat on back, facing ceiling
 
-                // Sit-up motion - torso rising up and down
-                const sitUpCycle = sitUpProgress * Math.PI * 4; // 4 sit-ups
-                const sitUpAngle = Math.abs(Math.sin(sitUpCycle)) * (Math.PI / 3);
+                // Sit-up motion - only torso and head rise up and down
+                const sitUpCycle = sitUpProgress * Math.PI * 6; // 6 sit-ups during this phase
+                const sitUpAngle = Math.abs(Math.sin(sitUpCycle)) * (Math.PI / 2);
 
-                torso.rotation.x = sitUpAngle;
-                head.rotation.x = sitUpAngle * 0.7;
+                // Torso sits up from lying position (positive rotation to sit up from back)
+                torso.rotation.x = sitUpAngle; // Positive to sit up from lying on back
+                head.rotation.x = sitUpAngle * 0.5;
 
-                // Full sit-up positioning
+                // Arms stay behind head throughout
                 leftArm.rotation.x = -Math.PI / 2;
                 rightArm.rotation.x = -Math.PI / 2;
                 leftArm.rotation.z = Math.PI / 4;
                 rightArm.rotation.z = -Math.PI / 4;
 
-                leftLeg.rotation.x = Math.PI / 3;
-                rightLeg.rotation.x = Math.PI / 3;
+                // Legs stay bent and stable
+                leftLeg.rotation.x = Math.PI / 6;
+                rightLeg.rotation.x = Math.PI / 6;
                 leftLeg.rotation.z = 0.1;
                 rightLeg.rotation.z = -0.1;
 
             } else {
-                // Phase 3: Final sitting position (85-100%)
+                // Phase 3: Getting up to sitting position (85-100%)
                 const sitProgress = (progress - 0.85) / 0.15;
 
-                // FIXED: End in sitting position, NOT standing
-                this.robot.group.position.y = this.robot.position.y - 15; // Sitting height
-                this.robot.group.rotation.x = 0;
+                // Transition from lying to sitting (stay above floor)
+                const finalY = this.robot.position.y - 15 + (5 * sitProgress); // Rise up slightly
+                this.robot.group.position.y = finalY;
+
+                // Rotate from lying on back to sitting upright
+                this.robot.group.rotation.x = (-Math.PI / 2) * (1 - sitProgress);
 
                 // Final sitting posture
-                torso.rotation.x = Math.PI / 6; // Slight forward lean while sitting
+                torso.rotation.x = (Math.PI / 6) * sitProgress; // Slight forward lean while sitting
                 head.rotation.x = 0;
 
-                // Arms relaxed at sides
-                leftArm.rotation.x = 0;
-                rightArm.rotation.x = 0;
-                leftArm.rotation.z = 0;
-                rightArm.rotation.z = 0;
+                // Arms return to sides gradually
+                leftArm.rotation.x = (-Math.PI / 2) * (1 - sitProgress);
+                rightArm.rotation.x = (-Math.PI / 2) * (1 - sitProgress);
+                leftArm.rotation.z = (Math.PI / 4) * (1 - sitProgress);
+                rightArm.rotation.z = (-Math.PI / 4) * (1 - sitProgress);
 
-                // Legs in sitting position
-                leftLeg.rotation.x = Math.PI / 2; // 90 degrees for sitting
-                rightLeg.rotation.x = Math.PI / 2;
+                // Legs transition to sitting position
+                leftLeg.rotation.x = Math.PI / 6 + ((Math.PI / 3) * sitProgress); // From lying to sitting
+                rightLeg.rotation.x = Math.PI / 6 + ((Math.PI / 3) * sitProgress);
                 leftLeg.rotation.z = 0.1;
                 rightLeg.rotation.z = -0.1;
             }
@@ -1357,11 +1371,11 @@ class RobotAnimator {
             rightLeg.rotation.x = -Math.sin(moveTime) * 0.3;
             torso.rotation.z = -0.1; // Lean right
 
-            // Actually move right
+            // Actually move right (relative to robot's facing direction)
             const currentMove = progress * 25;
             const currentRotation = this.robot.group.rotation.y;
-            const rightX = Math.cos(currentRotation) * currentMove;
-            const rightZ = -Math.sin(currentRotation) * currentMove;
+            const rightX = -Math.cos(currentRotation) * currentMove;
+            const rightZ = Math.sin(currentRotation) * currentMove;
             this.robot.group.position.x = this.robot.position.x + rightX;
             this.robot.group.position.z = this.robot.position.z + rightZ;
         }
@@ -1378,11 +1392,11 @@ class RobotAnimator {
             rightLeg.rotation.x = -Math.sin(moveTime) * 0.3;
             torso.rotation.z = 0.1; // Lean left
 
-            // Actually move left
+            // Actually move left (relative to robot's facing direction)
             const currentMove = progress * 25;
             const currentRotation = this.robot.group.rotation.y;
-            const leftX = -Math.cos(currentRotation) * currentMove;
-            const leftZ = Math.sin(currentRotation) * currentMove;
+            const leftX = Math.cos(currentRotation) * currentMove;
+            const leftZ = -Math.sin(currentRotation) * currentMove;
             this.robot.group.position.x = this.robot.position.x + leftX;
             this.robot.group.position.z = this.robot.position.z + leftZ;
         }
