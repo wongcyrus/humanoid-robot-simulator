@@ -28,6 +28,8 @@ EXPOSE 5000
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV FLASK_ENV=production
+ENV PORT=5000
 
 # Command to run the application
-CMD ["python", "app.py", "5000"]
+# Use PORT environment variable for Cloud Run compatibility
+CMD python app.py $PORT

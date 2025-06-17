@@ -1,0 +1,45 @@
+# Ignore common Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Ignore development files
+.git/
+.gitignore
+.dockerignore
+README.md
+.pytest_cache/
+.coverage
+.tox/
+
+# Ignore test files
+test_*/
+*_test.py
+tests/
+
+# Ignore documentation
+docs/
+
+# Ignore video files (large)
+static/video/
+
+# Ignore deployment scripts
+deploy.sh
+cloudbuild.yaml
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
