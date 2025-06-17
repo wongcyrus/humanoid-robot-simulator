@@ -339,6 +339,17 @@ class HumanoidSimulator {
                 this.handleServerActionRequest(data);
             });
 
+            // Video control handlers
+            this.socket.on('video_source_changed', (data) => {
+                console.log('📺 Video source change requested:', data);
+                this.handleVideoSourceChange(data);
+            });
+
+            this.socket.on('video_control', (data) => {
+                console.log('📺 Video control requested:', data);
+                this.handleVideoControl(data);
+            });
+
         } catch (error) {
             console.error('❌ WebSocket initialization failed:', error);
             this.updateConnectionStatus(false);
@@ -616,25 +627,21 @@ class HumanoidSimulator {
     }
 
     forceCanvasResize() {
-        // Force a canvas resize by triggering it multiple times if needed
-        // console.log('🔄 Forcing canvas resize...');
+        // Force a canvas resize with optimized timing to reduce performance impact
+        // Only resize if we haven't resized recently
+        const now = Date.now();
+        if (this.lastResizeTime && now - this.lastResizeTime < 500) {
+            return; // Prevent excessive resize calls
+        }
+        this.lastResizeTime = now;
 
         // Immediate resize
         this.resizeCanvas();
 
-        // Additional resize calls with increasing delays to handle CSS transitions
+        // Single delayed resize to handle CSS transitions
         setTimeout(() => {
             this.resizeCanvas();
-        }, 50);
-
-        setTimeout(() => {
-            this.resizeCanvas();
-        }, 150);
-
-        // Final resize after transition should be complete
-        setTimeout(() => {
-            this.resizeCanvas();
-        }, 350);
+        }, 100);
     }
 
     checkAndFixCanvasSize() {
@@ -651,7 +658,11 @@ class HumanoidSimulator {
 
         // Check if sizes don't match (with small tolerance for rounding)
         if (Math.abs(containerWidth - canvasWidth) > 2 || Math.abs(containerHeight - canvasHeight) > 2) {
-            console.log(`🔧 Canvas size mismatch detected. Container: ${containerWidth}x${containerHeight}, Canvas: ${canvasWidth}x${canvasHeight}`);
+            // Only log occasionally to avoid spam
+            if (!this.lastSizeLogTime || Date.now() - this.lastSizeLogTime > 5000) {
+                console.log(`🔧 Canvas size mismatch detected. Container: ${containerWidth}x${containerHeight}, Canvas: ${canvasWidth}x${canvasHeight}`);
+                this.lastSizeLogTime = Date.now();
+            }
             this.forceCanvasResize();
             return true; // Resize was needed
         }
@@ -661,11 +672,12 @@ class HumanoidSimulator {
 
     startCanvasSizeMonitoring() {
         // Periodically check if canvas size matches container and fix if needed
+        // Reduced frequency to avoid performance issues
         setInterval(() => {
             if (this.scene3d) {
                 this.checkAndFixCanvasSize();
             }
-        }, 1000); // Check every second
+        }, 2000); // Check every 2 seconds instead of 1
 
         console.log('📏 Canvas size monitoring started');
     }
@@ -726,6 +738,61 @@ class HumanoidSimulator {
         this.updateLastAction(robotId, actionName);
 
         console.log(`✅ Server action "${actionName}" executed locally on ${robotId}`);
+    }
+
+    /**
+     * Handle video source change from server
+     * @param {Object} data - Video source change data
+     */
+    handleVideoSourceChange(data) {
+        console.log('📺 Handling video source change:', data);
+
+        const { video_src, session_key } = data;
+
+        if (!video_src) {
+            console.warn('📺 No video source provided');
+            return;
+        }
+
+        // Change video source in the 3D scene
+        if (this.scene3d) {
+            this.scene3d.changeVideoSource(video_src);
+            this.showNotification(`Video source changed to: ${video_src}`, 'info');
+        } else {
+            console.warn('📺 No 3D scene available to change video source');
+        }
+    }
+
+    /**
+     * Handle video control commands from server
+     * @param {Object} data - Video control data
+     */
+    handleVideoControl(data) {
+        console.log('📺 Handling video control:', data);
+
+        const { action, session_key } = data;
+
+        if (!this.scene3d) {
+            console.warn('📺 No 3D scene available for video control');
+            return;
+        }
+
+        switch (action) {
+            case 'play':
+                this.scene3d.playVideo();
+                this.showNotification('Video playing', 'success');
+                break;
+            case 'pause':
+                this.scene3d.pauseVideo();
+                this.showNotification('Video paused', 'info');
+                break;
+            case 'toggle':
+                this.scene3d.toggleVideo();
+                this.showNotification('Video toggled', 'info');
+                break;
+            default:
+                console.warn('📺 Unknown video control action:', action);
+        }
     }
 
     updateLastAction(robotId, action) {

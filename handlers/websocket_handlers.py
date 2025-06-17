@@ -212,3 +212,93 @@ class WebSocketHandlers:
                 logger.debug(
                     f"❌ Emitting 'reset_result' error event: {error_result}")
                 emit('reset_result', error_result)
+
+        @self.socketio.on('change_video_source')
+        def handle_change_video_source(data):
+            """Handle video source change requests via WebSocket"""
+            logger.debug(
+                f"📺 Handling change_video_source event with data: {data}")
+
+            session_key = data.get('session_key')
+            video_src = data.get('video_src')
+
+            if not session_key:
+                logger.debug("❌ Session key required for change_video_source")
+                emit('error', {'message': 'Session key required'})
+                return
+
+            if not video_src:
+                logger.debug("❌ Video source required for change_video_source")
+                emit('error', {'message': 'Video source required'})
+                return
+
+            try:
+                # Emit to all clients in the session
+                self.socketio.emit(
+                    'video_source_changed',
+                    {
+                        'video_src': video_src,
+                        'session_key': session_key
+                    },
+                    room=f"session_{session_key}"
+                )
+
+                logger.debug(
+                    f"✅ Video source changed to {video_src} for session {session_key}")
+                emit('video_source_change_result', {
+                    'status': 'success',
+                    'video_src': video_src,
+                    'message': f'Video source changed to: {video_src}'
+                })
+
+            except Exception as e:
+                logger.error(f"❌ Error changing video source: {e}")
+                emit('video_source_change_result', {
+                    'status': 'error',
+                    'message': str(e)
+                })
+
+        @self.socketio.on('control_video')
+        def handle_control_video(data):
+            """Handle video control requests via WebSocket"""
+            logger.debug(f"📺 Handling control_video event with data: {data}")
+
+            session_key = data.get('session_key')
+            action = data.get('action')
+
+            if not session_key:
+                logger.debug("❌ Session key required for control_video")
+                emit('error', {'message': 'Session key required'})
+                return
+
+            if action not in ['play', 'pause', 'toggle']:
+                logger.debug("❌ Invalid action for control_video")
+                emit(
+                    'error', {'message': 'Action must be one of: play, pause, toggle'})
+                return
+
+            try:
+                # Emit to all clients in the session
+                self.socketio.emit(
+                    'video_control',
+                    {
+                        'action': action,
+                        'session_key': session_key
+                    },
+                    room=f"session_{session_key}"
+                )
+
+                logger.debug(
+                    f"✅ Video {action} command sent for session {session_key}")
+                emit('video_control_result', {
+                    'status': 'success',
+                    'action': action,
+                    'message': f'Video {action} command sent'
+                })
+
+            except Exception as e:
+                logger.error(f"❌ Error controlling video: {e}")
+                emit('video_control_result', {
+                    'status': 'error',
+                    'message': str(e)
+                })

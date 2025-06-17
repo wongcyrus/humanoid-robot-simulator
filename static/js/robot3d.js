@@ -310,7 +310,7 @@ class Robot3D {
     }
 
     // Start action with animation
-    startAction(action) {
+    startAction(action = 'idle') {
         console.log(`🎬 ${this.robotId} starting action: ${action}`);
 
         if (this.animator) {
@@ -491,7 +491,402 @@ class Scene3D {
         // const axesHelper = new THREE.AxesHelper(50);
         // this.scene.add(axesHelper);
 
+        // Video screen far away from the ground
+        this.setupVideoScreen();
+
         console.log('🌍 Environment setup complete');
+    }
+
+    setupVideoScreen(videoSrc = '/static/video/prog-video-01.mp4') {
+        console.log('📺 Setting up video screen with source:', videoSrc);
+
+        // Create video element
+        const video = document.createElement('video');
+        this.setVideoSource(video, videoSrc);
+        video.loop = true;
+        video.muted = false; // Enable sound
+        video.autoplay = true;
+        video.crossOrigin = 'anonymous';
+        video.preload = 'auto';
+        video.volume = 1.0; // Set maximum volume
+        video.controls = false; // Hide browser controls
+
+        // Force unmute with additional attributes
+        video.setAttribute('unmuted', 'true');
+        video.setAttribute('playsInline', 'true');
+
+        // Add to DOM for proper loading
+        video.style.display = 'none';
+        document.body.appendChild(video);
+
+        // Enhanced error handling and loading
+        video.addEventListener('loadeddata', () => {
+            console.log('📺 Video loaded successfully, dimensions:', video.videoWidth, 'x', video.videoHeight);
+        });
+
+        video.addEventListener('error', (e) => {
+            console.error('📺 Video loading error:', e);
+        });
+
+        // Simplified video event handling
+        video.addEventListener('loadstart', () => {
+            console.log('📺 Video loading started');
+        });
+
+        // Create video texture
+        const videoTexture = new THREE.VideoTexture(video);
+        videoTexture.minFilter = THREE.LinearFilter;
+        videoTexture.magFilter = THREE.LinearFilter;
+        videoTexture.format = THREE.RGBFormat;
+        videoTexture.flipY = true; // Fix upside down video
+
+        // Create screen geometry (16:9 aspect ratio) - smaller for better visibility
+        const screenWidth = 400;
+        const screenHeight = 225; // 400 * (9/16) for 16:9 aspect ratio
+        const screenGeometry = new THREE.PlaneGeometry(screenWidth, screenHeight);
+
+        // Create screen material
+        const screenMaterial = new THREE.MeshBasicMaterial({
+            map: videoTexture,
+            side: THREE.DoubleSide
+        });
+
+        // Create the screen mesh
+        const videoScreen = new THREE.Mesh(screenGeometry, screenMaterial);
+
+        // Position the screen to be easily visible from the default camera
+        // Camera is at (0, 100, 150) looking at (0, 0, 0)
+        // Position screen high above ground but in clear view
+        videoScreen.position.set(0, 80, -400); // Closer to camera view
+        videoScreen.rotation.x = 0; // Face camera directly
+
+        // Add screen to scene
+        this.scene.add(videoScreen);
+
+        // Create a frame for better visibility
+        const frameGeometry = new THREE.PlaneGeometry(screenWidth + 5, screenHeight + 5);
+        const frameMaterial = new THREE.MeshBasicMaterial({
+            color: 0x222222,
+            side: THREE.DoubleSide
+        });
+        const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+        frame.position.copy(videoScreen.position);
+        frame.position.z -= 0.5; // Behind the screen
+        this.scene.add(frame);
+
+        // Add IT115115.png image overlay in the center of the screen
+        this.addImageOverlay(videoScreen, screenWidth, screenHeight);
+
+        // Store references
+        this.videoScreen = videoScreen;
+        this.video = video;
+        this.videoFrame = frame;
+
+        // Start video playback with improved autoplay handling
+        this.attemptVideoPlay(video);
+
+        console.log('📺 Video screen positioned at:', videoScreen.position);
+    }
+
+    addImageOverlay(videoScreen, screenWidth, screenHeight) {
+        // Load the IT115115.png image
+        const textureLoader = new THREE.TextureLoader();
+        const imageTexture = textureLoader.load('/static/img/IT115115.png',
+            () => {
+                console.log('🖼️ IT115115.png image loaded successfully');
+            },
+            undefined,
+            (error) => {
+                console.error('🖼️ Error loading IT115115.png:', error);
+            }
+        );
+
+        // Create overlay geometry - smaller than the screen for centered placement
+        const overlayWidth = screenWidth * 0.3; // 30% of screen width
+        const overlayHeight = screenHeight * 0.3; // 30% of screen height
+        const overlayGeometry = new THREE.PlaneGeometry(overlayWidth, overlayHeight);
+
+        // Create overlay material with transparency
+        const overlayMaterial = new THREE.MeshBasicMaterial({
+            map: imageTexture,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide
+        });
+
+        // Create the overlay mesh
+        const imageOverlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
+
+        // Position the overlay in the center of the video screen, moved up by 25%
+        imageOverlay.position.copy(videoScreen.position);
+        imageOverlay.position.y += screenHeight * 0.15; // Move up by 25% of screen height
+        imageOverlay.position.z += 0.1; // Slightly in front of the video screen
+        imageOverlay.rotation.copy(videoScreen.rotation);
+
+        // Add overlay to scene
+        this.scene.add(imageOverlay);
+
+        // Add text under the image
+        this.addTextUnderImage(videoScreen, overlayWidth, overlayHeight, screenHeight);
+
+        // Store reference
+        this.imageOverlay = imageOverlay;
+
+        console.log('🖼️ Image overlay added to center of video screen');
+    }
+
+    addTextUnderImage(videoScreen, overlayWidth, overlayHeight, screenHeight) {
+        // Create canvas for text rendering
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        // Set larger canvas size to accommodate bigger fonts and avoid cropping
+        canvas.width = 2000;
+        canvas.height = 384;
+
+        // Clear canvas with transparent background
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Set font properties for Chinese text
+        context.fillStyle = 'white';
+        context.strokeStyle = 'black';
+        context.lineWidth = 4; // Thicker outline for larger font
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+
+        // Draw the first line of text (larger font)
+        context.font = 'bold 100px Arial, "Microsoft YaHei", "SimHei", sans-serif';
+        const text1 = '雲端系統及數據中心管理高級文憑';
+        const y1Position = canvas.height * 0.35;
+
+        // Draw text with stroke (outline) and fill
+        context.strokeText(text1, canvas.width / 2, y1Position);
+        context.fillText(text1, canvas.width / 2, y1Position);
+
+        // Draw the second line of text (smaller font)
+        context.font = 'bold 80px Arial, "Microsoft YaHei", "SimHei", sans-serif';
+        const text2 = '課程編號 IT114115';
+        const y2Position = canvas.height * 0.7;
+
+        // Draw text with stroke (outline) and fill
+        context.strokeText(text2, canvas.width / 2, y2Position);
+        context.fillText(text2, canvas.width / 2, y2Position);
+
+        // Create texture from canvas
+        const textTexture = new THREE.CanvasTexture(canvas);
+        textTexture.minFilter = THREE.LinearFilter;
+        textTexture.magFilter = THREE.LinearFilter;
+
+        // Create text geometry
+        const textWidth = overlayWidth * 2.2; // Wider to fit larger text
+        const textHeight = overlayHeight * 1.0; // Taller for bigger font
+        const textGeometry = new THREE.PlaneGeometry(textWidth, textHeight);
+
+        // Create text material
+        const textMaterial = new THREE.MeshBasicMaterial({
+            map: textTexture,
+            transparent: true,
+            opacity: 1.0,
+            side: THREE.DoubleSide
+        });
+
+        // Create text mesh
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+        // Position text under the image, moved up by 25%
+        textMesh.position.copy(videoScreen.position);
+        textMesh.position.y += screenHeight * 0.25; // Move up by 25% of screen height
+        textMesh.position.y -= overlayHeight * 1.1; // Position below the image
+        textMesh.position.z += 0.15; // Slightly in front of video screen
+        textMesh.rotation.copy(videoScreen.rotation);
+
+        // Add text to scene
+        this.scene.add(textMesh);
+
+        // Store reference
+        this.textMesh = textMesh;
+        this.textTexture = textTexture;
+
+        console.log('📝 Text added under image overlay');
+    }
+
+    /**
+     * Set video source for the video element
+     * @param {HTMLVideoElement} video - The video element
+     * @param {string} videoSrc - The video source URL
+     */
+    setVideoSource(video, videoSrc) {
+        video.src = videoSrc;
+        console.log('📺 Video source set to:', videoSrc);
+    }
+
+    /**
+     * Change the video source dynamically
+     * @param {string} newVideoSrc - The new video source URL
+     */
+    changeVideoSource(newVideoSrc) {
+        if (!this.video) {
+            console.warn('📺 No video element found to change source');
+            return;
+        }
+
+        console.log('📺 Changing video source from', this.video.src, 'to', newVideoSrc);
+
+        // Pause current video
+        this.video.pause();
+
+        // Set new source
+        this.setVideoSource(this.video, newVideoSrc);
+
+        // Reload and play with improved handling
+        this.video.load();
+        this.attemptVideoPlay(this.video);
+
+        console.log('📺 Video source changed successfully');
+    }
+
+    /**
+     * Get current video source
+     * @returns {string} Current video source URL
+     */
+    getCurrentVideoSource() {
+        return this.video ? this.video.src : null;
+    }
+
+    /**
+     * Play video
+     */
+    playVideo() {
+        if (this.video) {
+            this.video.play().catch(e => {
+                console.warn('📺 Video play failed:', e);
+            });
+        }
+    }
+
+    /**
+     * Pause video
+     */
+    pauseVideo() {
+        if (this.video) {
+            this.video.pause();
+        }
+    }
+
+    /**
+     * Toggle video play/pause
+     */
+    toggleVideo() {
+        if (this.video) {
+            if (this.video.paused) {
+                this.playVideo();
+            } else {
+                this.pauseVideo();
+            }
+        }
+    }
+
+    /**
+     * Attempt to play video with sound - simplified stable approach
+     * @param {HTMLVideoElement} video - The video element to play
+     */
+    attemptVideoPlay(video) {
+        if (!video) return;
+
+        // Set volume to maximum
+        video.volume = 1.0;
+
+        // Try unmuted first
+        video.muted = false;
+        video.play().then(() => {
+            console.log('📺 Video playing with sound');
+            this.hideAutoplayMessage();
+        }).catch(e => {
+            console.log('📺 Sound blocked, trying muted autoplay');
+            // If unmuted fails, try muted
+            video.muted = true;
+            video.play().then(() => {
+                console.log('📺 Video playing muted');
+                // Set up simple sound activation on first user interaction
+                this.setupSimpleSoundActivation(video);
+            }).catch(err => {
+                console.error('📺 Video autoplay completely blocked:', err);
+            });
+        });
+    }
+
+    /**
+     * Simple sound activation on user interaction
+     * @param {HTMLVideoElement} video - The video element
+     */
+    setupSimpleSoundActivation(video) {
+        const enableSound = () => {
+            video.muted = false;
+            console.log('📺 Video sound enabled');
+        };
+
+        // Add single event listener for first interaction
+        document.addEventListener('click', enableSound, { once: true });
+    }
+
+    /**
+     * Show message when autoplay is blocked
+     * @param {boolean} completeFailure - Whether video autoplay failed completely
+     */
+    showAutoplayMessage(completeFailure = false) {
+        // Remove any existing message
+        this.hideAutoplayMessage();
+
+        // Create visual indicator
+        const message = document.createElement('div');
+        message.id = 'autoplay-message';
+        message.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            z-index: 1000;
+            cursor: pointer;
+            animation: fadeIn 0.3s ease-in;
+        `;
+
+        if (completeFailure) {
+            message.innerHTML = '🎬 Click to start video playback';
+        } else {
+            message.innerHTML = '🔊 Click to enable video sound';
+        }
+
+        // Add fade-in animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        document.body.appendChild(message);
+
+        // Auto-hide after 8 seconds
+        setTimeout(() => {
+            this.hideAutoplayMessage();
+        }, 8000);
+    }
+
+    /**
+     * Hide autoplay message
+     */
+    hideAutoplayMessage() {
+        const message = document.getElementById('autoplay-message');
+        if (message) {
+            message.remove();
+        }
     }
 
     setupControls() {
@@ -653,11 +1048,79 @@ class Scene3D {
         this.renderer.render(this.scene, this.camera);
     }
 
+    // Cleanup method for proper resource management
+    dispose() {
+        // Stop and cleanup video
+        if (this.video) {
+            this.video.pause();
+            this.video.src = '';
+            this.video.load();
+        }
+
+        // Dispose of video texture
+        if (this.videoScreen && this.videoScreen.material.map) {
+            this.videoScreen.material.map.dispose();
+        }
+
+        // Dispose of image overlay texture
+        if (this.imageOverlay && this.imageOverlay.material.map) {
+            this.imageOverlay.material.map.dispose();
+        }
+
+        // Dispose of text texture
+        if (this.textTexture) {
+            this.textTexture.dispose();
+        }
+
+        // Cleanup renderer
+        if (this.renderer) {
+            this.renderer.dispose();
+        }
+
+        console.log('🧹 Scene3D resources disposed');
+    }
+
     animate() {
         requestAnimationFrame(() => this.animate());
 
         // Render the scene
         this.renderer.render(this.scene, this.camera);
+    }
+
+    /**
+     * Toggle video mute state
+     * @returns {boolean} New mute state
+     */
+    toggleVideoMute() {
+        if (!this.video) {
+            console.warn('📺 No video element found to toggle mute');
+            return false;
+        }
+
+        this.video.muted = !this.video.muted;
+        const isMuted = this.video.muted;
+
+        console.log(`📺 Video ${isMuted ? 'muted' : 'unmuted'}`);
+        return isMuted;
+    }
+
+    /**
+     * Get current video mute state
+     * @returns {boolean} Whether video is muted
+     */
+    isVideoMuted() {
+        return this.video ? this.video.muted : true;
+    }
+
+    /**
+     * Set video mute state
+     * @param {boolean} muted - Whether to mute the video
+     */
+    setVideoMuted(muted) {
+        if (this.video) {
+            this.video.muted = muted;
+            console.log(`📺 Video ${muted ? 'muted' : 'unmuted'}`);
+        }
     }
 }
 

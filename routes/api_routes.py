@@ -239,3 +239,97 @@ class APIRoutes:
 
             except Exception as e:
                 return jsonify({'success': False, 'error': str(e)}), 500
+
+        @self.app.route('/api/video/change_source', methods=['POST'])
+        def change_video_source():
+            """Change the video source for the 3D scene"""
+            try:
+                session_key = self.get_session_key_from_request()
+                is_valid, error_msg = self.validate_session_key(session_key)
+                if not is_valid:
+                    return jsonify({'success': False, 'error': error_msg}), 400
+
+                data = request.json or {}
+                video_src = data.get('video_src')
+
+                if not video_src:
+                    return jsonify({'success': False, 'error': 'video_src is required'}), 400
+
+                # Emit video source change to all clients in the session
+                self.socketio.emit(
+                    'video_source_changed',
+                    {
+                        'video_src': video_src,
+                        'session_key': session_key
+                    },
+                    room=f"session_{session_key}"
+                )
+
+                return jsonify({
+                    'success': True,
+                    'video_src': video_src,
+                    'session_key': session_key,
+                    'message': f'Video source changed to: {video_src}'
+                })
+
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)}), 500
+
+        @self.app.route('/api/video/control', methods=['POST'])
+        def control_video():
+            """Control video playback (play, pause, toggle)"""
+            try:
+                session_key = self.get_session_key_from_request()
+                is_valid, error_msg = self.validate_session_key(session_key)
+                if not is_valid:
+                    return jsonify({'success': False, 'error': error_msg}), 400
+
+                data = request.json or {}
+                action = data.get('action')
+
+                if action not in ['play', 'pause', 'toggle']:
+                    return jsonify({'success': False, 'error': 'action must be one of: play, pause, toggle'}), 400
+
+                # Emit video control to all clients in the session
+                self.socketio.emit(
+                    'video_control',
+                    {
+                        'action': action,
+                        'session_key': session_key
+                    },
+                    room=f"session_{session_key}"
+                )
+
+                return jsonify({
+                    'success': True,
+                    'action': action,
+                    'session_key': session_key,
+                    'message': f'Video {action} command sent'
+                })
+
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)}), 500
+
+        @self.app.route('/api/video/status')
+        def get_video_status():
+            """Get current video status information"""
+            try:
+                session_key = self.get_session_key_from_request()
+                is_valid, error_msg = self.validate_session_key(session_key)
+                if not is_valid:
+                    return jsonify({'success': False, 'error': error_msg}), 400
+
+                # For now, return basic status. In a more advanced implementation,
+                # you could track the current video source in the session
+                return jsonify({
+                    'success': True,
+                    'session_key': session_key,
+                    'available_videos': [
+                        '/static/video/prog-video-01.mp4',
+                        # Add more video paths here as needed
+                    ],
+                    'supported_actions': ['play', 'pause', 'toggle']
+                })
+
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)}), 500
