@@ -125,7 +125,7 @@ gcloud run deploy $SERVICE_NAME \
     --min-instances 0 \
     --timeout 3600 \
     --concurrency 80 \
-    --set-env-vars="FLASK_ENV=production" \
+    --set-env-vars="FLASK_ENV=production,ROBOT_API_URL=https://6mz6soy3j3.execute-api.us-east-1.amazonaws.com/prod/run_action/" \
     --quiet
 
 # Get the service URL

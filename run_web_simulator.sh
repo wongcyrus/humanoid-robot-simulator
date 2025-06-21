@@ -11,17 +11,12 @@ if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
     python3 -m venv venv
     source venv/bin/activate
-    pip install flask flask-cors flask-socketio requests python-socketio eventlet
+    pip install -r requirements.txt
 else
     source venv/bin/activate
 fi
 
-# Check dependencies
-python -c "import flask, flask_socketio, eventlet" 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "Installing web dependencies..."
-    pip install flask flask-cors flask-socketio python-socketio eventlet
-fi
+pip install -r requirements.txt
 
 # Parse port
 PORT=5000
@@ -47,5 +42,8 @@ echo "  ✅ Individual and synchronized robot control"
 echo "  ✅ Interactive 3D camera controls"
 echo ""
 
+# Set environment variables
+
+
 # Run the web simulator
-python3 app.py $PORT
+ROBOT_API_URL=https://6mz6soy3j3.execute-api.us-east-1.amazonaws.com/prod/run_action/ python3 app.py $PORT

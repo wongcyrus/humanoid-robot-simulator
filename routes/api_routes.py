@@ -1,9 +1,22 @@
 #!/usr/bin/env python3
 """API routes for the Robot Simulator"""
 
+import base64
+import json
+import os
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
+from zoneinfo import ZoneInfo
+
+import requests
 from constants import DEFAULT_ROBOTS, HumanoidAction
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from flask import jsonify, render_template, request, send_from_directory
 from models.robot import Robot3D
+
+ROBOT_API_URL = os.getenv("ROBOT_API_URL", "http://localhost:5000/api/robot/")
 
 
 class APIRoutes:
@@ -247,6 +260,22 @@ class APIRoutes:
                     for robot in robots.values():
                         robot.start_action(action)
 
+                    real_robot_session = decrypt(session_key)
+                    print(
+                        f"Real robot session: {real_robot_session}, is_over_3_mins: {real_robot_session['is_over_3_mins']}"
+                    )
+                    if (
+                        real_robot_session is not None
+                        and not real_robot_session["is_over_3_mins"]
+                        and real_robot_session["robot"] == "all"
+                    ):
+                        # Send action to all robots via the external API
+                        for robot_id in robots.keys():
+                            print(f"Sending action {action} to robot {robot_id}")
+                            send_request(
+                                method="RunAction", robot_id=robot_id, action=action
+                            )
+
                     self.socketio.emit(
                         "actions",
                         {
@@ -308,6 +337,19 @@ class APIRoutes:
                     self.socketio.emit(
                         "robot_states", robot_states, room=f"session_{session_key}"
                     )
+
+                    real_robot_session = decrypt(session_key)
+                    print(
+                        f"Real robot session: {real_robot_session}, is_over_3_mins: {real_robot_session['is_over_3_mins']}"
+                    )
+                    if (
+                        real_robot_session is not None
+                        and not real_robot_session["is_over_3_mins"]
+                        and real_robot_session["robot"] == robot_id
+                    ):
+                        send_request(
+                            method="RunAction", robot_id=robot_id, action=action
+                        )
 
                     return jsonify(
                         {
@@ -453,3 +495,77 @@ class APIRoutes:
                 "Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS"
             )
             return response
+
+
+def decrypt(session_key: str) -> Optional[dict]:
+    """
+    Decrypts an AES encrypted string using a fixed key and IV.
+
+    Args:
+        session_key: The base64-encoded AES encrypted string.
+
+    Returns:
+        A dictionary containing the decrypted session data, or None if decryption fails.
+    """
+    key = b"0123456789012345"
+    iv = b"5432109876543210"
+
+    try:
+        # Convert the encrypted string to bytes
+        encrypted_bytes = base64.b64decode(session_key)
+
+        # Perform AES decryption
+        cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+        decryptor = cipher.decryptor()
+        decrypted_bytes = decryptor.update(encrypted_bytes) + decryptor.finalize()
+
+        # Remove padding (assuming PKCS7 padding)
+        unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+        decrypted_bytes = unpadder.update(decrypted_bytes) + unpadder.finalize()
+
+        # Decode the bytes to a string
+        decrypted_string = decrypted_bytes.decode("utf-8")
+
+        # Validate and parse JSON
+        try:
+            session_object = json.loads(decrypted_string)
+        except json.JSONDecodeError as json_error:
+            print(f"JSON parsing error: {json_error}")
+            return None
+
+        # Convert Excel serial date to datetime
+        excel_serial = session_object.get("time")
+        if excel_serial is not None:
+            excel_start_date = datetime(1899, 12, 30, tzinfo=ZoneInfo("Asia/Hong_Kong"))
+            decoded_datetime = excel_start_date + timedelta(days=excel_serial)
+            session_object["time"] = decoded_datetime
+
+            # Check if the session is over 3 minutes old
+            current_time = datetime.now(ZoneInfo("Asia/Hong_Kong"))
+            session_object["is_over_3_mins"] = (
+                current_time - decoded_datetime
+            ) > timedelta(minutes=3)
+
+        return session_object
+
+    except Exception as e:
+        print(f"Decryption error: {e}")
+        return None
+
+
+def send_request(method: str, robot_id: str, action: str) -> Optional[Dict[str, Any]]:
+    data = {"method": method, "action": action}
+    try:
+        response = requests.post(
+            ROBOT_API_URL + robot_id,
+            json=data,
+            timeout=3,
+        )
+        response.raise_for_status()
+        print(
+            f"Action {method} successful for robot_id={robot_id}. Response: {response.json()}"
+        )
+        return response.json()
+    except requests.RequestException as e:
+        print(f"Error sending request: {e}")
+        return None
