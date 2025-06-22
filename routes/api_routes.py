@@ -261,20 +261,27 @@ class APIRoutes:
                         robot.start_action(action)
 
                     real_robot_session = decrypt(session_key)
-                    print(
-                        f"Real robot session: {real_robot_session}, is_over_3_mins: {real_robot_session['is_over_3_mins']}"
-                    )
                     if (
                         real_robot_session is not None
-                        and not real_robot_session["is_over_3_mins"]
-                        and real_robot_session["robot"] == "all"
+                        and "is_over_3_mins" in real_robot_session
+                        and "robot" in real_robot_session
                     ):
-                        # Send action to all robots via the external API
-                        for robot_id in robots.keys():
-                            print(f"Sending action {action} to robot {robot_id}")
-                            send_request(
-                                method="RunAction", robot_id=robot_id, action=action
-                            )
+                        print(
+                            f"Real robot session: {real_robot_session}, is_over_3_mins: {real_robot_session['is_over_3_mins']}"
+                        )
+                        if (
+                            not real_robot_session["is_over_3_mins"]
+                            and real_robot_session["robot"] == "all"
+                        ):
+                            # Send action to all robots via the external API
+                            for r in robots.values():
+                                robot_id = r.to_dict()["robot_id"]
+                                print(f"Sending action {action} to robot {robot_id}")
+                                send_request(
+                                    method="RunAction", robot_id=robot_id, action=action
+                                )
+                    else:
+                        print(f"Real robot session: {real_robot_session}")
 
                     self.socketio.emit(
                         "actions",
@@ -339,14 +346,15 @@ class APIRoutes:
                     )
 
                     real_robot_session = decrypt(session_key)
-                    print(
-                        f"Real robot session: {real_robot_session}, is_over_3_mins: {real_robot_session['is_over_3_mins']}"
-                    )
+
                     if (
                         real_robot_session is not None
                         and not real_robot_session["is_over_3_mins"]
                         and real_robot_session["robot"] == robot_id
                     ):
+                        print(
+                            f"Real robot session: {real_robot_session}, is_over_3_mins: {real_robot_session['is_over_3_mins']}"
+                        )
                         send_request(
                             method="RunAction", robot_id=robot_id, action=action
                         )
