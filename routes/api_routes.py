@@ -3,6 +3,7 @@
 
 import base64
 import json
+import logging
 import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
@@ -15,8 +16,12 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from flask import jsonify, render_template, request, send_from_directory
 from models.robot import Robot3D
+from urllib.parse import unquote_plus
 
 ROBOT_API_URL = os.getenv("ROBOT_API_URL", "http://localhost:5000/api/robot/")
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 
 class APIRoutes:
@@ -263,25 +268,27 @@ class APIRoutes:
                     real_robot_session = decrypt(session_key)
                     if (
                         real_robot_session is not None
-                        and "is_over_3_mins" in real_robot_session
+                        and "is_expired" in real_robot_session
                         and "robot" in real_robot_session
                     ):
-                        print(
-                            f"Real robot session: {real_robot_session}, is_over_3_mins: {real_robot_session['is_over_3_mins']}"
+                        logger.info(
+                            f"Real robot session: {real_robot_session}, is_expired: {real_robot_session['is_expired']}"
                         )
                         if (
-                            not real_robot_session["is_over_3_mins"]
+                            not real_robot_session["is_expired"]
                             and real_robot_session["robot"] == "all"
                         ):
                             # Send action to all robots via the external API
                             for r in robots.values():
                                 robot_id = r.to_dict()["robot_id"]
-                                print(f"Sending action {action} to robot {robot_id}")
+                                logger.info(
+                                    f"Sending action {action} to robot {robot_id}"
+                                )
                                 send_request(
                                     method="RunAction", robot_id=robot_id, action=action
                                 )
                     else:
-                        print(f"Real robot session: {real_robot_session}")
+                        logger.debug(f"Real robot session: {real_robot_session}")
 
                     self.socketio.emit(
                         "actions",
@@ -349,11 +356,11 @@ class APIRoutes:
 
                     if (
                         real_robot_session is not None
-                        and not real_robot_session["is_over_3_mins"]
+                        and not real_robot_session["is_expired"]
                         and real_robot_session["robot"] == robot_id
                     ):
-                        print(
-                            f"Real robot session: {real_robot_session}, is_over_3_mins: {real_robot_session['is_over_3_mins']}"
+                        logger.info(
+                            f"Real robot session: {real_robot_session}, is_expired: {real_robot_session['is_expired']}"
                         )
                         send_request(
                             method="RunAction", robot_id=robot_id, action=action
@@ -505,6 +512,24 @@ class APIRoutes:
             return response
 
 
+def send_request(method: str, robot_id: str, action: str) -> Optional[Dict[str, Any]]:
+    data = {"method": method, "action": action}
+    try:
+        response = requests.post(
+            ROBOT_API_URL + robot_id,
+            json=data,
+            timeout=3,
+        )
+        response.raise_for_status()
+        logger.info(
+            f"Action {method} successful for robot_id={robot_id}. Response: {response.json()}"
+        )
+        return response.json()
+    except requests.RequestException as e:
+        logger.error(f"Error sending request: {e}")
+        return None
+
+
 def decrypt(session_key: str) -> Optional[dict]:
     """
     Decrypts an AES encrypted string using a fixed key and IV.
@@ -520,7 +545,11 @@ def decrypt(session_key: str) -> Optional[dict]:
 
     try:
         # Convert the encrypted string to bytes
+        logger.info(f"Decrypting session_key: {session_key}")
+        # Use unquote_plus to handle spaces and plus signs in the session_key
+        session_key = session_key.replace(" ", "+")
         encrypted_bytes = base64.b64decode(session_key)
+        logger.info(f"Encrypted bytes: {encrypted_bytes}")
 
         # Perform AES decryption
         cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
@@ -538,7 +567,7 @@ def decrypt(session_key: str) -> Optional[dict]:
         try:
             session_object = json.loads(decrypted_string)
         except json.JSONDecodeError as json_error:
-            print(f"JSON parsing error: {json_error}")
+            logger.error(f"JSON parsing error: {json_error}")
             return None
 
         # Convert Excel serial date to datetime
@@ -547,33 +576,13 @@ def decrypt(session_key: str) -> Optional[dict]:
             excel_start_date = datetime(1899, 12, 30, tzinfo=ZoneInfo("Asia/Hong_Kong"))
             decoded_datetime = excel_start_date + timedelta(days=excel_serial)
             session_object["time"] = decoded_datetime
-
-            # Check if the session is over 3 minutes old
+            # Check if the session is expired
+            # Assuming the session is expired if the time is in the past
             current_time = datetime.now(ZoneInfo("Asia/Hong_Kong"))
-            session_object["is_over_3_mins"] = (
-                current_time - decoded_datetime
-            ) > timedelta(minutes=3)
+            session_object["is_expired"] = decoded_datetime < current_time
 
         return session_object
 
     except Exception as e:
-        print(f"Decryption error: {e}")
-        return None
-
-
-def send_request(method: str, robot_id: str, action: str) -> Optional[Dict[str, Any]]:
-    data = {"method": method, "action": action}
-    try:
-        response = requests.post(
-            ROBOT_API_URL + robot_id,
-            json=data,
-            timeout=3,
-        )
-        response.raise_for_status()
-        print(
-            f"Action {method} successful for robot_id={robot_id}. Response: {response.json()}"
-        )
-        return response.json()
-    except requests.RequestException as e:
-        print(f"Error sending request: {e}")
+        logger.error(f"Decryption error: {e}")
         return None
