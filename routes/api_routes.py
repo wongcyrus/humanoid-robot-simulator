@@ -229,7 +229,7 @@ class APIRoutes:
                 return jsonify({"success": False, "error": str(e)}), 500
 
         @self.app.route("/run_action/<robot_id>", methods=["POST"])
-        def run_action(robot_id):
+        def run_action(robot_id: str):
             """Run action on a specific robot or all robots"""
             try:
                 session_key = self.get_session_key_from_request()
@@ -546,8 +546,8 @@ def decrypt(session_key: str) -> Optional[dict]:
     try:
         # Convert the encrypted string to bytes
         logger.info(f"Decrypting session_key: {session_key}")
-        # Use unquote_plus to handle spaces and plus signs in the session_key
-        session_key = session_key.replace(" ", "+")
+        # Use unquote_plus to handle URL-encoded characters, spaces, and plus signs
+        session_key = unquote_plus(session_key).replace(" ", "+")
         encrypted_bytes = base64.b64decode(session_key)
         logger.info(f"Encrypted bytes: {encrypted_bytes}")
 
@@ -563,6 +563,11 @@ def decrypt(session_key: str) -> Optional[dict]:
         # Decode the bytes to a string
         decrypted_string = decrypted_bytes.decode("utf-8")
 
+        logger.info(f"Decrypted string: {decrypted_string}")
+
+        # TODO: Quick fix for trailing double quote issue
+        if decrypted_string.endswith('"'):
+            decrypted_string = decrypted_string[:-1]
         # Validate and parse JSON
         try:
             session_object = json.loads(decrypted_string)

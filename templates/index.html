@@ -203,6 +203,36 @@
         #toggle-panel:hover {
             background: rgba(74, 144, 226, 1) !important;
         }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+
+            /* Hide header title on mobile */
+            #header h1 {
+                display: none;
+            }
+
+            /* Hide session info on mobile */
+            #session-info {
+                display: none;
+            }
+
+            /* Adjust header spacing for mobile */
+            #header {
+                padding: 10px;
+                min-height: auto;
+            }
+
+            /* Make status bar more compact on mobile */
+            #status {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            #status span {
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 
