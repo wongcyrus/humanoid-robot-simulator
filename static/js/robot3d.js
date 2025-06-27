@@ -1026,9 +1026,9 @@ class Scene3D {
     }
 
     resetCamera() {
-        this.camera.position.set(0, 100, 200);
+        this.camera.position.set(0, 100, 150);
         this.camera.lookAt(0, 0, 0);
-        console.log('📷 Camera reset');
+        console.log('📷 Camera reset to initial position');
     }
 
     onWindowResize() {
