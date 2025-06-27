@@ -177,23 +177,39 @@
 
         /* Panel Toggle Functionality */
         #control-panel {
-            transition: transform 0.3s ease, width 0.3s ease;
-        }
-
-        #control-panel.hidden {
+            transition: transform 0.3s ease;
             transform: translateX(100%);
-            width: 0;
-            padding: 0;
-            overflow: hidden;
         }
 
-        #viewport-container {
-            transition: margin-right 0.3s ease;
+        #control-panel.visible {
+            transform: translateX(0);
         }
 
-        #viewport-container.panel-hidden {
-            margin-right: 0;
+        /* Fix instruction panel text overflow */
+        .panel-section {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
+
+        .panel-section ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .panel-section li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .panel-section strong {
+            display: inline-block;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+
+
 
         #toggle-panel {
             background: rgba(74, 144, 226, 0.8) !important;
@@ -264,11 +280,10 @@
                 <canvas id="three-canvas" width="800" height="600"></canvas>
                 <div class="animation-indicator" id="animation-indicator">🎭 Animating...</div>
                 <div id="viewport-controls">
-                    <button id="toggle-panel" class="action-btn">📋 Hide Panel</button>
+                    <button id="toggle-panel" class="action-btn">📋 Show Panel</button>
                     <button id="reset-camera" class="action-btn">📷 Reset Camera</button>
                     <button id="force-refresh" class="action-btn">🔄 Force Refresh</button>
                     <button id="reset-session" class="action-btn" style="background: #dc3545;">🔄 Reset Session</button>
-                    <button id="test-movement" class="action-btn movement-btn">🚶 Test Movement</button>
                 </div>
             </div>
 
@@ -310,7 +325,7 @@
                         </div>
 
                         <h4>💃 DANCE COLLECTION</h4>
-                        <button class="action-btn" data-action="dance">💃 Dance 1</button>
+                        <!-- <button class="action-btn" data-action="dance">💃 Dance 1</button> -->
                         <button class="action-btn" data-action="dance_two">💃 Dance 2</button>
                         <button class="action-btn" data-action="dance_three">💃 Dance 3</button>
                         <button class="action-btn" data-action="dance_four">💃 Dance 4</button>
@@ -398,7 +413,6 @@
                         <li><strong>Mouse Wheel:</strong> Zoom in/out</li>
                         <li><strong>Green Movement Buttons:</strong> Actually move robots</li>
                         <li><strong>Blue Action Buttons:</strong> Animate without moving</li>
-                        <li><strong>Test Movement:</strong> Try all movement actions on Robot 1</li>
                     </ul>
                 </div>
             </div>
@@ -425,37 +439,6 @@
                     });
                 }
             }
-        });
-
-        // Test movement button
-        document.getElementById('test-movement')?.addEventListener('click', () => {
-            console.log('🚶 Testing movement actions...');
-            const movements = ['go_forward', 'turn_right', 'go_backward', 'turn_left'];
-            let currentMove = 0;
-
-            function executeNextMove() {
-                if (currentMove < movements.length && window.simulator && window.simulator.scene3d) {
-                    const action = movements[currentMove];
-                    console.log(`🚶 Testing: ${action}`);
-
-                    window.simulator.triggerLocalAction('robot_1', action);
-
-                    // Show movement indicator
-                    const indicator = document.getElementById('animation-indicator');
-                    if (indicator) {
-                        indicator.textContent = `🚶 ${action.toUpperCase()}`;
-                        indicator.classList.add('active', 'movement');
-                        setTimeout(() => {
-                            indicator.classList.remove('active', 'movement');
-                        }, 2000);
-                    }
-
-                    currentMove++;
-                    setTimeout(executeNextMove, 2500); // Wait for animation to complete
-                }
-            }
-
-            executeNextMove();
         });
 
         // Function to run predefined action sequences

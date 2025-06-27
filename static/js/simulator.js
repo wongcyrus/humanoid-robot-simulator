@@ -565,28 +565,25 @@ class HumanoidSimulator {
 
     toggleControlPanel() {
         const controlPanel = document.getElementById('control-panel');
-        const viewportContainer = document.getElementById('viewport-container');
         const toggleBtn = document.getElementById('toggle-panel');
 
-        if (!controlPanel || !viewportContainer || !toggleBtn) {
+        if (!controlPanel || !toggleBtn) {
             console.error('❌ Required elements not found for panel toggle');
             return;
         }
 
-        const isHidden = controlPanel.classList.contains('hidden');
+        const isVisible = controlPanel.classList.contains('visible');
 
-        if (isHidden) {
-            // Show the panel
-            controlPanel.classList.remove('hidden');
-            viewportContainer.classList.remove('panel-hidden');
-            toggleBtn.textContent = '📋 Hide Panel';
-            console.log('👁️ Control panel shown');
-        } else {
+        if (isVisible) {
             // Hide the panel
-            controlPanel.classList.add('hidden');
-            viewportContainer.classList.add('panel-hidden');
+            controlPanel.classList.remove('visible');
             toggleBtn.textContent = '📋 Show Panel';
-            console.log('🙈 Control panel hidden');
+            console.log('� Control panel hidden');
+        } else {
+            // Show the panel
+            controlPanel.classList.add('visible');
+            toggleBtn.textContent = '📋 Hide Panel';
+            console.log('�️ Control panel shown');
         }
 
         // Trigger canvas resize after animation completes
