@@ -278,7 +278,7 @@ class APIRoutes:
                             f"Real robot session: {real_robot_session}, is_valid: {real_robot_session['is_valid']}"
                         )
                         if (
-                            not real_robot_session["is_valid"]
+                            real_robot_session["is_valid"]
                             and real_robot_session["robot"] == "all"
                         ):
                             # Send action to all robots via the external API
@@ -359,7 +359,7 @@ class APIRoutes:
 
                     if (
                         real_robot_session is not None
-                        and not real_robot_session["is_valid"]
+                        and real_robot_session["is_valid"]
                         and real_robot_session["robot"] == robot_id
                     ):
                         logger.info(
@@ -546,11 +546,9 @@ def decrypt(session_key: str) -> Optional[dict]:
 
     try:
         # Convert the encrypted string to bytes
-        logger.info(f"Decrypting session_key: {session_key}")
         # Use unquote_plus to handle URL-encoded characters, spaces, and plus signs
         session_key = unquote_plus(session_key).replace(" ", "+")
         encrypted_bytes = base64.b64decode(session_key)
-        logger.info(f"Encrypted bytes: {encrypted_bytes}")
 
         # Perform AES decryption
         cipher = Cipher(
@@ -602,7 +600,7 @@ def decrypt(session_key: str) -> Optional[dict]:
             and decoded_datetime_to is not None
             and decoded_datetime_from < current_time < decoded_datetime_to
         )
-
+        logger.info(f"Session object after decryption: {session_object}")
         return session_object
 
     except Exception as e:
