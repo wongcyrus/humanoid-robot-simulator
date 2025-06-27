@@ -20,6 +20,9 @@ from urllib.parse import unquote_plus
 
 ROBOT_API_URL = os.getenv("ROBOT_API_URL", "http://localhost:5000/api/robot/")
 
+SESSION_AES_KEY = os.environ.get("SESSION_AES_KEY", "0123456789012345").encode()
+SESSION_AES_IV = os.environ.get("SESSION_AES_IV", "5432109876543210").encode()
+
 # Set up logger
 logger = logging.getLogger(__name__)
 
@@ -268,14 +271,14 @@ class APIRoutes:
                     real_robot_session = decrypt(session_key)
                     if (
                         real_robot_session is not None
-                        and "is_expired" in real_robot_session
+                        and "is_valid" in real_robot_session
                         and "robot" in real_robot_session
                     ):
                         logger.info(
-                            f"Real robot session: {real_robot_session}, is_expired: {real_robot_session['is_expired']}"
+                            f"Real robot session: {real_robot_session}, is_valid: {real_robot_session['is_valid']}"
                         )
                         if (
-                            not real_robot_session["is_expired"]
+                            not real_robot_session["is_valid"]
                             and real_robot_session["robot"] == "all"
                         ):
                             # Send action to all robots via the external API
@@ -356,11 +359,11 @@ class APIRoutes:
 
                     if (
                         real_robot_session is not None
-                        and not real_robot_session["is_expired"]
+                        and not real_robot_session["is_valid"]
                         and real_robot_session["robot"] == robot_id
                     ):
                         logger.info(
-                            f"Real robot session: {real_robot_session}, is_expired: {real_robot_session['is_expired']}"
+                            f"Real robot session: {real_robot_session}, is_valid: {real_robot_session['is_valid']}"
                         )
                         send_request(
                             method="RunAction", robot_id=robot_id, action=action
@@ -540,8 +543,6 @@ def decrypt(session_key: str) -> Optional[dict]:
     Returns:
         A dictionary containing the decrypted session data, or None if decryption fails.
     """
-    key = b"0123456789012345"
-    iv = b"5432109876543210"
 
     try:
         # Convert the encrypted string to bytes
@@ -552,7 +553,11 @@ def decrypt(session_key: str) -> Optional[dict]:
         logger.info(f"Encrypted bytes: {encrypted_bytes}")
 
         # Perform AES decryption
-        cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+        cipher = Cipher(
+            algorithms.AES(SESSION_AES_KEY),
+            modes.CBC(SESSION_AES_IV),
+            backend=default_backend(),
+        )
         decryptor = cipher.decryptor()
         decrypted_bytes = decryptor.update(encrypted_bytes) + decryptor.finalize()
 
@@ -575,16 +580,28 @@ def decrypt(session_key: str) -> Optional[dict]:
             logger.error(f"JSON parsing error: {json_error}")
             return None
 
-        # Convert Excel serial date to datetime
-        excel_serial = session_object.get("time")
-        if excel_serial is not None:
-            excel_start_date = datetime(1899, 12, 30, tzinfo=ZoneInfo("Asia/Hong_Kong"))
-            decoded_datetime = excel_start_date + timedelta(days=excel_serial)
-            session_object["time"] = decoded_datetime
-            # Check if the session is expired
-            # Assuming the session is expired if the time is in the past
-            current_time = datetime.now(ZoneInfo("Asia/Hong_Kong"))
-            session_object["is_expired"] = decoded_datetime < current_time
+        # Convert Excel serial dates to datetime and check validity
+        excel_start_date = datetime(1899, 12, 30, tzinfo=ZoneInfo("Asia/Hong_Kong"))
+        decoded_datetime_to = decoded_datetime_from = None
+
+        if "to" in session_object:
+            decoded_datetime_to = excel_start_date + timedelta(
+                days=session_object["to"]
+            )
+            session_object["to"] = decoded_datetime_to
+
+        if "from" in session_object:
+            decoded_datetime_from = excel_start_date + timedelta(
+                days=session_object["from"]
+            )
+            session_object["from"] = decoded_datetime_from
+
+        current_time = datetime.now(ZoneInfo("Asia/Hong_Kong"))
+        session_object["is_valid"] = (
+            decoded_datetime_from is not None
+            and decoded_datetime_to is not None
+            and decoded_datetime_from < current_time < decoded_datetime_to
+        )
 
         return session_object
 

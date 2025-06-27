@@ -3,6 +3,9 @@
  * Guaranteed visibility with complete action library
  */
 
+// Constants for camera positioning
+const DEFAULT_CAMERA_POSITION = { x: 0, y: 110, z: 220 };
+
 class Robot3D {
     constructor(robotData) {
         this.robotId = robotData.robot_id;
@@ -406,7 +409,7 @@ class Scene3D {
         );
 
         // Position camera to see all robots clearly
-        this.camera.position.set(0, 100, 150);
+        this.camera.position.set(DEFAULT_CAMERA_POSITION.x, DEFAULT_CAMERA_POSITION.y, DEFAULT_CAMERA_POSITION.z);
         this.camera.lookAt(0, 0, 0);
 
         // Renderer with high quality settings
@@ -576,6 +579,9 @@ class Scene3D {
 
         // Add IT115115.png image overlay in the center of the screen
         this.addImageOverlay(videoScreen, screenWidth, screenHeight);
+
+        // Add ioextened.png image above the video screen
+        this.addTopImageOverlay(videoScreen, screenWidth, screenHeight);
 
         // Store references
         this.videoScreen = videoScreen;
@@ -1026,7 +1032,7 @@ class Scene3D {
     }
 
     resetCamera() {
-        this.camera.position.set(0, 100, 150);
+        this.camera.position.set(DEFAULT_CAMERA_POSITION.x, DEFAULT_CAMERA_POSITION.y, DEFAULT_CAMERA_POSITION.z);
         this.camera.lookAt(0, 0, 0);
         console.log('📷 Camera reset to initial position');
     }
@@ -1065,6 +1071,11 @@ class Scene3D {
         // Dispose of image overlay texture
         if (this.imageOverlay && this.imageOverlay.material.map) {
             this.imageOverlay.material.map.dispose();
+        }
+
+        // Dispose of top image overlay texture
+        if (this.topImageOverlay && this.topImageOverlay.material.map) {
+            this.topImageOverlay.material.map.dispose();
         }
 
         // Dispose of text texture
@@ -1121,6 +1132,70 @@ class Scene3D {
             this.video.muted = muted;
             console.log(`📺 Video ${muted ? 'muted' : 'unmuted'}`);
         }
+    }
+
+    addTopImageOverlay(videoScreen, screenWidth, screenHeight) {
+        // Load the ioextened.png image
+        const textureLoader = new THREE.TextureLoader();
+        const topImageTexture = textureLoader.load('/static/img/ioextened.jpg',
+            (texture) => {
+                console.log('🖼️ ioextened.jpg image loaded successfully');
+                // Get the actual image dimensions from the texture
+                const image = texture.image;
+                const aspectRatio = image.width / image.height;
+
+                // Use original image dimensions, but scale to a reasonable size for the 3D scene
+                // Assuming the image might be quite large, we'll scale it down proportionally
+                const maxWidth = 200; // Maximum width in 3D units
+                let topImageWidth = Math.min(image.width * 0.5, maxWidth); // Scale down by half or limit to maxWidth
+                let topImageHeight = topImageWidth / aspectRatio;
+
+                // Update the geometry with actual proportions
+                topImageOverlay.geometry.dispose(); // Clean up old geometry
+                topImageOverlay.geometry = new THREE.PlaneGeometry(topImageWidth, topImageHeight);
+
+                // Update position with correct dimensions - no gap between screen and image
+                topImageOverlay.position.copy(videoScreen.position);
+                topImageOverlay.position.y += (screenHeight + topImageHeight) / 2; // Position directly above with no gap
+                topImageOverlay.position.z += 0.2; // Slightly in front of the video screen
+
+                console.log(`🖼️ Image dimensions: ${image.width}x${image.height}, 3D size: ${topImageWidth}x${topImageHeight}`);
+            },
+            undefined,
+            (error) => {
+                console.error('🖼️ Error loading ioextened.jpg:', error);
+            }
+        );
+
+        // Create initial geometry with placeholder dimensions (will be updated when image loads)
+        const topImageWidth = 150; // Placeholder width
+        const topImageHeight = 100; // Placeholder height
+        const topImageGeometry = new THREE.PlaneGeometry(topImageWidth, topImageHeight);
+
+        // Create top image material with transparency
+        const topImageMaterial = new THREE.MeshBasicMaterial({
+            map: topImageTexture,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide
+        });
+
+        // Create the top image mesh
+        const topImageOverlay = new THREE.Mesh(topImageGeometry, topImageMaterial);
+
+        // Position the image directly above the video screen with no gap
+        topImageOverlay.position.copy(videoScreen.position);
+        topImageOverlay.position.y += (screenHeight + topImageHeight) / 2; // Position directly above with no gap
+        topImageOverlay.position.z += 0.2; // Slightly in front of the video screen
+        topImageOverlay.rotation.copy(videoScreen.rotation);
+
+        // Add overlay to scene
+        this.scene.add(topImageOverlay);
+
+        // Store reference
+        this.topImageOverlay = topImageOverlay;
+
+        console.log('🖼️ Top image overlay (ioextened.png) added above video screen');
     }
 }
 
