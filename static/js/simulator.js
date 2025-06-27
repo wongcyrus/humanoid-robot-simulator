@@ -598,12 +598,12 @@ class HumanoidSimulator {
             // Hide the panel
             controlPanel.classList.remove('visible');
             toggleBtn.textContent = '📋 Show Panel';
-            console.log('� Control panel hidden');
+            console.log('📱 Control panel hidden');
         } else {
             // Show the panel
             controlPanel.classList.add('visible');
             toggleBtn.textContent = '📋 Hide Panel';
-            console.log('�️ Control panel shown');
+            console.log('📱️ Control panel shown');
         }
 
         // Trigger canvas resize after animation completes
