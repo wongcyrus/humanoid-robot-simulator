@@ -413,10 +413,10 @@ class HumanoidSimulator {
             });
         }
 
-        // Reset session button
-        const resetSessionBtn = document.getElementById('reset-session');
-        if (resetSessionBtn) {
-            resetSessionBtn.addEventListener('click', () => {
+        // Reset button (combines reset session + force refresh)
+        const resetBtn = document.getElementById('reset');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
                 this.resetSession();
             });
         }
@@ -560,7 +560,27 @@ class HumanoidSimulator {
         } else {
             console.log('⚠️ WebSocket not connected, cannot reset session');
             this.showNotification('Cannot reset session - not connected to server', 'error');
+
+            // If not connected, still perform local force refresh
+            this.forceRefresh();
         }
+    }
+
+    forceRefresh() {
+        console.log('🔄 Force refreshing robots...');
+
+        // Add test robots to ensure they're in the scene
+        this.addTestRobots();
+
+        // If connected to WebSocket, request robot states
+        if (this.socket && this.isConnected && this.sessionKey) {
+            this.socket.emit('get_robot_states', {
+                session_key: this.sessionKey
+            });
+        }
+
+        // Show notification
+        this.showNotification('Robots refreshed successfully!', 'success');
     }
 
     toggleControlPanel() {
@@ -703,6 +723,10 @@ class HumanoidSimulator {
 
             // Update last action display
             this.updateLastAction('all', 'reset');
+
+            // After successful reset, perform force refresh
+            console.log('🔄 Performing force refresh after reset...');
+            this.forceRefresh();
         } else {
             this.showNotification(`Reset failed: ${result.message}`, 'error');
         }

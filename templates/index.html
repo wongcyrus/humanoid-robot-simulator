@@ -282,8 +282,7 @@
                 <div id="viewport-controls">
                     <button id="toggle-panel" class="action-btn">📋 Show Panel</button>
                     <button id="reset-camera" class="action-btn">📷 Reset Camera</button>
-                    <button id="force-refresh" class="action-btn">🔄 Force Refresh</button>
-                    <button id="reset-session" class="action-btn" style="background: #dc3545;">🔄 Reset Session</button>
+                    <button id="reset" class="action-btn" style="background: #dc3545;">🔄 Reset</button>
                 </div>
             </div>
 
@@ -427,19 +426,6 @@
     <script>
         // Additional initialization and debugging
         console.log('🚀 3D Robot Simulator HTML template loaded');
-
-        // Force refresh button
-        document.getElementById('force-refresh')?.addEventListener('click', () => {
-            console.log('🔄 Force refreshing robots...');
-            if (window.simulator) {
-                window.simulator.addTestRobots();
-                if (window.simulator.socket && window.simulator.isConnected && window.simulator.sessionKey) {
-                    window.simulator.socket.emit('get_robot_states', {
-                        session_key: window.simulator.sessionKey
-                    });
-                }
-            }
-        });
 
         // Function to run predefined action sequences
         function runSequence(sequenceType) {
