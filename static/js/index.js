@@ -175,15 +175,18 @@ document.addEventListener('click', (e) => {
 // Function to display action timing information
 function showActionTimings() {
     const timings = {
+        // Dance actions (long durations)
         'dance_two': 52,
         'dance_three': 70,
-        'dance_four': 83,
+        'dance_four': 59,
         'dance_five': 59,
         'dance_six': 69,
         'dance_seven': 67,
         'dance_eight': 85,
         'dance_nine': 84,
         'dance_ten': 85,
+
+        // Movement actions
         'stepping': 3,
         'twist': 4,
         'stand_up_back': 5,
@@ -209,7 +212,11 @@ function showActionTimings() {
         'go_forward': 3.5,
         'push_ups': 9,
         'weightlifting': 9,
-        'kung_fu': 2
+        'kung_fu': 2,
+
+        // Additional backend actions
+        'stand': 1,
+        'stop': 3
     };
 
     console.log('⏱️ Action Timings (seconds):');

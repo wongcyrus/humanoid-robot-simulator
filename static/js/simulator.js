@@ -1,5 +1,5 @@
 /**
- * Enhanced 3D Humanoid Robot Simulator - 44 Actions Available
+ * Enhanced 3D Humanoid Robot Simulator - 34 Actions Available
  * Complete action library with proper timing and realistic animations
  */
 
@@ -20,13 +20,12 @@ class HumanoidSimulator {
         // Resize debouncing
         this.resizeTimeout = null;
 
-        // Action duration mapping (exact timing as specified)
+        // Action duration mapping (exact timing from Python backend)
         this.actionDurations = {
             // Dance actions (long durations)
-            'dance': 2,
             'dance_two': 52,
             'dance_three': 70,
-            'dance_four': 83,
+            'dance_four': 59,
             'dance_five': 59,
             'dance_six': 69,
             'dance_seven': 67,
@@ -62,15 +61,9 @@ class HumanoidSimulator {
             'weightlifting': 9,
             'kung_fu': 2,
 
-            // Additional actions
-            'go_backward': 3.5,
-            'jumping_jacks': 3,
-            'jump': 2,
-            'celebrate': 3,
-            'think': 2,
-            'idle': 1,
-            'kick': 2,
-            'punch': 2,
+            // Additional backend actions
+            'stand': 1,
+            'stop': 3,
 
             // Default duration for unlisted actions
             'default': 2
@@ -212,7 +205,7 @@ class HumanoidSimulator {
                 const robot = this.scene3d.addRobot({
                     ...robotData,
                     rotation: [0, 0, 0],
-                    current_action: 'idle',
+                    current_action: 'stand',
                     action_progress: 0.0,
                     body_parts: {
                         head: { x: 0, y: 0, z: 0 },
@@ -770,7 +763,7 @@ class HumanoidSimulator {
     handleServerActionRequest(data) {
         console.log('🎬 Handling server action request:', data);
 
-        const actionName = data.action_name || 'idle';
+        const actionName = data.action_name || 'stand';
         const robotId = data.robot_id || 'all';
 
         // Execute the action LOCALLY only - don't send back to server to avoid loop
@@ -1059,7 +1052,7 @@ class HumanoidSimulator {
         const danceActions = [
             'dance_two',    // 52 seconds
             'dance_three',  // 70 seconds 
-            'dance_four',   // 83 seconds
+            'dance_four',   // 59 seconds
             'dance_five',   // 59 seconds
             'dance_six',    // 69 seconds
             'dance_seven',  // 67 seconds
@@ -1111,7 +1104,7 @@ class HumanoidSimulator {
         return this.queueMultipleActions(robotId, movementActions);
     }
 
-    // Function to demonstrate exact timing according to your requirements
+    // Function to demonstrate exact timing according to Python backend
     demonstrateTimingSequence(robotId) {
         console.log('🎭 Starting demonstration of exact timing sequence...');
 
@@ -1119,7 +1112,7 @@ class HumanoidSimulator {
             // Long dance sequences
             'dance_two',       // 52 seconds
             'dance_three',     // 70 seconds
-            'dance_four',      // 83 seconds
+            'dance_four',      // 59 seconds
             'dance_five',      // 59 seconds
             'dance_six',       // 69 seconds
             'dance_seven',     // 67 seconds
@@ -1157,7 +1150,11 @@ class HumanoidSimulator {
             'go_forward',     // 3.5 seconds
             'push_ups',       // 9 seconds
             'weightlifting',  // 9 seconds
-            'kung_fu'         // 2 seconds
+            'kung_fu',        // 2 seconds
+
+            // Additional backend actions
+            'stand',          // 1 second
+            'stop'            // 3 seconds
         ];
 
         return this.queueMultipleActions(robotId, allActions);
@@ -1182,4 +1179,4 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-console.log('🚀 CORRECTED Simulator with Fixed Movement loaded successfully');
+console.log('🚀 Enhanced 34-Action Robot Simulator loaded successfully - Python Backend Synchronized');

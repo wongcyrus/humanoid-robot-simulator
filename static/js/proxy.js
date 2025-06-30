@@ -113,7 +113,7 @@ class ActionExecutor {
                 method: "POST",
                 headers: headers,
                 body: JSON.stringify(data),
-                signal: AbortSignal.timeout(500)
+                signal: AbortSignal.timeout(1000)
             });
 
             if (!response.ok) {

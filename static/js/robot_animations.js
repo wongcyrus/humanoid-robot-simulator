@@ -37,7 +37,6 @@ class RobotAnimator {
             'left_move_fast': 3 * 1000,
             'back_fast': 4.5 * 1000,
             'go_forward': 3.5 * 1000,
-            'go_backward': 3.5 * 1000,
             'turn_right': 4 * 1000,
             'turn_left': 4 * 1000,
 
@@ -64,15 +63,12 @@ class RobotAnimator {
             'push_ups': 9 * 1000,
             'sit_ups': 12 * 1000,
             'weightlifting': 9 * 1000,
-            'jumping_jacks': 3 * 1000,
 
             // Basic actions
             'bow': 4 * 1000,
             'wave': 3.5 * 1000,
-            'jump': 2 * 1000,
-            'celebrate': 3 * 1000,
-            'think': 2 * 1000,
-            'idle': 1 * 1000,
+            'stand': 1 * 1000,
+            'stop': 3 * 1000,
 
             // Default duration for unlisted actions
             'default': 2 * 1000
@@ -142,34 +138,16 @@ class RobotAnimator {
             case 'bow':
                 this.animateBow(progress);
                 break;
-            case 'dance':
-                this.animateDance(progress);
-                break;
-            case 'jump':
-                this.animateJump(progress);
-                break;
             case 'kung_fu':
                 this.animateKungFu(progress);
                 break;
-            case 'kick':
-                this.animateKick(progress);
-                break;
-            case 'punch':
-                this.animatePunch(progress);
-                break;
             case 'push_ups':
                 this.animatePushUps(progress);
-                break;
-            case 'celebrate':
-                this.animateCelebrate(progress);
                 break;
 
             // Movement actions
             case 'go_forward':
                 this.animateGoForward(progress);
-                break;
-            case 'go_backward':
-                this.animateGoBackward(progress);
                 break;
             case 'turn_left':
                 this.animateTurnLeft(progress);
@@ -180,11 +158,13 @@ class RobotAnimator {
             case 'sit_ups':
                 this.animateSitUps(progress);
                 break;
-            case 'jumping_jacks':
-                this.animateJumpingJacks(progress);
+
+            // Backend actions
+            case 'stand':
+                this.animateStand(progress);
                 break;
-            case 'think':
-                this.animateThink(progress);
+            case 'stop':
+                this.animateStop(progress);
                 break;
 
             // NEW DANCE ACTIONS
@@ -570,40 +550,6 @@ class RobotAnimator {
         console.log(`🚶 ${this.robot.robotId} forward: x=${this.robot.group.position.x}, z=${this.robot.group.position.z}, rotation=${currentRotation}`);
     }
 
-    animateGoBackward(progress) {
-        console.log(`🚶 ${this.robot.robotId} moving backward - progress: ${progress}`);
-
-        // Walking animation - legs alternate (slower for backward)
-        const leftLeg = this.robot.parts.leftLeg;
-        const rightLeg = this.robot.parts.rightLeg;
-        const leftArm = this.robot.parts.leftArm;
-        const rightArm = this.robot.parts.rightArm;
-
-        if (leftLeg && rightLeg && leftArm && rightArm) {
-            const walkCycle = progress * Math.PI * 3; // Slower backward walk
-
-            leftLeg.rotation.x = Math.sin(walkCycle) * 0.3;
-            rightLeg.rotation.x = -Math.sin(walkCycle) * 0.3;
-            leftArm.rotation.x = Math.sin(walkCycle) * 0.2;
-            rightArm.rotation.x = -Math.sin(walkCycle) * 0.2;
-        }
-
-        // CORRECTED: Move backward based on robot's current rotation
-        const moveDistance = 20;
-        const currentMove = progress * moveDistance;
-
-        // Get robot's current Y rotation to determine backward direction
-        const currentRotation = this.robot.group.rotation.y;
-
-        // Calculate backward direction (opposite of forward)
-        const backwardX = -Math.sin(currentRotation) * currentMove;
-        const backwardZ = -Math.cos(currentRotation) * currentMove;
-
-        // Apply movement in the correct direction
-        this.robot.group.position.x = this.robot.position.x + backwardX;
-        this.robot.group.position.z = this.robot.position.z + backwardZ;
-    }
-
     animateTurnLeft(progress) {
         console.log(`🔄 ${this.robot.robotId} turning left - progress: ${progress}`);
 
@@ -784,7 +730,7 @@ class RobotAnimator {
         this.isAnimating = false;
 
         // For movement actions, update the robot's base position and rotation
-        if (['go_forward', 'go_backward', 'turn_left', 'turn_right', 'right_move_fast', 'left_move_fast', 'back_fast', 'stepping'].includes(this.currentAnimation)) {
+        if (['go_forward', 'turn_left', 'turn_right', 'right_move_fast', 'left_move_fast', 'back_fast', 'stepping'].includes(this.currentAnimation)) {
             console.log(`🔄 Updating base position/rotation for ${this.robot.robotId} after ${this.currentAnimation}`);
 
             // Update the robot's stored position to match current position
@@ -1634,9 +1580,67 @@ class RobotAnimator {
             torso.scale.x = 1 + Math.abs(Math.sin(liftTime)) * 0.05;
         }
     }
+
+    // Backend-specific actions
+    animateStand(progress) {
+        // Simple standing animation - reset to neutral position
+        const torso = this.robot.parts.torso;
+        const leftArm = this.robot.parts.leftArm;
+        const rightArm = this.robot.parts.rightArm;
+        const leftLeg = this.robot.parts.leftLeg;
+        const rightLeg = this.robot.parts.rightLeg;
+
+        if (torso) {
+            // Reset torso to upright
+            torso.rotation.x = 0;
+            torso.rotation.z = 0;
+        }
+
+        if (leftArm && rightArm) {
+            // Arms to neutral position
+            leftArm.rotation.x = 0;
+            rightArm.rotation.x = 0;
+        }
+
+        if (leftLeg && rightLeg) {
+            // Legs to neutral standing position
+            leftLeg.rotation.x = 0;
+            rightLeg.rotation.x = 0;
+        }
+
+        // Ensure robot is at ground level
+        this.robot.group.position.y = this.robot.position.y;
+    }
+
+    animateStop(progress) {
+        // Stop animation - gradually return to neutral position
+        const torso = this.robot.parts.torso;
+        const leftArm = this.robot.parts.leftArm;
+        const rightArm = this.robot.parts.rightArm;
+        const leftLeg = this.robot.parts.leftLeg;
+        const rightLeg = this.robot.parts.rightLeg;
+
+        // Gradual return to neutral position
+        const returnProgress = Math.sin(progress * Math.PI);
+
+        if (torso) {
+            torso.rotation.x *= (1 - returnProgress);
+            torso.rotation.z *= (1 - returnProgress);
+        }
+
+        if (leftArm && rightArm) {
+            leftArm.rotation.x *= (1 - returnProgress);
+            rightArm.rotation.x *= (1 - returnProgress);
+        }
+
+        if (leftLeg && rightLeg) {
+            leftLeg.rotation.x *= (1 - returnProgress);
+            rightLeg.rotation.x *= (1 - returnProgress);
+        }
+    }
 }
 
 // Export for use
 window.RobotAnimator = RobotAnimator;
 
-console.log('🚀 Robot Animation System with 44 Actions loaded successfully!');
+console.log('🚀 Robot Animation System with 34 Python Backend Actions loaded successfully!');
