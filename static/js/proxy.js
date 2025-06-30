@@ -145,28 +145,29 @@ class ActionExecutor {
             let elapsed = 0;
             const checkInterval = 100; // Check every 100ms
 
-            this.currentActionTimeout = setInterval(() => {
-                if (this.immediateStopEvent) {
-                    console.log(`Stopping action execution for ${actionName}`);
-                    clearInterval(this.currentActionTimeout);
-                    this.immediateStopEvent = false;
-                    this.runStopAction();
-                    this.removeActionById(actionItem.id);
-                    this.currentAction = { ...idleAction };
-                    return;
-                }
+            return new Promise((resolve) => {
+                this.currentActionTimeout = setInterval(() => {
+                    if (this.immediateStopEvent) {
+                        console.log(`Stopping action execution for ${actionName}`);
+                        clearInterval(this.currentActionTimeout);
+                        this.immediateStopEvent = false;
+                        this.runStopAction();
+                        this.currentAction = { ...idleAction };
+                        resolve();
+                        return;
+                    }
 
-                elapsed += checkInterval;
-                if (elapsed >= sleepTime) {
-                    clearInterval(this.currentActionTimeout);
-                    this.removeActionById(actionItem.id);
-                    this.currentAction = { ...idleAction };
-                }
-            }, checkInterval);
+                    elapsed += checkInterval;
+                    if (elapsed >= sleepTime) {
+                        clearInterval(this.currentActionTimeout);
+                        this.currentAction = { ...idleAction };
+                        resolve();
+                    }
+                }, checkInterval);
+            });
 
         } catch (error) {
             console.error(`Error executing action ${actionName}:`, error);
-            this.removeActionById(actionItem.id);
             this.currentAction = { ...idleAction };
         }
     }
@@ -180,12 +181,12 @@ class ActionExecutor {
     }
 
     startConsumer() {
-        // Wait for 5-second alignment
+        // Wait for 5-second alignment (like Python version)
         const delay = 5000 - (Date.now() % 5000);
         setTimeout(() => {
             this.consumerInterval = setInterval(() => {
                 this.processQueue();
-            }, 1000);
+            }, 1000); // Process queue every second like Python
         }, delay);
     }
 
@@ -207,9 +208,14 @@ class ActionExecutor {
         if (this.actionQueue.length > 0 && !this.isRunning) {
             const actionItem = this.actionQueue.shift();
             this.isRunning = true;
+
+            // Execute action and wait for its sleep_time to complete
             await this.executeAction(actionItem);
 
-            // Add small delay between actions
+            // Remove the completed action from queue
+            this.removeActionById(actionItem.id);
+
+            // Add delay before processing next action (like Python version)
             setTimeout(() => {
                 this.isRunning = false;
             }, 500);
