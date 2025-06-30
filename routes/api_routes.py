@@ -5,14 +5,13 @@ import logging
 
 from constants import HumanoidAction
 from flask import jsonify, render_template, request, send_from_directory
-from routes.cors_utils import CORSMixin
 from routes.validation import ValidationMixin
 
 # Set up logger
 logger = logging.getLogger(__name__)
 
 
-class APIRoutes(ValidationMixin, CORSMixin):
+class APIRoutes(ValidationMixin):
     def __init__(self, app, socketio, sessions_manager):
         self.app = app
         self.socketio = socketio
@@ -88,6 +87,3 @@ class APIRoutes(ValidationMixin, CORSMixin):
                 )
 
             return render_template("proxy.html", session_key=session_key)
-
-        # CORS configuration
-        self.setup_cors_handlers()
