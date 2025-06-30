@@ -429,7 +429,7 @@ class HumanoidSimulator {
             });
         }
 
-        // Action buttons - ENHANCED with immediate visual feedback
+        // Action buttons - Send all actions through backend API
         const actionButtons = document.querySelectorAll('.action-btn');
         actionButtons.forEach(button => {
             button.addEventListener('click', (e) => {
@@ -447,10 +447,7 @@ class HumanoidSimulator {
                     e.target.style.background = e.target.classList.contains('movement-btn') ? '#28a745' : '#4A90E2';
                 }, 200);
 
-                // Add action to queue instead of triggering immediately
-                this.queueAction(robotId, action);
-
-                // Also send to server if connected
+                // Send action to backend - this will trigger proper events for proxy
                 this.sendAction(robotId, action);
 
                 // Update last action display
@@ -509,16 +506,29 @@ class HumanoidSimulator {
     sendActionByName(actionName, robotId = 'all') {
         console.log(`📡 Sending action by name: ${actionName} to ${robotId} in session: ${this.sessionKey}`);
 
-        if (this.socket && this.isConnected) {
-            this.socket.emit('actions', {
-                session_key: this.sessionKey,
-                action_name: actionName,
-                robot_id: robotId
+        // Send action through REST API endpoint to ensure proper event handling
+        fetch(`/run_action/${robotId}?session_key=${this.sessionKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: actionName
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(`✅ Action ${actionName} sent successfully to ${robotId}`);
+                } else {
+                    console.error(`❌ Failed to send action: ${data.error}`);
+                    this.showNotification(`Failed to send action: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error(`❌ Error sending action: ${error}`);
+                this.showNotification(`Error sending action: ${error.message}`, 'error');
             });
-        } else {
-            console.log('⚠️ WebSocket not connected, cannot send action by name');
-            this.showNotification('Cannot send action: WebSocket not connected', 'error');
-        }
     }
 
     executeAction(actionName, robotId = 'all') {
@@ -534,15 +544,29 @@ class HumanoidSimulator {
     sendAction(robotId, action) {
         console.log(`📡 Sending action: ${action} to ${robotId} in session: ${this.sessionKey}`);
 
-        if (this.socket && this.isConnected) {
-            this.socket.emit('robot_action', {
-                session_key: this.sessionKey,
-                robot_id: robotId,
+        // Send action through REST API endpoint to ensure proper event handling
+        fetch(`/run_action/${robotId}?session_key=${this.sessionKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
                 action: action
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(`✅ Action ${action} sent successfully to ${robotId}`);
+                } else {
+                    console.error(`❌ Failed to send action: ${data.error}`);
+                    this.showNotification(`Failed to send action: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error(`❌ Error sending action: ${error}`);
+                this.showNotification(`Error sending action: ${error.message}`, 'error');
             });
-        } else {
-            console.log('⚠️ WebSocket not connected, using local animation only');
-        }
     }
 
     resetSession() {
@@ -946,8 +970,27 @@ class HumanoidSimulator {
 
             console.log(`⚡ Processing action: ${action} for ${robotId}`);
 
-            // Trigger the action
-            this.triggerLocalAction(robotId, action);
+            // Send action to backend API instead of local processing
+            try {
+                const response = await fetch(`/run_action/${robotId}?session_key=${this.sessionKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: action
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    console.log(`✅ Action ${action} sent successfully to ${robotId} via backend`);
+                } else {
+                    console.error(`❌ Failed to send action via backend: ${data.error}`);
+                }
+            } catch (error) {
+                console.error(`❌ Error sending action via backend: ${error}`);
+            }
 
             // Update last action display
             this.updateLastAction(robotId, action);

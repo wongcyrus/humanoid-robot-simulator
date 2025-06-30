@@ -8,6 +8,9 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 from handlers.websocket_handlers import WebSocketHandlers
 from routes.api_routes import APIRoutes
+from routes.robot_routes import RobotRoutes
+from routes.action_routes import ActionRoutes
+from routes.video_routes import VideoRoutes
 from server.session_manager import SessionManager
 
 
@@ -81,6 +84,15 @@ class RobotWebSocketServer:
         # Initialize components
         self.sessions_manager = SessionManager()
         self.api_routes = APIRoutes(self.app, self.socketio, self.sessions_manager)
+        self.robot_routes = RobotRoutes(
+            self.app, self.socketio, self.sessions_manager, self.api_routes
+        )
+        self.action_routes = ActionRoutes(
+            self.app, self.socketio, self.sessions_manager, self.api_routes
+        )
+        self.video_routes = VideoRoutes(
+            self.app, self.socketio, self.sessions_manager, self.api_routes
+        )
         self.websocket_handlers = WebSocketHandlers(
             self.socketio, self.sessions_manager
         )
