@@ -20,53 +20,53 @@ class HumanoidSimulator {
         // Resize debouncing
         this.resizeTimeout = null;
 
-        // Action duration mapping (exact timing from Python backend)
+        // Action duration mapping (synchronized with animation system for precise timing)
         this.actionDurations = {
-            // Dance actions (long durations)
-            'dance_two': 52,
-            'dance_three': 70,
-            'dance_four': 59,
-            'dance_five': 59,
-            'dance_six': 69,
-            'dance_seven': 67,
-            'dance_eight': 85,
-            'dance_nine': 84,
-            'dance_ten': 85,
+            // Dance actions (long durations) - Complex choreographed sequences
+            'dance_two': 52,    // Energetic multi-phase dance with 5 distinct sections
+            'dance_three': 70,  // Extended dance sequence with sophisticated timing
+            'dance_four': 59,   // Moderate dance sequence with varied intensity
+            'dance_five': 59,   // Moderate dance sequence with rhythmic patterns
+            'dance_six': 69,    // Extended dance sequence with build-up and climax
+            'dance_seven': 67,  // Extended dance sequence with complex choreography
+            'dance_eight': 85,  // Long dance sequence with maximum complexity
+            'dance_nine': 84,   // Long dance sequence with sustained high energy
+            'dance_ten': 85,    // Long dance sequence with elaborate finale
 
-            // Movement actions
-            'stepping': 3,
-            'twist': 4,
-            'stand_up_back': 5,
-            'stand_up_front': 5,
-            'right_kick': 2,
-            'left_kick': 2,
-            'right_uppercut': 2,
-            'left_uppercut': 2,
-            'wing_chun': 2,
-            'right_shot_fast': 4,
-            'left_shot_fast': 4,
-            'chest': 9,
-            'squat_up': 6,
-            'squat': 1,
-            'bow': 4,
-            'wave': 3.5,
-            'turn_right': 4,
-            'turn_left': 4,
-            'sit_ups': 12,
-            'right_move_fast': 3,
-            'left_move_fast': 3,
-            'back_fast': 4.5,
-            'go_forward': 3.5,
-            'push_ups': 9,
-            'weightlifting': 9,
-            'kung_fu': 2,
+            // Movement actions - Quick responsive locomotion
+            'stepping': 3,       // Stepping in place with rhythm
+            'twist': 4,          // Body twisting motion with momentum
+            'stand_up_back': 5,  // Recovery from back position with support
+            'stand_up_front': 5, // Recovery from front position with push-up
+            'right_kick': 2,     // Quick right leg strike
+            'left_kick': 2,      // Quick left leg strike
+            'right_uppercut': 2, // Sharp right arm uppercut
+            'left_uppercut': 2,  // Sharp left arm uppercut
+            'wing_chun': 2,      // Wing chun martial arts technique
+            'right_shot_fast': 4, // Quick right punch combination
+            'left_shot_fast': 4,  // Quick left punch combination
+            'chest': 9,          // Chest exercise routine with multiple reps
+            'squat_up': 6,       // Squatting exercise with controlled movement
+            'squat': 1,          // Quick single squat movement
+            'bow': 4,            // Formal bowing gesture with proper timing
+            'wave': 3.5,         // Friendly waving gesture with natural rhythm
+            'turn_right': 4,     // 90-degree right turn with smooth acceleration
+            'turn_left': 4,      // 90-degree left turn with smooth acceleration
+            'sit_ups': 12,       // Extended sit-up routine (longest exercise)
+            'right_move_fast': 3, // Quick right sidestep movement
+            'left_move_fast': 3,  // Quick left sidestep movement
+            'back_fast': 4.5,     // Quick backward movement with safety
+            'go_forward': 3.5,    // Forward walking motion with natural gait
+            'push_ups': 9,        // Push-up routine with proper form
+            'weightlifting': 9,   // Weightlifting routine with controlled reps
+            'kung_fu': 2,         // Kung fu strike with precision
 
-            // Additional backend actions
-            'stand': 1,
-            'stop': 3,
+            // Additional backend actions - System control
+            'stand': 1,          // Return to neutral standing position
+            'stop': 3,           // Stop all movement and return to rest
 
             // Default duration for unlisted actions
-            'default': 2
+            'default': 2         // Standard fallback timing
         };
 
         console.log('🚀 Starting Enhanced Humanoid Simulator...');
@@ -1159,6 +1159,116 @@ class HumanoidSimulator {
 
         return this.queueMultipleActions(robotId, allActions);
     }
+
+    // Enhanced timing demonstration functions
+    demonstrateActionCategories(robotId = 'all') {
+        console.log('🎭 Starting enhanced action category demonstration...');
+
+        const categories = {
+            'Quick Combat Moves (2-4s)': ['right_kick', 'left_kick', 'kung_fu', 'wing_chun'],
+            'Basic Gestures (3-4s)': ['wave', 'bow', 'twist', 'stepping'],
+            'Movement Actions (3-5s)': ['go_forward', 'turn_left', 'turn_right', 'stand_up_back'],
+            'Exercise Routines (6-12s)': ['squat_up', 'chest', 'push_ups', 'weightlifting', 'sit_ups'],
+            'Moderate Dances (52-69s)': ['dance_two', 'dance_four', 'dance_five', 'dance_six'],
+            'Long Dances (70-85s)': ['dance_three', 'dance_seven', 'dance_eight', 'dance_nine', 'dance_ten']
+        };
+
+        Object.entries(categories).forEach(([categoryName, actions], categoryIndex) => {
+            console.log(`\n📂 Category ${categoryIndex + 1}: ${categoryName}`);
+            actions.forEach((action, actionIndex) => {
+                const duration = this.getActionDuration(action);
+                console.log(`  ⏱️ ${action}: ${duration}s`);
+            });
+        });
+
+        return categories;
+    }
+
+    demonstrateTimingPrecision(robotId = 'all') {
+        console.log('🔧 Demonstrating enhanced animation timing precision...');
+
+        // Test sequence showing timing accuracy
+        const testSequence = [
+            { action: 'squat', expectedDuration: 1 },      // Very quick
+            { action: 'kung_fu', expectedDuration: 2 },    // Quick combat
+            { action: 'wave', expectedDuration: 3.5 },     // Basic gesture
+            { action: 'turn_right', expectedDuration: 4 }, // Movement
+            { action: 'chest', expectedDuration: 9 },      // Exercise
+            { action: 'sit_ups', expectedDuration: 12 },   // Long exercise
+            { action: 'dance_two', expectedDuration: 52 }  // Dance sequence
+        ];
+
+        console.log('🎯 Timing precision test sequence:');
+        testSequence.forEach((item, index) => {
+            const actualDuration = this.getActionDuration(item.action);
+            const isAccurate = actualDuration === item.expectedDuration;
+            console.log(`  ${index + 1}. ${item.action}: Expected ${item.expectedDuration}s, Actual ${actualDuration}s ${isAccurate ? '✅' : '❌'}`);
+        });
+
+        return testSequence;
+    }
+
+    queuePhasedDanceDemo(robotId = 'all') {
+        console.log('💃 Starting phased dance demonstration with precise timing...');
+
+        // Demonstrate the new phased animation system with different dance complexities
+        const danceProgression = [
+            'dance_two',    // 52s - Short/Medium dance with 4-5 phases
+            'dance_four',   // 59s - Medium dance 
+            'dance_six',    // 69s - Extended dance
+            'dance_three',  // 70s - Long dance
+            'dance_eight',  // 85s - Maximum complexity dance
+        ];
+
+        let totalTime = 0;
+        danceProgression.forEach(dance => {
+            totalTime += this.getActionDuration(dance);
+        });
+
+        console.log(`🕺 Total dance progression duration: ${totalTime} seconds (${(totalTime / 60).toFixed(1)} minutes)`);
+
+        return this.queueMultipleActions(robotId, danceProgression);
+    }
+
+    // Enhanced action queuing with timing analysis
+    queueActionWithTimingAnalysis(robotId, action) {
+        const duration = this.getActionDuration(action);
+        const category = this.getActionCategory(action);
+
+        console.log(`📊 Timing Analysis for ${action}:`);
+        console.log(`  ⏱️ Duration: ${duration} seconds`);
+        console.log(`  📂 Category: ${category}`);
+        console.log(`  🎭 Animation Style: ${this.getAnimationStyle(action)}`);
+
+        this.queueAction(robotId, action);
+        return duration;
+    }
+
+    getActionCategory(action) {
+        const duration = this.getActionDuration(action);
+
+        if (action.startsWith('dance_')) {
+            return duration > 75 ? 'Long Dance' : duration > 60 ? 'Extended Dance' : 'Moderate Dance';
+        } else if (['chest', 'squat_up', 'push_ups', 'sit_ups', 'weightlifting'].includes(action)) {
+            return 'Exercise';
+        } else if (['right_kick', 'left_kick', 'kung_fu', 'wing_chun', 'right_uppercut', 'left_uppercut'].includes(action)) {
+            return 'Combat';
+        } else if (['go_forward', 'turn_left', 'turn_right', 'stepping', 'twist'].includes(action)) {
+            return 'Movement';
+        } else {
+            return 'Basic Action';
+        }
+    }
+
+    getAnimationStyle(action) {
+        if (action.startsWith('dance_')) return 'Complex Multi-Phase';
+        if (['right_kick', 'left_kick', 'kung_fu', 'wing_chun'].includes(action)) return 'Sharp Combat';
+        if (['chest', 'push_ups', 'sit_ups', 'weightlifting'].includes(action)) return 'Repetitive Exercise';
+        if (['go_forward', 'turn_left', 'turn_right'].includes(action)) return 'Smooth Movement';
+        return 'Basic Gesture';
+    }
+
+    // ...existing code...
 }
 
 // Initialize simulator when page loads

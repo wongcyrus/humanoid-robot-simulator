@@ -16,59 +16,59 @@ class RobotAnimator {
         this.animationDuration = 2000; // Default 2 seconds
         this.currentAnimation = null;
 
-        // Action duration mapping (exact timing as specified)
+        // Action duration mapping (synchronized with backend timing)
         this.actionDurations = {
-            // Dance actions (long durations)
+            // Dance actions (long durations) - Complex choreographed sequences
             'dance': 2 * 1000, // Original dance action
-            'dance_two': 52 * 1000,
-            'dance_three': 70 * 1000,
-            'dance_four': 83 * 1000,
-            'dance_five': 59 * 1000,
-            'dance_six': 69 * 1000,
-            'dance_seven': 67 * 1000,
-            'dance_eight': 85 * 1000,
-            'dance_nine': 84 * 1000,
-            'dance_ten': 85 * 1000,
+            'dance_two': 52 * 1000,    // Moderate dance sequence
+            'dance_three': 70 * 1000,  // Extended dance sequence  
+            'dance_four': 59 * 1000,   // Moderate dance sequence (CORRECTED)
+            'dance_five': 59 * 1000,   // Moderate dance sequence
+            'dance_six': 69 * 1000,    // Extended dance sequence
+            'dance_seven': 67 * 1000,  // Extended dance sequence
+            'dance_eight': 85 * 1000,  // Long dance sequence
+            'dance_nine': 84 * 1000,   // Long dance sequence
+            'dance_ten': 85 * 1000,    // Long dance sequence
 
-            // Movement actions
-            'stepping': 3 * 1000,
-            'twist': 4 * 1000,
-            'right_move_fast': 3 * 1000,
-            'left_move_fast': 3 * 1000,
-            'back_fast': 4.5 * 1000,
-            'go_forward': 3.5 * 1000,
-            'turn_right': 4 * 1000,
-            'turn_left': 4 * 1000,
+            // Movement actions - Quick responsive movements
+            'stepping': 3 * 1000,       // Stepping in place
+            'twist': 4 * 1000,          // Body twisting motion
+            'right_move_fast': 3 * 1000, // Quick right sidestep
+            'left_move_fast': 3 * 1000,  // Quick left sidestep
+            'back_fast': 4.5 * 1000,     // Quick backward movement
+            'go_forward': 3.5 * 1000,    // Forward walking motion
+            'turn_right': 4 * 1000,      // 90-degree right turn
+            'turn_left': 4 * 1000,       // 90-degree left turn
 
-            // Standing actions
-            'stand_up_back': 5 * 1000,
-            'stand_up_front': 5 * 1000,
+            // Standing actions - Recovery movements
+            'stand_up_back': 5 * 1000,   // Getting up from back position
+            'stand_up_front': 5 * 1000,  // Getting up from front position
 
-            // Combat actions
-            'right_kick': 2 * 1000,
-            'left_kick': 2 * 1000,
-            'right_uppercut': 2 * 1000,
-            'left_uppercut': 2 * 1000,
-            'wing_chun': 2 * 1000,
-            'right_shot_fast': 4 * 1000,
-            'left_shot_fast': 4 * 1000,
-            'kung_fu': 2 * 1000,
-            'kick': 2 * 1000,
-            'punch': 2 * 1000,
+            // Combat actions - Quick precise strikes
+            'right_kick': 2 * 1000,      // Right leg kick
+            'left_kick': 2 * 1000,       // Left leg kick
+            'right_uppercut': 2 * 1000,  // Right arm uppercut
+            'left_uppercut': 2 * 1000,   // Left arm uppercut
+            'wing_chun': 2 * 1000,       // Wing chun martial arts
+            'right_shot_fast': 4 * 1000, // Quick right punch combo
+            'left_shot_fast': 4 * 1000,  // Quick left punch combo
+            'kung_fu': 2 * 1000,         // Kung fu strike
+            'kick': 2 * 1000,            // Generic kick
+            'punch': 2 * 1000,           // Generic punch
 
-            // Exercise actions
-            'chest': 9 * 1000,
-            'squat_up': 6 * 1000,
-            'squat': 1 * 1000,
-            'push_ups': 9 * 1000,
-            'sit_ups': 12 * 1000,
-            'weightlifting': 9 * 1000,
+            // Exercise actions - Sustained movements
+            'chest': 9 * 1000,           // Chest exercise routine
+            'squat_up': 6 * 1000,        // Squat up movement
+            'squat': 1 * 1000,           // Quick squat
+            'push_ups': 9 * 1000,        // Push-up routine
+            'sit_ups': 12 * 1000,        // Sit-up routine (longest exercise)
+            'weightlifting': 9 * 1000,   // Weightlifting routine
 
-            // Basic actions
-            'bow': 4 * 1000,
-            'wave': 3.5 * 1000,
-            'stand': 1 * 1000,
-            'stop': 3 * 1000,
+            // Basic actions - Simple gestures
+            'bow': 4 * 1000,             // Bowing gesture
+            'wave': 3.5 * 1000,          // Waving gesture
+            'stand': 1 * 1000,           // Return to standing position
+            'stop': 3 * 1000,            // Stop all movement
 
             // Default duration for unlisted actions
             'default': 2 * 1000
@@ -108,8 +108,173 @@ class RobotAnimator {
         // Store the robot's current facing direction at animation start
         this.animationStartRotation = this.robot.rotation.y || this.robot.group.rotation.y || 0;
 
+        // Initialize animation-specific properties based on action type
+        this.initializeAnimationProperties(action);
+
         // Start the animation loop
         this.animateAction(action);
+    }
+
+    initializeAnimationProperties(action) {
+        const actionKey = action.toLowerCase();
+
+        // Set animation characteristics based on action type
+        if (actionKey.startsWith('dance_')) {
+            // Dance actions: Complex multi-phase animations
+            this.animationPhases = this.getDancePhases(actionKey);
+            this.animationStyle = 'complex';
+        } else if (['right_kick', 'left_kick', 'right_uppercut', 'left_uppercut', 'wing_chun', 'kung_fu'].includes(actionKey)) {
+            // Combat actions: Sharp, precise movements
+            this.animationPhases = this.getCombatPhases();
+            this.animationStyle = 'combat';
+        } else if (['chest', 'squat_up', 'squat', 'push_ups', 'sit_ups', 'weightlifting'].includes(actionKey)) {
+            // Exercise actions: Repetitive, sustained movements
+            this.animationPhases = this.getExercisePhases(actionKey);
+            this.animationStyle = 'exercise';
+        } else if (['go_forward', 'turn_left', 'turn_right', 'stepping', 'twist'].includes(actionKey)) {
+            // Movement actions: Smooth locomotion
+            this.animationPhases = this.getMovementPhases();
+            this.animationStyle = 'movement';
+        } else {
+            // Basic actions: Simple gestures
+            this.animationPhases = this.getBasicPhases();
+            this.animationStyle = 'basic';
+        }
+    }
+
+    getDancePhases(danceAction) {
+        // Different dance actions have different complexity levels
+        const baseDuration = this.actionDurations[danceAction] / 1000;
+
+        if (baseDuration > 80) {
+            // Long dances: 5 phases with complex transitions
+            return [
+                { name: 'intro', duration: 0.1, easing: 'easeInOut' },
+                { name: 'buildup', duration: 0.2, easing: 'easeIn' },
+                { name: 'main', duration: 0.4, easing: 'linear' },
+                { name: 'climax', duration: 0.2, easing: 'easeOut' },
+                { name: 'outro', duration: 0.1, easing: 'easeInOut' }
+            ];
+        } else if (baseDuration > 60) {
+            // Medium dances: 4 phases
+            return [
+                { name: 'intro', duration: 0.15, easing: 'easeIn' },
+                { name: 'main', duration: 0.5, easing: 'linear' },
+                { name: 'climax', duration: 0.25, easing: 'easeOut' },
+                { name: 'outro', duration: 0.1, easing: 'easeInOut' }
+            ];
+        } else {
+            // Short dances: 3 phases
+            return [
+                { name: 'intro', duration: 0.2, easing: 'easeIn' },
+                { name: 'main', duration: 0.6, easing: 'linear' },
+                { name: 'outro', duration: 0.2, easing: 'easeOut' }
+            ];
+        }
+    }
+
+    getCombatPhases() {
+        // Combat actions: Quick, sharp movements
+        return [
+            { name: 'windup', duration: 0.2, easing: 'easeIn' },
+            { name: 'strike', duration: 0.3, easing: 'sharp' },
+            { name: 'follow_through', duration: 0.3, easing: 'easeOut' },
+            { name: 'recovery', duration: 0.2, easing: 'easeInOut' }
+        ];
+    }
+
+    getExercisePhases(exerciseAction) {
+        // Exercise actions: Repetitive patterns
+        const baseDuration = this.actionDurations[exerciseAction] / 1000;
+
+        if (baseDuration > 10) {
+            // Long exercises: Multiple rep cycles
+            return [
+                { name: 'warmup', duration: 0.1, easing: 'easeIn' },
+                { name: 'reps', duration: 0.8, easing: 'linear' },
+                { name: 'cooldown', duration: 0.1, easing: 'easeOut' }
+            ];
+        } else {
+            // Short exercises: Simple pattern
+            return [
+                { name: 'setup', duration: 0.2, easing: 'easeIn' },
+                { name: 'execute', duration: 0.6, easing: 'linear' },
+                { name: 'return', duration: 0.2, easing: 'easeOut' }
+            ];
+        }
+    }
+
+    getMovementPhases() {
+        // Movement actions: Smooth locomotion
+        return [
+            { name: 'start', duration: 0.2, easing: 'easeIn' },
+            { name: 'move', duration: 0.6, easing: 'linear' },
+            { name: 'stop', duration: 0.2, easing: 'easeOut' }
+        ];
+    }
+
+    getBasicPhases() {
+        // Basic actions: Simple gestures
+        return [
+            { name: 'begin', duration: 0.3, easing: 'easeIn' },
+            { name: 'hold', duration: 0.4, easing: 'linear' },
+            { name: 'end', duration: 0.3, easing: 'easeOut' }
+        ];
+    }
+
+    // Enhanced easing functions for more natural animations
+    applyEasing(progress, easingType) {
+        switch (easingType) {
+            case 'easeIn':
+                return progress * progress;
+            case 'easeOut':
+                return 1 - (1 - progress) * (1 - progress);
+            case 'easeInOut':
+                return progress < 0.5
+                    ? 2 * progress * progress
+                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+            case 'sharp':
+                // Sharp acceleration and deceleration for combat moves
+                return progress < 0.5
+                    ? 4 * progress * progress * progress
+                    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+            case 'linear':
+            default:
+                return progress;
+        }
+    }
+
+    // Get current animation phase and local progress within that phase
+    getCurrentPhase(progress) {
+        let cumulativeDuration = 0;
+
+        for (let i = 0; i < this.animationPhases.length; i++) {
+            const phase = this.animationPhases[i];
+            const phaseEnd = cumulativeDuration + phase.duration;
+
+            if (progress <= phaseEnd) {
+                const phaseProgress = (progress - cumulativeDuration) / phase.duration;
+                const easedProgress = this.applyEasing(phaseProgress, phase.easing);
+
+                return {
+                    phase: phase,
+                    phaseIndex: i,
+                    phaseProgress: phaseProgress,
+                    easedProgress: easedProgress
+                };
+            }
+
+            cumulativeDuration = phaseEnd;
+        }
+
+        // If we're past all phases, return the last phase at 100%
+        const lastPhase = this.animationPhases[this.animationPhases.length - 1];
+        return {
+            phase: lastPhase,
+            phaseIndex: this.animationPhases.length - 1,
+            phaseProgress: 1.0,
+            easedProgress: 1.0
+        };
     }
 
     resetToOriginalPositions() {
@@ -129,20 +294,29 @@ class RobotAnimator {
         const elapsed = Date.now() - this.animationStartTime;
         const progress = Math.min(elapsed / this.animationDuration, 1);
 
-        // Apply animation based on action
+        // Get current animation phase and eased progress
+        const phaseInfo = this.getCurrentPhase(progress);
+
+        // Log phase transitions for complex animations
+        if (this.animationStyle === 'complex' && phaseInfo.phaseIndex !== this.lastPhaseIndex) {
+            console.log(`🎭 ${this.robot.robotId} ${action}: Phase ${phaseInfo.phaseIndex + 1}/${this.animationPhases.length} - ${phaseInfo.phase.name}`);
+            this.lastPhaseIndex = phaseInfo.phaseIndex;
+        }
+
+        // Apply animation based on action with enhanced timing
         switch (action.toLowerCase()) {
-            // Original actions
+            // Original actions with enhanced timing
             case 'wave':
-                this.animateWave(progress);
+                this.animateWave(progress, phaseInfo);
                 break;
             case 'bow':
-                this.animateBow(progress);
+                this.animateBow(progress, phaseInfo);
                 break;
             case 'kung_fu':
-                this.animateKungFu(progress);
+                this.animateKungFu(progress, phaseInfo);
                 break;
             case 'push_ups':
-                this.animatePushUps(progress);
+                this.animatePushUps(progress, phaseInfo);
                 break;
 
             // Movement actions
@@ -270,21 +444,69 @@ class RobotAnimator {
         }
     }
 
-    // EXISTING ANIMATIONS (unchanged)
-    animateWave(progress) {
+    // ENHANCED ANIMATIONS WITH PHASED TIMING
+    animateWave(progress, phaseInfo = null) {
         const rightArm = this.robot.parts.rightArm;
-        if (rightArm) {
+        if (!rightArm) return;
+
+        if (phaseInfo) {
+            // Enhanced wave with proper timing phases
+            switch (phaseInfo.phase.name) {
+                case 'begin':
+                    // Raise arm gradually
+                    const raiseProgress = phaseInfo.easedProgress;
+                    rightArm.rotation.z = -Math.PI / 6 * raiseProgress;
+                    break;
+                case 'hold':
+                    // Main waving motion
+                    const waveFreq = 3; // waves per phase
+                    const waveAngle = Math.sin(phaseInfo.easedProgress * Math.PI * waveFreq) * 0.4;
+                    rightArm.rotation.z = -Math.PI / 4 + waveAngle;
+                    rightArm.rotation.x = Math.sin(phaseInfo.easedProgress * Math.PI * waveFreq * 2) * 0.1;
+                    break;
+                case 'end':
+                    // Lower arm back to position
+                    const lowerProgress = 1 - phaseInfo.easedProgress;
+                    rightArm.rotation.z = -Math.PI / 6 * lowerProgress;
+                    break;
+            }
+        } else {
+            // Fallback to original animation
             const waveAngle = Math.sin(progress * Math.PI * 4) * 0.5;
             rightArm.rotation.z = -Math.PI / 4 + waveAngle;
             rightArm.rotation.x = Math.sin(progress * Math.PI * 8) * 0.2;
         }
     }
 
-    animateBow(progress) {
+    animateBow(progress, phaseInfo = null) {
         const torso = this.robot.parts.torso;
         const head = this.robot.parts.head;
 
-        if (torso && head) {
+        if (!torso || !head) return;
+
+        if (phaseInfo) {
+            // Enhanced bow with proper timing phases
+            switch (phaseInfo.phase.name) {
+                case 'begin':
+                    // Gradual bow down
+                    const bowProgress = phaseInfo.easedProgress;
+                    torso.rotation.x = bowProgress * 0.6;
+                    head.rotation.x = bowProgress * 0.3;
+                    break;
+                case 'hold':
+                    // Hold bow position
+                    torso.rotation.x = 0.6;
+                    head.rotation.x = 0.3;
+                    break;
+                case 'end':
+                    // Return to upright position
+                    const returnProgress = 1 - phaseInfo.easedProgress;
+                    torso.rotation.x = returnProgress * 0.6;
+                    head.rotation.x = returnProgress * 0.3;
+                    break;
+            }
+        } else {
+            // Fallback to original animation
             const bowAngle = Math.sin(progress * Math.PI) * 0.5;
             torso.rotation.x = bowAngle;
             head.rotation.x = bowAngle * 0.5;
@@ -725,9 +947,14 @@ class RobotAnimator {
     }
 
     finishAnimation() {
-        console.log(`✅ Animation finished: ${this.currentAnimation} for ${this.robot.robotId}`);
+        console.log(`✅ Animation finished: ${this.currentAnimation} for ${this.robot.robotId} (${this.animationDuration / 1000}s duration)`);
 
         this.isAnimating = false;
+
+        // Clean up enhanced animation state
+        this.animationPhases = null;
+        this.animationStyle = null;
+        this.lastPhaseIndex = -1;
 
         // For movement actions, update the robot's base position and rotation
         if (['go_forward', 'turn_left', 'turn_right', 'right_move_fast', 'left_move_fast', 'back_fast', 'stepping'].includes(this.currentAnimation)) {
@@ -744,7 +971,9 @@ class RobotAnimator {
             console.log(`📍 New position for ${this.robot.robotId}:`, this.robot.position);
             console.log(`🔄 New rotation for ${this.robot.robotId}:`, this.robot.rotation.y);
         } else {
-            // For non-movement actions, handle different ending positions
+            // For non-movement actions, handle different ending positions based on animation style
+            const resetDelay = this.getResetDelay();
+
             setTimeout(() => {
                 if (!this.isAnimating) {
                     console.log(`🎭 Finishing ${this.currentAnimation} for ${this.robot.robotId}`);
@@ -779,10 +1008,23 @@ class RobotAnimator {
 
                     console.log(`📍 Maintained position for ${this.robot.robotId}:`, this.robot.position);
                 }
-            }, 500);
+            }, resetDelay);
         }
 
         this.currentAnimation = null;
+    }
+
+    getResetDelay() {
+        // Determine reset delay based on animation type and style
+        if (this.animationStyle === 'complex' || this.currentAnimation?.startsWith('dance_')) {
+            return 1000; // Longer pause for complex dances
+        } else if (this.animationStyle === 'exercise') {
+            return 500; // Medium pause for exercises  
+        } else if (this.animationStyle === 'combat') {
+            return 200; // Quick reset for combat moves
+        } else {
+            return 300; // Default pause for basic actions
+        }
     }
 
     stopAnimation() {
@@ -791,8 +1033,8 @@ class RobotAnimator {
     }
 
     // NEW DANCE ANIMATIONS
-    animateDanceTwo(progress) {
-        // Energetic multi-phase dance with 4 distinct sections
+    animateDanceTwo(progress, phaseInfo = null) {
+        // Enhanced 52-second energetic multi-phase dance with sophisticated timing
         const leftArm = this.robot.parts.leftArm;
         const rightArm = this.robot.parts.rightArm;
         const torso = this.robot.parts.torso;
@@ -800,8 +1042,80 @@ class RobotAnimator {
         const leftLeg = this.robot.parts.leftLeg;
         const rightLeg = this.robot.parts.rightLeg;
 
-        if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
-            // Create 4 distinct dance phases
+        if (!leftArm || !rightArm || !torso || !head || !leftLeg || !rightLeg) return;
+
+        if (phaseInfo) {
+            // Enhanced dance with phased timing (52 seconds total)
+            const intensity = this.getDanceIntensity(phaseInfo);
+            const baseFrequency = 2; // Base dance frequency
+            const danceTime = progress * Math.PI * baseFrequency;
+
+            switch (phaseInfo.phase.name) {
+                case 'intro':
+                    // Gentle introduction with arms and body sway
+                    const introIntensity = phaseInfo.easedProgress * 0.3;
+                    leftArm.rotation.z = Math.sin(danceTime * 1.5) * introIntensity;
+                    rightArm.rotation.z = -Math.sin(danceTime * 1.5) * introIntensity;
+                    torso.rotation.y = Math.sin(danceTime * 0.8) * 0.1;
+                    this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(danceTime)) * 2;
+                    break;
+
+                case 'buildup':
+                    // Increasing energy and complexity
+                    const buildupIntensity = 0.3 + (phaseInfo.easedProgress * 0.4);
+                    leftArm.rotation.z = Math.sin(danceTime * 2.5) * buildupIntensity;
+                    rightArm.rotation.z = -Math.sin(danceTime * 2.5 + Math.PI / 3) * buildupIntensity;
+                    leftArm.rotation.x = Math.sin(danceTime * 1.8) * 0.3;
+                    rightArm.rotation.x = Math.sin(danceTime * 1.8 + Math.PI) * 0.3;
+                    torso.rotation.y = Math.sin(danceTime * 1.2) * 0.25;
+                    torso.rotation.x = Math.sin(danceTime * 2) * 0.1;
+                    head.rotation.y = Math.sin(danceTime * 1.5) * 0.2;
+                    this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(danceTime * 1.5)) * 5;
+                    break;
+
+                case 'main':
+                    // Main dance sequence with full energy
+                    const mainIntensity = 0.7 + Math.sin(phaseInfo.easedProgress * Math.PI * 3) * 0.2;
+                    leftArm.rotation.z = Math.sin(danceTime * 3.5) * mainIntensity;
+                    rightArm.rotation.z = -Math.sin(danceTime * 3.5 + Math.PI / 2) * mainIntensity;
+                    leftArm.rotation.x = Math.sin(danceTime * 2.8) * 0.5;
+                    rightArm.rotation.x = Math.sin(danceTime * 2.8 + Math.PI / 4) * 0.5;
+                    torso.rotation.y = Math.sin(danceTime * 2) * 0.4;
+                    torso.rotation.x = Math.sin(danceTime * 2.5) * 0.2;
+                    head.rotation.y = Math.sin(danceTime * 2.2) * 0.3;
+                    head.rotation.x = Math.sin(danceTime * 1.8) * 0.15;
+                    leftLeg.rotation.x = Math.sin(danceTime * 1.5) * 0.3;
+                    rightLeg.rotation.x = Math.sin(danceTime * 1.5 + Math.PI) * 0.3;
+                    this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(danceTime * 2.5)) * 8;
+                    break;
+
+                case 'climax':
+                    // Peak energy with maximum movement
+                    const climaxIntensity = 0.9;
+                    leftArm.rotation.z = Math.sin(danceTime * 4) * climaxIntensity;
+                    rightArm.rotation.z = -Math.sin(danceTime * 4 + Math.PI / 6) * climaxIntensity;
+                    leftArm.rotation.x = Math.sin(danceTime * 3.5) * 0.7;
+                    rightArm.rotation.x = Math.sin(danceTime * 3.5 + Math.PI / 3) * 0.7;
+                    torso.rotation.y = Math.sin(danceTime * 3) * 0.5;
+                    torso.rotation.x = Math.sin(danceTime * 3.2) * 0.3;
+                    head.rotation.y = Math.sin(danceTime * 3.5) * 0.4;
+                    head.rotation.x = Math.sin(danceTime * 2.8) * 0.2;
+                    leftLeg.rotation.x = Math.sin(danceTime * 2) * 0.4;
+                    rightLeg.rotation.x = Math.sin(danceTime * 2 + Math.PI / 2) * 0.4;
+                    this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(danceTime * 3)) * 12;
+                    break;
+
+                case 'outro':
+                    // Graceful wind down
+                    const outroIntensity = 0.4 * (1 - phaseInfo.easedProgress);
+                    leftArm.rotation.z = Math.sin(danceTime * 1.8) * outroIntensity;
+                    rightArm.rotation.z = -Math.sin(danceTime * 1.8) * outroIntensity;
+                    torso.rotation.y = Math.sin(danceTime * 1) * (outroIntensity * 0.5);
+                    this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(danceTime)) * (3 * (1 - phaseInfo.easedProgress));
+                    break;
+            }
+        } else {
+            // Fallback to original dance animation
             const phase = Math.floor(progress * 4) / 4;
             const phaseProgress = (progress * 4) % 1;
             const danceTime = phaseProgress * Math.PI * 12; // Increased frequency
@@ -831,9 +1145,21 @@ class RobotAnimator {
                 rightArm.rotation.z = -Math.sin(danceTime * 6) * 0.5;
                 torso.rotation.z = Math.sin(danceTime * 3) * 0.3;
             }
-
             head.rotation.y = Math.sin(danceTime * 2.5) * 0.2;
         }
+    }
+
+    // Helper function to calculate dance intensity based on phase
+    getDanceIntensity(phaseInfo) {
+        const baseIntensity = {
+            'intro': 0.3,
+            'buildup': 0.6,
+            'main': 0.8,
+            'climax': 1.0,
+            'outro': 0.4
+        };
+
+        return baseIntensity[phaseInfo.phase.name] || 0.5;
     }
 
     animateDanceThree(progress) {

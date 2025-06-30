@@ -5,9 +5,12 @@ Simple test server that responds with "ok" to all requests on port 9030
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
+import time
 
 
 class TestHandler(BaseHTTPRequestHandler):
+    last_post_time = 0
+
     def do_GET(self):
         """Handle GET requests"""
         self.send_response(200)
@@ -18,6 +21,14 @@ class TestHandler(BaseHTTPRequestHandler):
         self.wfile.write(response.encode("utf-8"))
 
     def do_POST(self):
+        """Handle POST requests"""
+        current_time = time.time()
+        if TestHandler.last_post_time != 0:
+            diff = current_time - TestHandler.last_post_time
+            print(f"Time since last POST: {diff:.3f} seconds")
+        else:
+            print("First POST request received")
+        TestHandler.last_post_time = current_time
         """Handle POST requests"""
         self.send_response(200)
         self.send_header("Content-type", "application/json")
