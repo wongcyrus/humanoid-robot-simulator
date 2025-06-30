@@ -136,6 +136,10 @@ class ActionRoutes:
                 send_request(
                     method="RunAction", robot_id=robot_data["robot_id"], action=action
                 )
+        elif real_robot_session.get("robot") == "all" and target_robot_id != "all":
+            # Send action to a specific robot when one robot is targeted, but the real_robot_session is for all robots
+            logger.info(f"Sending action {action} to robot {target_robot_id}")
+            send_request(method="RunAction", robot_id=target_robot_id, action=action)
         elif real_robot_session.get("robot") == target_robot_id:
             logger.info(f"Sending action {action} to robot {target_robot_id}")
             send_request(method="RunAction", robot_id=target_robot_id, action=action)
