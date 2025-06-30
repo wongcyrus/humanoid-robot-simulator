@@ -76,8 +76,8 @@ class ActionExecutor {
             return await this.sendRequest(
                 "RunAction",
                 [p1, p2],
-                `Action run_action(${p1}, ${p2}) successful.`,
-                `Error running action run_action(${p1}, ${p2}):`
+                `Action ${actionName} run_action(${p1}, ${p2}) successful.`,
+                `Error running action ${actionName} run_action(${p1}, ${p2}):`
             );
         } catch (error) {
             console.error(`Error in runAction: ${error}`);
@@ -139,9 +139,12 @@ class ActionExecutor {
         };
 
         try {
+            console.log(`Sending action ${actionName} to robot...`);
             await this.runAction(actionName, action.action[0], action.action[1]);
 
             const sleepTime = action.sleep_time * 1000; // Convert to milliseconds
+            console.log(`Waiting ${action.sleep_time} seconds for action ${actionName} to complete...`);
+
             let elapsed = 0;
             const checkInterval = 100; // Check every 100ms
 
@@ -159,6 +162,7 @@ class ActionExecutor {
 
                     elapsed += checkInterval;
                     if (elapsed >= sleepTime) {
+                        console.log(`Action ${actionName} completed after ${elapsed / 1000} seconds`);
                         clearInterval(this.currentActionTimeout);
                         this.currentAction = { ...idleAction };
                         resolve();
@@ -169,6 +173,7 @@ class ActionExecutor {
         } catch (error) {
             console.error(`Error executing action ${actionName}:`, error);
             this.currentAction = { ...idleAction };
+            throw error; // Re-throw to ensure proper error handling in processQueue
         }
     }
 
@@ -183,7 +188,10 @@ class ActionExecutor {
     startConsumer() {
         // Wait for 5-second alignment (like Python version)
         const delay = 5000 - (Date.now() % 5000);
+        console.log(`ActionExecutor: Starting consumer in ${delay}ms to align with 5-second intervals`);
+
         setTimeout(() => {
+            console.log('ActionExecutor: Consumer started, processing queue every 1 second');
             this.consumerInterval = setInterval(() => {
                 this.processQueue();
             }, 1000); // Process queue every second like Python
@@ -206,19 +214,30 @@ class ActionExecutor {
         }
 
         if (this.actionQueue.length > 0 && !this.isRunning) {
-            const actionItem = this.actionQueue.shift();
+            // Get the first action but don't remove it yet (like Python version)
+            const actionItem = this.actionQueue[0];
             this.isRunning = true;
 
-            // Execute action and wait for its sleep_time to complete
-            await this.executeAction(actionItem);
+            console.log(`Starting action: ${actionItem.name}, queue length: ${this.actionQueue.length}`);
 
-            // Remove the completed action from queue
-            this.removeActionById(actionItem.id);
+            try {
+                // Execute action and wait for its sleep_time to complete
+                await this.executeAction(actionItem);
 
-            // Add delay before processing next action (like Python version)
-            setTimeout(() => {
+                console.log(`Completed action: ${actionItem.name}`);
+
+                // Now remove the completed action from queue
+                this.removeActionById(actionItem.id);
+
+                // Add delay before processing next action (like Python version)
+                setTimeout(() => {
+                    this.isRunning = false;
+                }, 500);
+            } catch (error) {
+                console.error(`Error processing action ${actionItem.name}:`, error);
+                this.removeActionById(actionItem.id);
                 this.isRunning = false;
-            }, 500);
+            }
         } else if (this.actionQueue.length === 0) {
             this.isRunning = false;
         }
