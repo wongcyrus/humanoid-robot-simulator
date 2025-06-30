@@ -487,6 +487,18 @@ class APIRoutes:
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
 
+        @self.app.route("/proxy")
+        def action_events_proxy():
+            """Action Events Proxy Page - Subscribes to all WebSocket action events"""
+            session_key = request.args.get("session_key")
+            if not session_key:
+                return (
+                    "Session key required. Add ?session_key=YOUR_SESSION_ID to the URL.",
+                    400,
+                )
+
+            return render_template("proxy.html", session_key=session_key)
+
         # CORS preflight handler
         @self.app.before_request
         def handle_preflight():
