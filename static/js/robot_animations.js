@@ -1174,7 +1174,7 @@ class RobotAnimator {
         if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
             // Create 5 flowing phases
             const phase = Math.floor(progress * 5) / 5;
-            const phaseProgress = (progress * 5) % 1;
+            const phaseProgress = progress >= 1.0 ? 1.0 : (progress * 5) % 1;
             const flowTime = phaseProgress * Math.PI * 10; // Increased frequency
 
             if (phase < 0.2) {
@@ -1223,39 +1223,39 @@ class RobotAnimator {
         if (leftArm && rightArm && leftLeg && rightLeg && torso && head) {
             // Create 6 hip-hop phases
             const phase = Math.floor(progress * 6) / 6;
-            const phaseProgress = (progress * 6) % 1;
+            const phaseProgress = progress >= 1.0 ? 1.0 : (progress * 6) % 1;
             const hipHopTime = phaseProgress * Math.PI * 15; // Much higher frequency
 
-            if (phase < 0.166) {
-                // Phase 1: Fast sharp arm movements
+            if (phase < 0.167) {
+                // Phase 1: Fast sharp arm movements (0-16.7%)
                 leftArm.rotation.x = Math.sin(hipHopTime * 4) * 0.8;
                 rightArm.rotation.x = Math.sin(hipHopTime * 4 + Math.PI) * 0.8;
                 torso.rotation.z = Math.sin(hipHopTime * 2) * 0.2;
             } else if (phase < 0.333) {
-                // Phase 2: Rapid popping movements
+                // Phase 2: Rapid popping movements (16.7-33.3%)
                 const popTime = Math.floor(hipHopTime * 3) % 2;
                 leftArm.rotation.z = popTime * 0.5;
                 rightArm.rotation.z = -popTime * 0.5;
                 torso.rotation.y = popTime * 0.3;
             } else if (phase < 0.5) {
-                // Phase 3: Fast breakdance prep
+                // Phase 3: Fast breakdance prep (33.3-50%)
                 leftArm.rotation.x = Math.sin(hipHopTime * 3) * 0.9;
                 rightArm.rotation.x = Math.sin(hipHopTime * 3 + Math.PI / 2) * 0.9;
                 this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(hipHopTime * 5)) * 12;
-            } else if (phase < 0.666) {
-                // Phase 4: Rapid leg work
+            } else if (phase < 0.667) {
+                // Phase 4: Rapid leg work (50-66.7%)
                 leftLeg.rotation.x = Math.sin(hipHopTime * 4) * 0.6;
                 rightLeg.rotation.x = -Math.sin(hipHopTime * 4) * 0.6;
                 leftLeg.rotation.z = Math.sin(hipHopTime * 3) * 0.3;
                 rightLeg.rotation.z = -Math.sin(hipHopTime * 3) * 0.3;
             } else if (phase < 0.833) {
-                // Phase 5: Fast head spins and arm crosses
+                // Phase 5: Fast head spins and arm crosses (66.7-83.3%)
                 head.rotation.y += 0.4; // Faster head movement
                 leftArm.rotation.z = Math.sin(hipHopTime * 6) * 0.7;
                 rightArm.rotation.z = -Math.sin(hipHopTime * 6) * 0.7;
                 torso.rotation.x = Math.sin(hipHopTime * 2) * 0.2;
             } else {
-                // Phase 6: High-energy finale
+                // Phase 6: High-energy finale (83.3-100%)
                 leftArm.rotation.x = Math.sin(hipHopTime * 8) * 1.0;
                 rightArm.rotation.x = Math.sin(hipHopTime * 8 + Math.PI) * 1.0;
                 this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(hipHopTime * 6)) * 15;
@@ -1276,37 +1276,37 @@ class RobotAnimator {
         if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
             // Create 4 ballet phases with faster timing
             const phase = Math.floor(progress * 4) / 4;
-            const phaseProgress = (progress * 4) % 1;
-            const balletTime = phaseProgress * Math.PI * 8; // Increased frequency like dance_two
+            const phaseProgress = progress >= 1.0 ? 1.0 : (progress * 4) % 1;
+            const balletTime = phaseProgress * Math.PI * 12; // Increased frequency for faster movement
 
             if (phase < 0.25) {
-                // Phase 1: Port de bras (arm positions)
-                leftArm.rotation.z = Math.PI / 3 + Math.sin(balletTime) * 0.4;
-                rightArm.rotation.z = -Math.PI / 3 - Math.sin(balletTime) * 0.4;
-                leftArm.rotation.y = Math.sin(balletTime * 0.8) * 0.5;
-                rightArm.rotation.y = -Math.sin(balletTime * 0.8) * 0.5;
+                // Phase 1: Port de bras (arm positions) - Fast and energetic
+                leftArm.rotation.z = Math.PI / 3 + Math.sin(balletTime * 2.5) * 0.4;
+                rightArm.rotation.z = -Math.PI / 3 - Math.sin(balletTime * 2.5) * 0.4;
+                leftArm.rotation.y = Math.sin(balletTime * 2) * 0.5;
+                rightArm.rotation.y = -Math.sin(balletTime * 2) * 0.5;
             } else if (phase < 0.5) {
-                // Phase 2: Arabesque-inspired leg extensions
-                leftLeg.rotation.x = Math.sin(balletTime) * 0.6;
-                rightLeg.rotation.x = Math.sin(balletTime + Math.PI) * 0.3;
-                torso.rotation.x = Math.sin(balletTime) * 0.2;
-                leftArm.rotation.x = Math.sin(balletTime) * 0.4;
-                rightArm.rotation.x = -Math.sin(balletTime) * 0.4;
+                // Phase 2: Arabesque-inspired leg extensions - Fast and graceful
+                leftLeg.rotation.x = Math.sin(balletTime * 2) * 0.6;
+                rightLeg.rotation.x = Math.sin(balletTime * 2 + Math.PI) * 0.3;
+                torso.rotation.x = Math.sin(balletTime * 1.5) * 0.2;
+                leftArm.rotation.x = Math.sin(balletTime * 2) * 0.4;
+                rightArm.rotation.x = -Math.sin(balletTime * 2) * 0.4;
             } else if (phase < 0.75) {
-                // Phase 3: Pirouette-inspired turns
+                // Phase 3: Pirouette-inspired turns - Fast spins
                 this.robot.group.rotation.y += 0.2;
                 leftArm.rotation.z = Math.PI / 2;
                 rightArm.rotation.z = -Math.PI / 2;
-                head.rotation.y = Math.sin(balletTime * 2) * 0.3;
-                this.robot.group.position.y = this.robot.position.y + Math.sin(balletTime * 3) * 5;
+                head.rotation.y = Math.sin(balletTime * 3) * 0.3;
+                this.robot.group.position.y = this.robot.position.y + Math.sin(balletTime * 4) * 5;
             } else {
-                // Phase 4: Grand finale with flowing movements
-                leftArm.rotation.x = Math.sin(balletTime * 2) * 0.8;
-                rightArm.rotation.x = Math.cos(balletTime * 2) * 0.8;
-                leftArm.rotation.z = Math.sin(balletTime) * 0.6;
-                rightArm.rotation.z = -Math.sin(balletTime) * 0.6;
-                torso.rotation.y = Math.sin(balletTime * 0.5) * 0.3;
-                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(balletTime * 2)) * 8;
+                // Phase 4: Grand finale with flowing movements - Fast and dramatic
+                leftArm.rotation.x = Math.sin(balletTime * 3) * 0.8;
+                rightArm.rotation.x = Math.cos(balletTime * 3) * 0.8;
+                leftArm.rotation.z = Math.sin(balletTime * 2) * 0.6;
+                rightArm.rotation.z = -Math.sin(balletTime * 2) * 0.6;
+                torso.rotation.y = Math.sin(balletTime * 1.5) * 0.3;
+                this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(balletTime * 3)) * 8;
             }
         }
     }
@@ -1323,7 +1323,7 @@ class RobotAnimator {
         if (leftArm && rightArm && head && torso && leftLeg && rightLeg) {
             // Create 5 robotic phases with precise movements
             const phase = Math.floor(progress * 5) / 5;
-            const phaseProgress = (progress * 5) % 1;
+            const phaseProgress = progress >= 1.0 ? 1.0 : (progress * 5) % 1;
             const robotTime = phaseProgress * Math.PI * 16; // Much higher frequency
             const stepFunction = Math.floor(robotTime * 4) % 2; // Faster sharp steps
 
@@ -1383,7 +1383,7 @@ class RobotAnimator {
         if (leftArm && rightArm && torso && leftLeg && rightLeg && head) {
             // Create 5 salsa phases with faster base timing
             const phase = Math.floor(progress * 5) / 5;
-            const phaseProgress = (progress * 5) % 1;
+            const phaseProgress = progress >= 1.0 ? 1.0 : (progress * 5) % 1;
             const salsaTime = phaseProgress * Math.PI * 12; // Increased frequency for faster movement
 
             if (phase < 0.2) {
@@ -1438,45 +1438,50 @@ class RobotAnimator {
         if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
             // Create 6 breakdance phases
             const phase = Math.floor(progress * 6) / 6;
-            const phaseProgress = (progress * 6) % 1;
+            const phaseProgress = progress >= 1.0 ? 1.0 : (progress * 6) % 1;
             const breakTime = phaseProgress * Math.PI * 20; // Very high frequency for breakdance
 
-            if (phase < 0.166) {
-                // Phase 1: Fast top rock
+            if (phase < 0.167) {
+                // Phase 1: Fast top rock (0-16.7%)
                 leftArm.rotation.x = Math.sin(breakTime * 5) * 0.8;
                 rightArm.rotation.x = Math.sin(breakTime * 5 + Math.PI) * 0.8;
                 leftLeg.rotation.x = Math.sin(breakTime * 3) * 0.4;
                 rightLeg.rotation.x = -Math.sin(breakTime * 3) * 0.4;
                 this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(breakTime * 4)) * 8;
             } else if (phase < 0.333) {
-                // Phase 2: Rapid footwork
+                // Phase 2: Rapid footwork (16.7-33.3%)
                 leftLeg.rotation.x = Math.sin(breakTime * 8) * 0.7;
                 rightLeg.rotation.x = Math.sin(breakTime * 8 + Math.PI / 2) * 0.7;
                 leftLeg.rotation.z = Math.sin(breakTime * 6) * 0.5;
                 rightLeg.rotation.z = -Math.sin(breakTime * 6) * 0.5;
                 torso.rotation.z = Math.sin(breakTime * 3) * 0.3;
             } else if (phase < 0.5) {
-                // Phase 3: Power freeze
-                leftArm.rotation.x = -Math.PI / 2;
-                rightArm.rotation.x = -Math.PI / 2;
-                leftArm.rotation.z = Math.PI / 4;
-                rightArm.rotation.z = -Math.PI / 4;
-                this.robot.group.position.y = this.robot.position.y + 15;
-                head.rotation.x = -0.5;
-            } else if (phase < 0.666) {
-                // Phase 4: Fast windmill simulation
+                // Phase 3: Power freeze (33.3-50%) - Fixed: Add subtle movement to avoid appearing frozen
+                // Base freeze pose with subtle breathing/tension effect
+                const freezeIntensity = 1 + Math.sin(breakTime * 2) * 0.1; // Subtle variation
+                leftArm.rotation.x = -Math.PI / 2 * freezeIntensity;
+                rightArm.rotation.x = -Math.PI / 2 * freezeIntensity;
+                leftArm.rotation.z = Math.PI / 4 + Math.sin(breakTime) * 0.05;
+                rightArm.rotation.z = -Math.PI / 4 - Math.sin(breakTime) * 0.05;
+                // Add slight bobbing motion to show the robot is still "alive"
+                this.robot.group.position.y = this.robot.position.y + 15 + Math.sin(breakTime * 3) * 2;
+                head.rotation.x = -0.5 + Math.sin(breakTime * 1.5) * 0.1;
+            } else if (phase < 0.667) {
+                // Phase 4: Fast windmill simulation (50-66.7%)
                 leftArm.rotation.x = Math.sin(breakTime * 10) * 1.2;
                 rightArm.rotation.x = Math.sin(breakTime * 10 + Math.PI) * 1.2;
                 torso.rotation.z = Math.sin(breakTime * 6) * 0.8;
-                this.robot.group.rotation.y += 0.35; // Faster rotation
+                // Fixed: Use progress-based rotation instead of accumulating
+                this.robot.group.rotation.y = this.animationStartRotation + (phaseProgress * Math.PI * 2);
             } else if (phase < 0.833) {
-                // Phase 5: Rapid head spins
-                head.rotation.y += 0.6; // Much faster head spins
+                // Phase 5: Rapid head spins (66.7-83.3%)
+                // Fixed: Use progress-based rotation instead of accumulating
+                head.rotation.y = phaseProgress * Math.PI * 4; // Spin based on phase progress
                 leftArm.rotation.z = Math.sin(breakTime * 8) * 0.6;
                 rightArm.rotation.z = -Math.sin(breakTime * 8) * 0.6;
                 this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(breakTime * 6)) * 10;
             } else {
-                // Phase 6: Explosive freeze pose
+                // Phase 6: Explosive freeze pose (83.3-100%)
                 leftArm.rotation.x = Math.PI / 2;
                 rightArm.rotation.x = Math.PI / 2;
                 leftArm.rotation.z = Math.PI / 3;
@@ -1500,30 +1505,30 @@ class RobotAnimator {
         if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
             // Create 6 contemporary phases with faster base timing
             const phase = Math.floor(progress * 6) / 6;
-            const phaseProgress = (progress * 6) % 1;
+            const phaseProgress = progress >= 1.0 ? 1.0 : (progress * 6) % 1;
             const contempoTime = phaseProgress * Math.PI * 8; // Increased frequency like dance_two
 
-            if (phase < 0.166) {
-                // Phase 1: Fast reaching movements
+            if (phase < 0.167) {
+                // Phase 1: Fast reaching movements (0-16.7%)
                 leftArm.rotation.x = Math.sin(contempoTime) * 0.8;
                 rightArm.rotation.x = Math.cos(contempoTime) * 0.8;
                 leftArm.rotation.z = Math.sin(contempoTime * 0.7) * 0.5;
                 rightArm.rotation.z = -Math.sin(contempoTime * 0.7) * 0.5;
                 torso.rotation.x = Math.sin(contempoTime * 0.5) * 0.3;
             } else if (phase < 0.333) {
-                // Phase 2: Floor work simulation
+                // Phase 2: Floor work simulation (16.7-33.3%)
                 torso.rotation.x = Math.sin(contempoTime) * 0.6;
                 leftArm.rotation.y = Math.sin(contempoTime * 1.5) * 0.7;
                 rightArm.rotation.y = -Math.sin(contempoTime * 1.5) * 0.7;
                 this.robot.group.position.y = this.robot.position.y + Math.sin(contempoTime) * 8;
             } else if (phase < 0.5) {
-                // Phase 3: Contractions and releases
+                // Phase 3: Contractions and releases (33.3-50%)
                 torso.rotation.z = Math.sin(contempoTime * 2) * 0.4;
                 leftArm.rotation.x = Math.sin(contempoTime * 3) * 0.9;
                 rightArm.rotation.x = Math.sin(contempoTime * 3 + Math.PI) * 0.9;
                 head.rotation.x = Math.sin(contempoTime) * 0.3;
-            } else if (phase < 0.666) {
-                // Phase 4: Spirals and curves
+            } else if (phase < 0.667) {
+                // Phase 4: Spirals and curves (50-66.7%)
                 leftArm.rotation.y = Math.sin(contempoTime * 2) * 0.8;
                 rightArm.rotation.y = Math.cos(contempoTime * 2) * 0.8;
                 torso.rotation.y = Math.sin(contempoTime * 1.2) * 0.5;
@@ -1531,14 +1536,14 @@ class RobotAnimator {
                 rightLeg.rotation.x = Math.cos(contempoTime) * 0.4;
                 this.robot.group.rotation.y += Math.sin(contempoTime) * 0.05;
             } else if (phase < 0.833) {
-                // Phase 5: Jump and suspension
+                // Phase 5: Jump and suspension (66.7-83.3%)
                 this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(contempoTime * 2)) * 15;
                 leftArm.rotation.z = Math.PI / 2 + Math.sin(contempoTime) * 0.3;
                 rightArm.rotation.z = -Math.PI / 2 - Math.sin(contempoTime) * 0.3;
                 leftLeg.rotation.x = Math.sin(contempoTime * 3) * 0.6;
                 rightLeg.rotation.x = -Math.sin(contempoTime * 3) * 0.6;
             } else {
-                // Phase 6: Emotional release finale
+                // Phase 6: Emotional release finale (83.3-100%)
                 leftArm.rotation.x = Math.sin(contempoTime * 4) * 1.0;
                 rightArm.rotation.x = Math.cos(contempoTime * 4) * 1.0;
                 torso.rotation.x = Math.sin(contempoTime * 0.8) * 0.4;
@@ -1560,7 +1565,7 @@ class RobotAnimator {
         if (leftArm && rightArm && torso && head && leftLeg && rightLeg) {
             // Create 5 disco phases
             const phase = Math.floor(progress * 5) / 5;
-            const phaseProgress = (progress * 5) % 1;
+            const phaseProgress = progress >= 1.0 ? 1.0 : (progress * 5) % 1;
             const discoTime = phaseProgress * Math.PI * 18; // High frequency for disco energy
 
             if (phase < 0.2) {
