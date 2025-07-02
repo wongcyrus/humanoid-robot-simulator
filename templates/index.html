@@ -76,7 +76,7 @@
 
         .action-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: 1fr 1fr;
             gap: 8px;
             margin: 10px 0;
         }
@@ -310,20 +310,19 @@
 
                     <!-- Action Buttons -->
                     <div class="action-grid">
-                        <div class="movement-section">
-                            <h4>🚶 MOVEMENT</h4>
-                            <button class="action-btn movement-btn" data-action="go_forward">⬆️ Forward</button>
-                            <button class="action-btn movement-btn" data-action="turn_left">⬅️ Turn Left</button>
-                            <button class="action-btn movement-btn" data-action="turn_right">➡️ Turn Right</button>
-                            <button class="action-btn movement-btn" data-action="right_move_fast">➡️ Right Fast</button>
-                            <button class="action-btn movement-btn" data-action="left_move_fast">⬅️ Left Fast</button>
-                            <button class="action-btn movement-btn" data-action="back_fast">⬇️ Back Fast</button>
-                            <button class="action-btn" data-action="stepping">🦶 Stepping</button>
-                            <button class="action-btn" data-action="twist">🌪️ Twist</button>
-                        </div>
+
+                        <h4>🚶 MOVEMENT</h4>
+                        <button class="action-btn movement-btn" data-action="go_forward">⬆️ Forward</button>
+                        <button class="action-btn movement-btn" data-action="turn_left">⬅️ Turn Left</button>
+                        <button class="action-btn movement-btn" data-action="turn_right">➡️ Turn Right</button>
+                        <button class="action-btn movement-btn" data-action="right_move_fast">➡️ Right Fast</button>
+                        <button class="action-btn movement-btn" data-action="left_move_fast">⬅️ Left Fast</button>
+                        <button class="action-btn movement-btn" data-action="back_fast">⬇️ Back Fast</button>
+                        <button class="action-btn movement-btn" data-action="stepping">🦶 Stepping</button>
+                        <button class="action-btn movement-btn" data-action="twist">🌪️ Twist</button>
+
 
                         <h4>💃 DANCE COLLECTION</h4>
-                        <!-- <button class="action-btn" data-action="dance">💃 Dance 1</button> -->
                         <button class="action-btn" data-action="dance_two">💃 Dance 2</button>
                         <button class="action-btn" data-action="dance_three">💃 Dance 3</button>
                         <button class="action-btn" data-action="dance_four">💃 Dance 4</button>
@@ -363,7 +362,8 @@
                         <h4>⚡ QUEUE CONTROLS</h4>
                         <button class="action-btn queue-btn" onclick="clearQueue()">🗑️ Clear Queue</button>
                         <button class="action-btn queue-btn" onclick="showQueueStatus()">📋 Queue Status</button>
-                        <button class="action-btn queue-btn" onclick="showActionTimings()">⏱️ Action Timings</button>
+                        <button class="action-btn queue-btn" onclick="showActionTimings()">⏱️ Action
+                            Timings</button>
                     </div>
                 </div>
 
