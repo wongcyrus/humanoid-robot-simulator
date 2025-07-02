@@ -97,6 +97,9 @@ class HumanoidSimulator {
         // Setup UI event listeners
         this.setupUIEvents();
 
+        // Initialize button states - stop button should be disabled initially
+        this.disableStopButton();
+
         // Start periodic canvas size checking
         this.startCanvasSizeMonitoring();
 
@@ -499,6 +502,28 @@ class HumanoidSimulator {
     sendActionByName(actionName, robotId = 'all') {
         console.log(`📡 Sending action by name: ${actionName} to ${robotId} in session: ${this.sessionKey}`);
 
+        // Special handling for stop action - it should interrupt any running action
+        if (actionName === 'stop') {
+            if (this.isActionInProgress) {
+                console.log(`🛑 Stop action interrupting current action: ${this.currentActionName}`);
+                this.showNotification(`Stopping current action: ${this.currentActionName}`, 'info');
+                // Stop current action and clear queue
+                this.stopCurrentAction();
+            }
+            // Process stop action immediately
+            this.startActionExecution(robotId, actionName);
+        } else {
+            // Check if another action is already in progress (for non-stop actions)
+            if (this.isActionInProgress) {
+                console.log(`⏸️ Action ${actionName} blocked - another action is in progress: ${this.currentActionName}`);
+                this.showNotification(`Please wait - ${this.currentActionName} is still in progress`, 'warning');
+                return;
+            }
+
+            // Start action execution (disable buttons)
+            this.startActionExecution(robotId, actionName);
+        }
+
         // Send action through REST API endpoint to ensure proper event handling
         fetch(`/run_action/${robotId}?session_key=${this.sessionKey}`, {
             method: 'POST',
@@ -516,11 +541,15 @@ class HumanoidSimulator {
                 } else {
                     console.error(`❌ Failed to send action: ${data.error}`);
                     this.showNotification(`Failed to send action: ${data.error}`, 'error');
+                    // Re-enable buttons on error
+                    this.enableActionButtons();
                 }
             })
             .catch(error => {
                 console.error(`❌ Error sending action: ${error}`);
                 this.showNotification(`Error sending action: ${error.message}`, 'error');
+                // Re-enable buttons on error
+                this.enableActionButtons();
             });
     }
 
@@ -536,6 +565,28 @@ class HumanoidSimulator {
 
     sendAction(robotId, action) {
         console.log(`📡 Sending action: ${action} to ${robotId} in session: ${this.sessionKey}`);
+
+        // Special handling for stop action - it should interrupt any running action
+        if (action === 'stop') {
+            if (this.isActionInProgress) {
+                console.log(`🛑 Stop action interrupting current action: ${this.currentActionName}`);
+                this.showNotification(`Stopping current action: ${this.currentActionName}`, 'info');
+                // Stop current action and clear queue
+                this.stopCurrentAction();
+            }
+            // Process stop action immediately
+            this.startActionExecution(robotId, action);
+        } else {
+            // Check if another action is already in progress (for non-stop actions)
+            if (this.isActionInProgress) {
+                console.log(`⏸️ Action ${action} blocked - another action is in progress: ${this.currentActionName}`);
+                this.showNotification(`Please wait - ${this.currentActionName} is still in progress`, 'warning');
+                return;
+            }
+
+            // Start action execution (disable buttons)
+            this.startActionExecution(robotId, action);
+        }
 
         // Send action through REST API endpoint to ensure proper event handling
         fetch(`/run_action/${robotId}?session_key=${this.sessionKey}`, {
@@ -554,11 +605,15 @@ class HumanoidSimulator {
                 } else {
                     console.error(`❌ Failed to send action: ${data.error}`);
                     this.showNotification(`Failed to send action: ${data.error}`, 'error');
+                    // Re-enable buttons on error
+                    this.enableActionButtons();
                 }
             })
             .catch(error => {
                 console.error(`❌ Error sending action: ${error}`);
                 this.showNotification(`Error sending action: ${error.message}`, 'error');
+                // Re-enable buttons on error
+                this.enableActionButtons();
             });
     }
 
@@ -954,6 +1009,12 @@ class HumanoidSimulator {
             return;
         }
 
+        // Check if a single action is in progress
+        if (this.isActionInProgress) {
+            console.log('⏸️ Queue processing paused - waiting for current action to complete');
+            return;
+        }
+
         this.isProcessingQueue = true;
         console.log('🏃 Starting action queue processing...');
 
@@ -962,6 +1023,9 @@ class HumanoidSimulator {
             const { robotId, action } = queueItem;
 
             console.log(`⚡ Processing action: ${action} for ${robotId}`);
+
+            // Start action execution (disable buttons)
+            this.startActionExecution(robotId, action);
 
             // Send action to backend API instead of local processing
             try {
@@ -994,6 +1058,9 @@ class HumanoidSimulator {
 
             // Wait for the action to complete
             await this.sleep(duration * 1000);
+
+            // Complete the action (re-enable buttons)
+            this.enableActionButtons();
 
             console.log(`✅ Action completed: ${action} for ${robotId}`);
         }
@@ -1268,13 +1335,175 @@ class HumanoidSimulator {
         return 'Basic Gesture';
     }
 
-    // ...existing code...
+    // Action management system to disable buttons during action execution
+    startActionExecution(action, robotId) {
+        console.log(`▶️ Starting action execution: ${action} for ${robotId}`);
+
+        this.isActionInProgress = true;
+        this.currentActionRobot = robotId;
+        this.currentActionName = action;
+        this.actionStartTime = Date.now();
+
+        // Disable all action buttons
+        const actionButtons = document.querySelectorAll('.action-btn');
+        actionButtons.forEach(button => {
+            button.disabled = true;
+        });
+
+        // Highlight the currently executing action button
+        const activeButton = document.querySelector(`.action-btn[data-action="${action}"]`);
+        if (activeButton) {
+            activeButton.classList.add('active');
+        }
+
+        // Set a timeout to re-enable buttons after the action duration
+        const duration = this.getActionDuration(action);
+        this.actionTimeoutId = setTimeout(() => {
+            this.endActionExecution();
+        }, duration * 1000);
+    }
+
+    endActionExecution() {
+        console.log(`⏹️ Ending action execution: ${this.currentActionName} for ${this.currentActionRobot}`);
+
+        this.isActionInProgress = false;
+        this.currentActionRobot = null;
+        this.currentActionName = null;
+        this.actionStartTime = null;
+
+        // Re-enable all action buttons
+        const actionButtons = document.querySelectorAll('.action-btn');
+        actionButtons.forEach(button => {
+            button.disabled = false;
+        });
+
+        // Remove active class from all buttons
+        actionButtons.forEach(button => {
+            button.classList.remove('active');
+        });
+
+        clearTimeout(this.actionTimeoutId);
+        this.actionTimeoutId = null;
+    }
+
+    // Add methods for managing button states
+
+    disableActionButtons() {
+        console.log('🚫 Disabling action buttons...');
+        // Disable all action buttons except UI controls and stop button
+        const actionButtons = document.querySelectorAll('.action-btn:not(.sequence-btn):not(#toggle-panel):not(#reset-camera):not(#reset):not([data-action="stop"])');
+        actionButtons.forEach(button => {
+            button.disabled = true;
+            button.style.opacity = '0.5';
+            button.style.cursor = 'not-allowed';
+        });
+
+        // Enable stop button when action is running
+        this.enableStopButton();
+    }
+
+    enableActionButtons() {
+        console.log('✅ Enabling action buttons...');
+        const actionButtons = document.querySelectorAll('.action-btn:not(.sequence-btn):not(#toggle-panel):not(#reset-camera):not(#reset)');
+        actionButtons.forEach(button => {
+            button.disabled = false;
+            button.style.opacity = '1';
+            button.style.cursor = 'pointer';
+        });
+
+        // Disable stop button when no action is running
+        this.disableStopButton();
+
+        // Clear action state
+        this.isActionInProgress = false;
+        this.currentActionRobot = null;
+        this.currentActionName = null;
+        this.actionStartTime = null;
+
+        // Clear any pending timeout
+        if (this.actionTimeoutId) {
+            clearTimeout(this.actionTimeoutId);
+            this.actionTimeoutId = null;
+        }
+    }
+
+    startActionExecution(robotId, actionName) {
+        console.log(`🚀 Starting action execution: ${actionName} for ${robotId}`);
+
+        // Set action state
+        this.isActionInProgress = true;
+        this.currentActionRobot = robotId;
+        this.currentActionName = actionName;
+        this.actionStartTime = Date.now();
+
+        // Disable all action buttons
+        this.disableActionButtons();
+
+        // Get action duration and set a safety timeout
+        const duration = this.getActionDuration(actionName);
+        const timeoutDuration = (duration + 2) * 1000; // Add 2 seconds buffer
+
+        this.actionTimeoutId = setTimeout(() => {
+            console.log(`⚠️ Action timeout reached for ${actionName}, re-enabling buttons`);
+            this.enableActionButtons();
+        }, timeoutDuration);
+
+        console.log(`⏱️ Action will timeout in ${timeoutDuration / 1000} seconds`);
+    }
+
+    completeActionExecution() {
+        console.log(`✅ Completing action execution: ${this.currentActionName} for ${this.currentActionRobot}`);
+        this.enableActionButtons();
+    }
+
+    enableStopButton() {
+        const stopButton = document.querySelector('[data-action="stop"]');
+        if (stopButton) {
+            stopButton.disabled = false;
+            stopButton.style.opacity = '1';
+            stopButton.style.cursor = 'pointer';
+            console.log('🔴 Stop button enabled');
+        }
+    }
+
+    disableStopButton() {
+        const stopButton = document.querySelector('[data-action="stop"]');
+        if (stopButton) {
+            stopButton.disabled = true;
+            stopButton.style.opacity = '0.5';
+            stopButton.style.cursor = 'not-allowed';
+            console.log('⏹️ Stop button disabled');
+        }
+    }
+
+    stopCurrentAction() {
+        console.log('🛑 Stopping current action and clearing queue...');
+
+        // Clear any running action timeout
+        if (this.actionTimeoutId) {
+            clearTimeout(this.actionTimeoutId);
+            this.actionTimeoutId = null;
+        }
+
+        // Clear the action queue
+        this.clearActionQueue();
+
+        // Stop queue processing
+        this.isProcessingQueue = false;
+
+        // Clear action state and re-enable buttons
+        this.enableActionButtons();
+
+        console.log('✅ Current action stopped and queue cleared');
+    }
 }
 
 // Initialize simulator when page loads
 document.addEventListener('DOMContentLoaded', () => {
     console.log('📄 DOM loaded, starting simulator...');
+    // Initialize simulator and make it globally available
     window.simulator = new HumanoidSimulator();
+    window.humanoidSimulator = window.simulator; // Also provide with the name expected by animations
 });
 
 // Handle page visibility changes

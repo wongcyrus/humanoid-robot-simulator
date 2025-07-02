@@ -8,6 +8,12 @@ function runSequence(sequenceType) {
         return;
     }
 
+    // Check if an action is already in progress
+    if (window.simulator.isActionInProgress) {
+        alert(`⚠️ Please wait - ${window.simulator.currentActionName} is still in progress for ${window.simulator.currentActionRobot}`);
+        return;
+    }
+
     const robotSelect = document.getElementById('robot-select');
     const selectedRobot = robotSelect ? robotSelect.value : 'robot_1';
 

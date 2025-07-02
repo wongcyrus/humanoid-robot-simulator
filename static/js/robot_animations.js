@@ -956,6 +956,12 @@ class RobotAnimator {
         this.animationStyle = null;
         this.lastPhaseIndex = -1;
 
+        // Notify the simulator that the action is complete
+        if (window.humanoidSimulator && typeof window.humanoidSimulator.completeActionExecution === 'function') {
+            console.log(`📢 Notifying simulator that action ${this.currentAnimation} completed for ${this.robot.robotId}`);
+            window.humanoidSimulator.completeActionExecution();
+        }
+
         // For movement actions, update the robot's base position and rotation
         if (['go_forward', 'turn_left', 'turn_right', 'right_move_fast', 'left_move_fast', 'back_fast', 'stepping'].includes(this.currentAnimation)) {
             console.log(`🔄 Updating base position/rotation for ${this.robot.robotId} after ${this.currentAnimation}`);
