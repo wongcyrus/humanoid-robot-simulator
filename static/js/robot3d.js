@@ -1137,9 +1137,9 @@ class Scene3D {
     addTopImageOverlay(videoScreen, screenWidth, screenHeight) {
         // Load the ioextened.png image
         const textureLoader = new THREE.TextureLoader();
-        const topImageTexture = textureLoader.load('/static/img/ioextened.jpg',
+        const topImageTexture = textureLoader.load('/static/img/HKIIT_full.jpg',
             (texture) => {
-                console.log('🖼️ ioextened.jpg image loaded successfully');
+                console.log('🖼️ HKIIT_full.jpg image loaded successfully');
                 // Get the actual image dimensions from the texture
                 const image = texture.image;
                 const aspectRatio = image.width / image.height;
@@ -1163,7 +1163,7 @@ class Scene3D {
             },
             undefined,
             (error) => {
-                console.error('🖼️ Error loading ioextened.jpg:', error);
+                console.error('🖼️ Error loading HKIIT_full.jpg:', error);
             }
         );
 
