@@ -2,11 +2,14 @@
 """Action handling routes for the Robot Simulator"""
 
 import logging
+import os
 from flask import jsonify, request
 from routes.session_utils import decrypt, send_request
 
 # Set up logger
 logger = logging.getLogger(__name__)
+
+ROBOT_SESSION_KEY = os.getenv("ROBOT_SESSION_KEY", "hktiit_robot_remote_proxy")
 
 
 class ActionRoutes:
@@ -136,13 +139,17 @@ class ActionRoutes:
                 send_request(
                     method="RunAction", robot_id=robot_data["robot_id"], action=action
                 )
+            self._emit_action_events(ROBOT_SESSION_KEY, action, "all", robots)
+
         elif real_robot_session.get("robot") == "all" and target_robot_id != "all":
             # Send action to a specific robot when one robot is targeted, but the real_robot_session is for all robots
             logger.info(f"Sending action {action} to robot {target_robot_id}")
             send_request(method="RunAction", robot_id=target_robot_id, action=action)
+            self._emit_action_events(ROBOT_SESSION_KEY, action, target_robot_id, robots)
         elif real_robot_session.get("robot") == target_robot_id:
             logger.info(f"Sending action {action} to robot {target_robot_id}")
             send_request(method="RunAction", robot_id=target_robot_id, action=action)
+            self._emit_action_events(ROBOT_SESSION_KEY, action, target_robot_id, robots)
 
     def _emit_action_events(self, session_key, action, robot_id, robots):
         """Emit WebSocket events for action execution"""

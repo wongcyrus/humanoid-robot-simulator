@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from urllib.parse import unquote_plus
 
-ROBOT_API_URL = os.getenv("ROBOT_API_URL", "http://localhost:5000/api/robot/")
+ROBOT_API_URL = os.getenv("ROBOT_API_URL", None)
 
 SESSION_AES_KEY = os.environ.get("SESSION_AES_KEY", "0123456789012345").encode()
 SESSION_AES_IV = os.environ.get("SESSION_AES_IV", "5432109876543210").encode()
@@ -26,6 +26,10 @@ logger = logging.getLogger(__name__)
 
 def send_request(method: str, robot_id: str, action: str) -> Optional[Dict[str, Any]]:
     """Send request to external robot API"""
+    if not ROBOT_API_URL:
+        logger.info("ROBOT_API_URL environment variable is not set.")
+        return None
+
     data = {"method": method, "action": action}
     try:
         response = requests.post(
