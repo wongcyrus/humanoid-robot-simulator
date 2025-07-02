@@ -896,47 +896,182 @@ class Scene3D {
     }
 
     setupControls() {
-        // Simple mouse controls
+        // Enhanced mouse and keyboard controls
         let mouseDown = false;
+        let mouseButton = 0; // Track which mouse button
         let mouseX = 0, mouseY = 0;
 
+        // Camera state
+        this.cameraTarget = new THREE.Vector3(0, 0, 0);
+        this.cameraDistance = this.camera.position.length();
+
+        // Keyboard state tracking
+        this.keys = {
+            shift: false,
+            ctrl: false,
+            alt: false
+        };
+
+        // Keyboard event listeners
+        document.addEventListener('keydown', (e) => {
+            this.keys.shift = e.shiftKey;
+            this.keys.ctrl = e.ctrlKey;
+            this.keys.alt = e.altKey;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            this.keys.shift = e.shiftKey;
+            this.keys.ctrl = e.ctrlKey;
+            this.keys.alt = e.altKey;
+        });
+
+        // Mouse down - detect button and modifiers
         this.canvas.addEventListener('mousedown', (e) => {
             mouseDown = true;
+            mouseButton = e.button; // 0=left, 1=middle, 2=right
             mouseX = e.clientX;
             mouseY = e.clientY;
+            this.canvas.style.cursor = this.getCursorForMode(e);
+            e.preventDefault();
         });
 
+        // Mouse up
         this.canvas.addEventListener('mouseup', () => {
             mouseDown = false;
+            this.canvas.style.cursor = 'default';
         });
 
+        // Context menu disable for right-click
+        this.canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        // Enhanced mouse move with multiple control modes
         this.canvas.addEventListener('mousemove', (e) => {
             if (!mouseDown) return;
 
             const deltaX = e.clientX - mouseX;
             const deltaY = e.clientY - mouseY;
+            const sensitivity = 0.01;
 
-            // Rotate camera around the scene
-            const spherical = new THREE.Spherical();
-            spherical.setFromVector3(this.camera.position);
-            spherical.theta -= deltaX * 0.01;
-            spherical.phi += deltaY * 0.01;
-            spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
-
-            this.camera.position.setFromSpherical(spherical);
-            this.camera.lookAt(0, 0, 0);
+            // Determine control mode based on mouse button and modifiers
+            if (this.isPanMode(mouseButton, e)) {
+                // PAN: Shift + Left Click or Middle Click
+                this.panCamera(deltaX, deltaY, sensitivity);
+            } else if (this.isRotateMode(mouseButton, e)) {
+                // ROTATE: Left Click (default) or Right Click
+                this.rotateCamera(deltaX, deltaY, sensitivity);
+            } else if (this.isZoomMode(mouseButton, e)) {
+                // ZOOM: Ctrl + Left Click or Right Click + Shift
+                this.zoomCamera(deltaY, sensitivity * 5);
+            }
 
             mouseX = e.clientX;
             mouseY = e.clientY;
         });
 
+        // Enhanced wheel zoom with modifiers
         this.canvas.addEventListener('wheel', (e) => {
-            const distance = this.camera.position.length();
-            const newDistance = Math.max(50, Math.min(500, distance + e.deltaY * 0.1));
-            this.camera.position.normalize().multiplyScalar(newDistance);
+            e.preventDefault();
+
+            let zoomSpeed = 0.1;
+
+            // Faster zoom with Shift
+            if (e.shiftKey) {
+                zoomSpeed *= 3;
+            }
+
+            // Slower, precise zoom with Ctrl
+            if (e.ctrlKey) {
+                zoomSpeed *= 0.3;
+            }
+
+            this.zoomCamera(e.deltaY, zoomSpeed);
         });
 
-        console.log('🖱️ Controls setup complete');
+        console.log('🖱️ Enhanced camera controls setup complete');
+        console.log('📖 Camera Controls:');
+        console.log('  • Drag: Rotate camera');
+        console.log('  • Shift + Drag: Pan camera');
+        console.log('  • Middle Click + Drag: Pan camera');
+        console.log('  • Ctrl + Drag: Zoom camera');
+        console.log('  • Right Click + Drag: Rotate camera');
+        console.log('  • Mouse Wheel: Zoom (Shift=faster, Ctrl=slower)');
+    }
+
+    getCursorForMode(e) {
+        if (this.isPanMode(e.button, e)) {
+            return 'grab';
+        } else if (this.isZoomMode(e.button, e)) {
+            return 'ns-resize';
+        } else {
+            return 'grabbing';
+        }
+    }
+
+    isPanMode(button, e) {
+        return (button === 0 && e.shiftKey) || button === 1; // Shift+Left or Middle
+    }
+
+    isRotateMode(button, e) {
+        return (button === 0 && !e.shiftKey && !e.ctrlKey) || (button === 2 && !e.shiftKey); // Left (default) or Right
+    }
+
+    isZoomMode(button, e) {
+        return (button === 0 && e.ctrlKey) || (button === 2 && e.shiftKey); // Ctrl+Left or Shift+Right
+    }
+
+    rotateCamera(deltaX, deltaY, sensitivity) {
+        // Rotate camera around the target point
+        const spherical = new THREE.Spherical();
+        const offset = new THREE.Vector3();
+
+        offset.copy(this.camera.position).sub(this.cameraTarget);
+        spherical.setFromVector3(offset);
+
+        spherical.theta -= deltaX * sensitivity;
+        spherical.phi += deltaY * sensitivity;
+
+        // Limit phi to prevent flipping
+        spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+
+        offset.setFromSpherical(spherical);
+        this.camera.position.copy(this.cameraTarget).add(offset);
+        this.camera.lookAt(this.cameraTarget);
+    }
+
+    panCamera(deltaX, deltaY, sensitivity) {
+        // Pan camera while maintaining distance from target
+        const distance = this.camera.position.distanceTo(this.cameraTarget);
+        const panSpeed = distance * sensitivity * 0.5;
+
+        // Get camera's right and up vectors
+        const right = new THREE.Vector3();
+        const up = new THREE.Vector3();
+
+        right.setFromMatrixColumn(this.camera.matrix, 0); // X axis
+        up.setFromMatrixColumn(this.camera.matrix, 1);    // Y axis
+
+        // Pan relative to camera orientation
+        const panOffset = new THREE.Vector3();
+        panOffset.addScaledVector(right, -deltaX * panSpeed);
+        panOffset.addScaledVector(up, deltaY * panSpeed);
+
+        this.camera.position.add(panOffset);
+        this.cameraTarget.add(panOffset);
+        this.camera.lookAt(this.cameraTarget);
+    }
+
+    zoomCamera(deltaY, sensitivity) {
+        // Zoom by moving camera closer/farther from target
+        const direction = new THREE.Vector3();
+        direction.subVectors(this.camera.position, this.cameraTarget).normalize();
+
+        const currentDistance = this.camera.position.distanceTo(this.cameraTarget);
+        const newDistance = Math.max(10, Math.min(1000, currentDistance + deltaY * sensitivity));
+
+        this.camera.position.copy(this.cameraTarget).addScaledVector(direction, newDistance);
+        this.cameraDistance = newDistance;
     }
 
     addRobot(robotData) {
@@ -1033,8 +1168,10 @@ class Scene3D {
 
     resetCamera() {
         this.camera.position.set(DEFAULT_CAMERA_POSITION.x, DEFAULT_CAMERA_POSITION.y, DEFAULT_CAMERA_POSITION.z);
-        this.camera.lookAt(0, 0, 0);
-        console.log('📷 Camera reset to initial position');
+        this.cameraTarget.set(0, 0, 0);
+        this.cameraDistance = this.camera.position.length();
+        this.camera.lookAt(this.cameraTarget);
+        console.log('📷 Camera reset to initial position with enhanced controls');
     }
 
     onWindowResize() {

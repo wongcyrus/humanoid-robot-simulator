@@ -13,6 +13,21 @@
         #three-canvas {
             background-color: #1a1a2e !important;
             border: 2px solid #444;
+            user-select: none;
+            /* Prevent text selection during camera controls */
+        }
+
+        /* Camera control cursor styles */
+        #three-canvas.grabbing {
+            cursor: grabbing !important;
+        }
+
+        #three-canvas.grab {
+            cursor: grab !important;
+        }
+
+        #three-canvas.zoom {
+            cursor: ns-resize !important;
         }
 
         .status-panel {
@@ -384,20 +399,16 @@
 
                 <!-- Instructions -->
                 <div class="panel-section">
-                    <h3>📖 Instructions</h3>
+                    <h3>📖 Camera Controls</h3>
                     <ul>
-                        <li><strong>👁️ Robot Faces:</strong> Clear eyes, nose, and direction indicators!</li>
-                        <li><strong>🎯 Proper Directions:</strong> All combat actions face forward correctly!</li>
-                        <li><strong>🎮 Full Control:</strong> All movements and actions work perfectly!</li>
-                        <li><strong>💪 Push Ups:</strong> Complete sequence - down, exercise, stand up</li>
-                        <li><strong>🪑 Sit Ups:</strong> Lie down, exercise, end sitting on floor</li>
-                        <li><strong>Forward/Backward:</strong> Robot moves in its facing direction</li>
-                        <li><strong>Turn Left/Right:</strong> Robot rotates properly</li>
-                        <li><strong>Combat Actions:</strong> Kicks, punches, and strikes go forward</li>
                         <li><strong>Mouse Drag:</strong> Rotate camera around robots</li>
+                        <li><strong>Shift + Drag:</strong> Pan camera (move view)</li>
+                        <li><strong>Middle Click + Drag:</strong> Pan camera</li>
+                        <li><strong>Ctrl + Drag:</strong> Zoom camera in/out</li>
+                        <li><strong>Right Click + Drag:</strong> Rotate camera</li>
                         <li><strong>Mouse Wheel:</strong> Zoom in/out</li>
-                        <li><strong>Green Movement Buttons:</strong> Actually move robots</li>
-                        <li><strong>Blue Action Buttons:</strong> Animate without moving</li>
+                        <li><strong>Shift + Wheel:</strong> Fast zoom</li>
+                        <li><strong>Ctrl + Wheel:</strong> Precise zoom</li>
                     </ul>
                 </div>
             </div>
