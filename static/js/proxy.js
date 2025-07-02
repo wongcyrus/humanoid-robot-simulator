@@ -462,6 +462,13 @@ class ActionEventsProxy {
                 // Handle actions events by executing the action
                 if (eventType === 'actions' && data && data.action_name) {
                     console.log(`🎯 Auto-executing action from WebSocket: ${data.action_name}`);
+                    const robotId = new URLSearchParams(window.location.search).get('robot_id') || this.robotId;
+                    if (data.robot_id === "all")
+                        this.executeAction(data.action_name);
+                    if (data.robot_id && data.robot_id !== robotId) {
+                        // Ignore actions for other robots
+                        return;
+                    }
                     this.executeAction(data.action_name);
                 }
             });
