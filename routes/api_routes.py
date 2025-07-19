@@ -43,6 +43,12 @@ class APIRoutes(ValidationMixin):
         def static_files(filename):
             return send_from_directory("static", filename)
 
+        @self.app.route("/favicon.ico")
+        def favicon():
+            return send_from_directory(
+                "static", "favicon.ico", mimetype="image/vnd.microsoft.icon"
+            )
+
         @self.app.route("/health")
         def health_check():
             return jsonify({"status": "healthy", "service": "robot-simulator"}), 200
