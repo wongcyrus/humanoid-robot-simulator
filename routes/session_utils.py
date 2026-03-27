@@ -7,13 +7,13 @@ import logging
 import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
+from urllib.parse import unquote_plus
 from zoneinfo import ZoneInfo
 
 import requests
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from urllib.parse import unquote_plus
 
 ROBOT_API_URL = os.getenv("ROBOT_API_URL", None)
 
