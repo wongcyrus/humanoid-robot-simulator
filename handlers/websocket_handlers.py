@@ -280,6 +280,57 @@ class WebSocketHandlers:
                     "video_source_change_result", {"status": "error", "message": str(e)}
                 )
 
+        @self.socketio.on("speech")
+        def handle_speech(data):
+            """Handle speech audio playback requests via WebSocket.
+
+            Broadcasts the speech audio URL to all clients in the session
+            so the SpeechPlayer can play it.
+            """
+            logger.debug(f"🔊 Handling speech event with data: {data}")
+
+            session_key = data.get("session_key")
+            audio_url = data.get("audio_url")
+            text = data.get("text", "")
+            robot_id = data.get("robot_id", "all")
+
+            if not session_key:
+                logger.debug("❌ Session key required for speech")
+                emit("error", {"message": "Session key required"})
+                return
+
+            if not audio_url:
+                logger.debug("❌ audio_url required for speech")
+                emit("error", {"message": "audio_url required"})
+                return
+
+            try:
+                self.socketio.emit(
+                    "speech",
+                    {
+                        "audio_url": audio_url,
+                        "text": text,
+                        "robot_id": robot_id,
+                        "session_key": session_key,
+                    },
+                    room=f"session_{session_key}",
+                )
+
+                logger.debug(
+                    f"✅ Speech audio broadcast to session {session_key}"
+                )
+                emit(
+                    "speech_result",
+                    {
+                        "status": "success",
+                        "message": f"Speech audio broadcast to session",
+                    },
+                )
+
+            except Exception as e:
+                logger.error(f"❌ Error broadcasting speech: {e}")
+                emit("speech_result", {"status": "error", "message": str(e)})
+
         @self.socketio.on("control_video")
         def handle_control_video(data):
             """Handle video control requests via WebSocket"""

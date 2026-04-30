@@ -335,6 +335,12 @@ class HumanoidSimulator {
                 this.handleServerActionRequest(data);
             });
 
+            // Speech playback handler for Polly TTS audio
+            this.socket.on('speech', (data) => {
+                console.log('🔊 Speech audio received:', data);
+                this.handleSpeechAudio(data);
+            });
+
             // Video control handlers
             this.socket.on('video_source_changed', (data) => {
                 console.log('📺 Video source change requested:', data);
@@ -821,6 +827,12 @@ class HumanoidSimulator {
         const actionName = data.action_name || 'stand';
         const robotId = data.robot_id || 'all';
 
+        // Check if this is a speech action with an audio URL
+        if (actionName === 'speech' && data.audio_url) {
+            this.handleSpeechAudio(data);
+            return;
+        }
+
         // Execute the action LOCALLY only - don't send back to server to avoid loop
         this.triggerLocalAction(robotId, actionName);
 
@@ -831,6 +843,34 @@ class HumanoidSimulator {
         this.updateLastAction(robotId, actionName);
 
         console.log(`✅ Server action "${actionName}" executed locally on ${robotId}`);
+    }
+
+    /**
+     * Handle speech audio from IoT (Polly TTS).
+     * Plays the presigned S3 URL via the per-robot SpeechPlayer.
+     * Multiple robots can speak concurrently; new speech for the
+     * same robot interrupts its previous speech.
+     * @param {Object} data - { audio_url, text, robot_id }
+     */
+    handleSpeechAudio(data) {
+        const audioUrl = data.audio_url;
+        const text = data.text || '';
+        const robotId = data.robot_id || 'unknown';
+
+        if (!audioUrl) {
+            console.warn('🔊 Speech event received without audio_url');
+            return;
+        }
+
+        console.log(`🔊 Playing speech for ${robotId}: "${text}"`);
+
+        if (window.speechPlayer) {
+            window.speechPlayer.play(robotId, audioUrl, text);
+        } else {
+            console.warn('🔊 SpeechPlayer not available');
+        }
+
+        this.updateLastAction(robotId, `speech: "${text.substring(0, 30)}..."`);
     }
 
     /**

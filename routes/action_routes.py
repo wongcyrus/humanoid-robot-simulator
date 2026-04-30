@@ -58,6 +58,56 @@ class ActionRoutes:
                 logger.error(f"Error in run_action: {e}")
                 return jsonify({"success": False, "error": str(e)}), 500
 
+        @self.app.route("/speech/<robot_id>", methods=["POST"])
+        def speech(robot_id: str):
+            """Forward speech audio URL to simulator clients for playback"""
+            try:
+                session_key = self.validation_mixin.get_session_key_from_request()
+                is_valid, error_msg = self.validation_mixin.validate_session_key(
+                    session_key
+                )
+                if not is_valid:
+                    return jsonify({"success": False, "error": error_msg}), 400
+
+                data = request.json or {}
+                audio_url = data.get("audio_url")
+                text = data.get("text", "")
+
+                if not audio_url:
+                    return (
+                        jsonify({"success": False, "error": "audio_url is required"}),
+                        400,
+                    )
+
+                # Broadcast speech event to all clients in the session
+                self.socketio.emit(
+                    "speech",
+                    {
+                        "audio_url": audio_url,
+                        "text": text,
+                        "robot_id": robot_id,
+                        "session_key": session_key,
+                    },
+                    room=f"session_{session_key}",
+                )
+
+                logger.info(
+                    f"Speech forwarded to simulator session {session_key} "
+                    f"for robot {robot_id}: {text[:80]}"
+                )
+
+                return jsonify(
+                    {
+                        "success": True,
+                        "robot_id": robot_id,
+                        "message": f"Speech audio broadcast to session",
+                    }
+                )
+
+            except Exception as e:
+                logger.error(f"Error in speech: {e}")
+                return jsonify({"success": False, "error": str(e)}), 500
+
     def _handle_all_robots_action(self, session_key, robots, action):
         """Handle action execution on all robots"""
         if not robots:
