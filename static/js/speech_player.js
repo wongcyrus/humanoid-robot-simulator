@@ -24,6 +24,9 @@ class SpeechPlayer {
         /** @type {boolean} */
         this._deviceAvailable = this._checkAudioDevice();
 
+        /** @type {boolean} Whether speech playback is enabled (controlled by UI toggle) */
+        this.enabled = true;
+
         // Unlock audio context on first user interaction (mobile / autoplay policy)
         const unlock = () => {
             document.removeEventListener('click', unlock);
@@ -53,6 +56,11 @@ class SpeechPlayer {
     play(robotId, url, text) {
         if (!url) {
             console.warn('🔊 SpeechPlayer.play() called with empty URL');
+            return;
+        }
+
+        if (!this.enabled) {
+            console.log(`🔇 Speech disabled, ignoring: [${robotId}] "${text || ''}"`);
             return;
         }
 

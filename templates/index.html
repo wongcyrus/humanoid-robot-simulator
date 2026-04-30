@@ -201,6 +201,15 @@
             transform: translateX(0);
         }
 
+        /* Speech toggle switch */
+        .speech-toggle input:checked+span {
+            background: #28a745 !important;
+        }
+
+        .speech-toggle input:checked+span+span {
+            left: 23px !important;
+        }
+
         /* Fix instruction panel text overflow */
         .panel-section {
             word-wrap: break-word;
@@ -395,6 +404,19 @@
                         <p><strong>Current Action:</strong> <span id="current-action">None</span></p>
                         <p><strong>Movement:</strong> <span id="movement-status" style="color: #28a745;">✅
                                 Working</span></p>
+                        <p style="display:flex;align-items:center;gap:8px;">
+                            <strong>🔊 Robot Speech:</strong>
+                            <label class="speech-toggle"
+                                style="position:relative;display:inline-block;width:44px;height:24px;margin:0;">
+                                <input type="checkbox" id="speech-toggle" checked style="opacity:0;width:0;height:0;"
+                                    onchange="toggleSpeech(this.checked)">
+                                <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+                                    background:#ccc;border-radius:24px;transition:.3s;"></span>
+                                <span style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;
+                                    background:white;border-radius:50%;transition:.3s;pointer-events:none;"></span>
+                            </label>
+                            <span id="speech-status" style="color:#28a745;">✅ On</span>
+                        </p>
                     </div>
                 </div>
 
@@ -417,6 +439,22 @@
     </div>
 
     <!-- Load Corrected Animation System -->
+    <script>
+        function toggleSpeech(enabled) {
+            if (window.speechPlayer) {
+                window.speechPlayer.enabled = enabled;
+                if (!enabled) {
+                    window.speechPlayer.stopAll();
+                }
+            }
+            const status = document.getElementById('speech-status');
+            if (status) {
+                status.textContent = enabled ? '✅ On' : '🔇 Off';
+                status.style.color = enabled ? '#28a745' : '#999';
+            }
+            console.log('🔊 Robot speech ' + (enabled ? 'enabled' : 'disabled'));
+        }
+    </script>
     <script src="{{ url_for('static', filename='js/robot_animations.js') }}"></script>
     <script src="{{ url_for('static', filename='js/robot3d.js') }}"></script>
     <script src="{{ url_for('static', filename='js/speech_player.js') }}"></script>
