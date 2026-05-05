@@ -80,17 +80,38 @@ class SpeechPlayer {
         audio.preload = 'auto';
         audio.volume = 1.0;
 
-        // Clean up when finished
-        audio.addEventListener('ended', () => {
+        // Named functions for easy removal
+        const onEnded = () => {
             console.log(`🔊 [${robotId}] Speech finished`);
-            this._removeChannel(robotId);
-        });
+            this._cleanupChannel(robotId, audio, onEnded, onError);
+        };
 
-        audio.addEventListener('error', (e) => {
-            console.error(`🔊 [${robotId}] Speech error:`, e);
-            this._showNotification(`Speech failed for ${robotId}`, 'error');
-            this._removeChannel(robotId);
-        });
+        const onLoadedMetadata = () => {
+            console.log(`🔊 [${robotId}] Metadata loaded - Duration: ${audio.duration.toFixed(2)}s`);
+        };
+
+        const onError = (e) => {
+            // Only log if not already cleaned up
+            if (audio.src) {
+                const err = audio.error;
+                let msg = 'Unknown error';
+                if (err) {
+                    switch (err.code) {
+                        case 1: msg = 'Aborted'; break;
+                        case 2: msg = 'Network error'; break;
+                        case 3: msg = 'Decoding error'; break;
+                        case 4: msg = 'Source not supported'; break;
+                    }
+                }
+                console.error(`🔊 [${robotId}] Speech error (${msg}):`, e);
+                this._showNotification(`Speech failed for ${robotId}: ${msg}`, 'error');
+            }
+            this._cleanupChannel(robotId, audio, onEnded, onError, onLoadedMetadata);
+        };
+
+        audio.addEventListener('ended', onEnded);
+        audio.addEventListener('error', onError);
+        audio.addEventListener('loadedmetadata', onLoadedMetadata);
 
         this._channels.set(robotId, audio);
         audio.src = url;
@@ -122,8 +143,10 @@ class SpeechPlayer {
         if (audio) {
             try {
                 audio.pause();
-                audio.currentTime = 0;
+                // We don't have the original listeners here, so we just clear src
+                // If it was called from stop(), it's likely a manual override
                 audio.src = '';
+                audio.load(); // Force release of resources
             } catch (_) { /* ignore */ }
             this._channels.delete(robotId);
         }
@@ -159,13 +182,25 @@ class SpeechPlayer {
     /*  Internal helpers                                                    */
     /* ------------------------------------------------------------------ */
 
-    /** @param {string} robotId */
-    _removeChannel(robotId) {
-        const audio = this._channels.get(robotId);
-        if (audio) {
-            audio.src = '';
+    /**
+     * Proper cleanup of an audio channel.
+     */
+    _cleanupChannel(robotId, audio, onEnded, onError, onLoadedMetadata) {
+        audio.removeEventListener('ended', onEnded);
+        audio.removeEventListener('error', onError);
+        if (onLoadedMetadata) {
+            audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+        }
+        
+        if (this._channels.get(robotId) === audio) {
             this._channels.delete(robotId);
         }
+        
+        try {
+            audio.pause();
+            audio.src = '';
+            audio.load();
+        } catch (_) { }
     }
 
     _checkAudioDevice() {
