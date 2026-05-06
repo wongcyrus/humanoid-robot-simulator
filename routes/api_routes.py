@@ -93,3 +93,15 @@ class APIRoutes(ValidationMixin):
                 )
 
             return render_template("proxy.html", session_key=session_key)
+
+        @self.app.route("/hand-controller")
+        def hand_controller():
+            """Hand Tracking Camera Controller Page"""
+            session_key = request.args.get("session_key")
+            if not session_key:
+                return (
+                    "Session key required. Add ?session_key=YOUR_SESSION_ID to the URL.",
+                    400,
+                )
+
+            return render_template("hand_controller.html", session_key=session_key)

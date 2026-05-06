@@ -352,6 +352,11 @@ class HumanoidSimulator {
                 this.handleVideoControl(data);
             });
 
+            this.socket.on('camera_control', (data) => {
+                console.log('📷 Camera control received:', data);
+                this.handleCameraControl(data);
+            });
+
         } catch (error) {
             console.error('❌ WebSocket initialization failed:', error);
             this.updateConnectionStatus(false);
@@ -925,6 +930,33 @@ class HumanoidSimulator {
                 break;
             default:
                 console.warn('📺 Unknown video control action:', action);
+        }
+    }
+
+    /**
+     * Handle camera control commands from server/hand controller
+     * @param {Object} data - Camera control data
+     */
+    handleCameraControl(data) {
+        if (!this.scene3d) {
+            console.warn('📷 No 3D scene available for camera control');
+            return;
+        }
+
+        const { type, params } = data;
+
+        switch (type) {
+            case 'rotate':
+                this.scene3d.rotateCamera(params.dx, params.dy, 0.05);
+                break;
+            case 'zoom':
+                this.scene3d.zoomCamera(params.delta, 2.0);
+                break;
+            case 'pan':
+                this.scene3d.panCamera(params.dx, params.dy, 0.05);
+                break;
+            default:
+                console.warn('📷 Unknown camera control type:', type);
         }
     }
 

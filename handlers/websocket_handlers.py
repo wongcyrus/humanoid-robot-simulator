@@ -372,3 +372,29 @@ class WebSocketHandlers:
             except Exception as e:
                 logger.error(f"❌ Error controlling video: {e}")
                 emit("video_control_result", {"status": "error", "message": str(e)})
+
+        @self.socketio.on("camera_control")
+        def handle_camera_control(data):
+            """Handle camera control requests via WebSocket"""
+            logger.debug(f"📷 Handling camera_control event with data: {data}")
+
+            session_key = data.get("session_key")
+            if not session_key:
+                logger.debug("❌ Session key required for camera_control")
+                emit("error", {"message": "Session key required"})
+                return
+
+            try:
+                # Emit to all clients in the session
+                self.socketio.emit(
+                    "camera_control",
+                    data,
+                    room=f"session_{session_key}",
+                )
+
+                logger.debug(
+                    f"✅ Camera control command broadcast for session {session_key}"
+                )
+            except Exception as e:
+                logger.error(f"❌ Error broadcasting camera control: {e}")
+                emit("error", {"message": str(e)})
