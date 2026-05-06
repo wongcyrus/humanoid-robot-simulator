@@ -70,6 +70,14 @@ class RobotAnimator {
             'stand': 1 * 1000,           // Return to standing position
             'stop': 3 * 1000,            // Stop all movement
 
+            // Domain Expansion actions
+            'domain_unlimited_void': 8 * 1000,
+            'domain_malevolent_shrine': 10 * 1000,
+            'domain_self_embodiment': 8 * 1000,
+            'domain_authentic_love': 12 * 1000,
+            'domain_idle_death_gamble': 15 * 1000,
+            'domain_yuji_itadori': 8 * 1000,
+
             // Default duration for unlisted actions
             'default': 2 * 1000
         };
@@ -119,8 +127,8 @@ class RobotAnimator {
         const actionKey = action.toLowerCase();
 
         // Set animation characteristics based on action type
-        if (actionKey.startsWith('dance_')) {
-            // Dance actions: Complex multi-phase animations
+        if (actionKey.startsWith('dance_') || actionKey.startsWith('domain_')) {
+            // Dance and Domain actions: Complex multi-phase animations
             this.animationPhases = this.getDancePhases(actionKey);
             this.animationStyle = 'complex';
         } else if (['right_kick', 'left_kick', 'right_uppercut', 'left_uppercut', 'wing_chun', 'kung_fu'].includes(actionKey)) {
@@ -430,6 +438,26 @@ class RobotAnimator {
                 break;
             case 'weightlifting':
                 this.animateWeightlifting(progress);
+                break;
+
+            // DOMAIN EXPANSION ACTIONS
+            case 'domain_unlimited_void':
+                this.animateDomainGojo(progress, phaseInfo);
+                break;
+            case 'domain_malevolent_shrine':
+                this.animateDomainSukuna(progress, phaseInfo);
+                break;
+            case 'domain_self_embodiment':
+                this.animateDomainMahito(progress, phaseInfo);
+                break;
+            case 'domain_authentic_love':
+                this.animateDomainYuta(progress, phaseInfo);
+                break;
+            case 'domain_idle_death_gamble':
+                this.animateDomainHakari(progress, phaseInfo);
+                break;
+            case 'domain_yuji_itadori':
+                this.animateDomainYuji(progress, phaseInfo);
                 break;
 
             default:
@@ -1975,6 +2003,137 @@ class RobotAnimator {
         if (leftLeg && rightLeg) {
             leftLeg.rotation.x *= (1 - returnProgress);
             rightLeg.rotation.x *= (1 - returnProgress);
+        }
+    }
+
+    // --- DOMAIN EXPANSION ANIMATIONS ---
+
+    animateDomainGojo(progress, phaseInfo) {
+        const rightArm = this.robot.parts.rightArm;
+        const leftArm = this.robot.parts.leftArm;
+        const torso = this.robot.parts.torso;
+        
+        if (!rightArm || !torso) return;
+        
+        const intenseTime = progress * Math.PI * 15;
+        
+        // Pose: Right hand sign (Gojo crossing fingers)
+        rightArm.rotation.x = -Math.PI / 1.5;
+        rightArm.rotation.z = -Math.PI / 8;
+        leftArm.rotation.x = -Math.PI / 6;
+        
+        // Float and pulse
+        this.robot.group.position.y = this.robot.position.y + 40 * Math.sin(progress * Math.PI);
+        torso.scale.setScalar(1 + 0.1 * Math.sin(intenseTime));
+        
+        // Rapid rotation at peak
+        if (progress > 0.4 && progress < 0.8) {
+            this.robot.group.rotation.y += 0.2;
+        }
+    }
+
+    animateDomainSukuna(progress, phaseInfo) {
+        const leftArm = this.robot.parts.leftArm;
+        const rightArm = this.robot.parts.rightArm;
+        const torso = this.robot.parts.torso;
+        
+        if (!leftArm || !rightArm || !torso) return;
+        
+        // Form triangle in front
+        leftArm.rotation.x = -Math.PI / 2.5;
+        leftArm.rotation.z = Math.PI / 4;
+        rightArm.rotation.x = -Math.PI / 2.5;
+        rightArm.rotation.z = -Math.PI / 4;
+        
+        // Deep squat and shake
+        const shake = Math.sin(progress * Math.PI * 30) * 2;
+        this.robot.group.position.y = this.robot.position.y - 15;
+        this.robot.group.position.x = this.robot.position.x + (progress > 0.2 ? shake : 0);
+        
+        torso.rotation.x = 0.3;
+    }
+
+    animateDomainMahito(progress, phaseInfo) {
+        const leftArm = this.robot.parts.leftArm;
+        const rightArm = this.robot.parts.rightArm;
+        const torso = this.robot.parts.torso;
+        
+        if (!leftArm || !rightArm || !torso) return;
+        
+        // Egg shape pose
+        leftArm.rotation.x = -Math.PI / 3;
+        leftArm.rotation.z = Math.PI / 3;
+        rightArm.rotation.x = -Math.PI / 3;
+        rightArm.rotation.z = -Math.PI / 3;
+        
+        // Wavy motion
+        const wave = Math.sin(progress * Math.PI * 4);
+        torso.rotation.z = wave * 0.2;
+        this.robot.group.position.y = this.robot.position.y + 10 + wave * 5;
+    }
+
+    animateDomainYuta(progress, phaseInfo) {
+        const leftArm = this.robot.parts.leftArm;
+        const rightArm = this.robot.parts.rightArm;
+        const torso = this.robot.parts.torso;
+        
+        if (!leftArm || !rightArm || !torso) return;
+        
+        // Fist and open hand pose
+        leftArm.rotation.x = -Math.PI / 2; // Fist
+        rightArm.rotation.z = -Math.PI / 2; // Open hand out
+        
+        // Heartbeat pulse
+        const heartBeat = Math.pow(Math.sin(progress * Math.PI * 6), 4);
+        torso.scale.setScalar(1 + heartBeat * 0.15);
+        
+        // Hugging motion at end
+        if (progress > 0.7) {
+            const hug = (progress - 0.7) / 0.3;
+            leftArm.rotation.z = hug * Math.PI / 3;
+            rightArm.rotation.z = -hug * Math.PI / 3;
+        }
+    }
+
+    animateDomainHakari(progress, phaseInfo) {
+        const leftArm = this.robot.parts.leftArm;
+        const rightArm = this.robot.parts.rightArm;
+        const torso = this.robot.parts.torso;
+        
+        if (!leftArm || !rightArm || !torso) return;
+        
+        // Pose: Circle above flat hand
+        leftArm.rotation.x = -Math.PI / 4;
+        rightArm.rotation.x = -Math.PI / 2;
+        rightArm.rotation.y = -Math.PI / 2;
+        
+        // Jackpot spinning
+        const spinSpeed = progress < 0.8 ? progress * 20 : (1 - progress) * 20;
+        this.robot.group.rotation.y += spinSpeed * 0.1;
+        
+        // Celebratory jumps
+        this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(progress * Math.PI * 8)) * 15;
+    }
+
+    animateDomainYuji(progress, phaseInfo) {
+        const leftArm = this.robot.parts.leftArm;
+        const rightArm = this.robot.parts.rightArm;
+        const leftLeg = this.robot.parts.leftLeg;
+        
+        if (!leftArm || !rightArm || !leftLeg) return;
+        
+        // Index fingers up pose (beginning)
+        if (progress < 0.3) {
+            leftArm.rotation.x = -Math.PI / 1.2;
+            rightArm.rotation.x = -Math.PI / 1.2;
+        } else {
+            // Rapid punches
+            const punchTime = progress * Math.PI * 12;
+            leftArm.rotation.x = -Math.PI / 4 + Math.sin(punchTime) * 0.8;
+            rightArm.rotation.x = -Math.PI / 4 + Math.sin(punchTime + Math.PI) * 0.8;
+            
+            // Stomp
+            this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(punchTime * 0.5)) * 5;
         }
     }
 }

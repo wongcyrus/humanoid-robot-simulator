@@ -108,25 +108,36 @@
     <div class="container">
         <video id="webcam"></video>
         <canvas id="output-canvas"></canvas>
+        <canvas id="vfx-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; transform: scaleX(-1);"></canvas>
     </div>
 
     <div class="overlay header">
         <h1>🖐️ Hand Camera Controller</h1>
-        <p>Control the 3D scene with gestures</p>
+        <p id="mode-display">Control the 3D scene with gestures</p>
+        <div id="domain-display" style="font-size: 2.5rem; font-weight: bold; margin-top: 10px; color: #4A90E2; text-shadow: 0 0 20px rgba(74, 144, 226, 0.8);"></div>
     </div>
 
     <div class="overlay settings-panel">
         <div>
-            <label>🔄 Rotation Sensitivity</label>
-            <input type="range" id="rotate-sensitivity" min="50" max="1000" value="300">
+            <label>🎮 Operation Mode</label>
+            <select id="operation-mode" style="width: 100%; background: rgba(0,0,0,0.5); color: white; border: 1px solid #666; padding: 5px; border-radius: 4px;">
+                <option value="camera">📷 Camera Control</option>
+                <option value="domain">✨ Domain Expansion</option>
+            </select>
         </div>
-        <div>
-            <label>🔍 Zoom Sensitivity</label>
-            <input type="range" id="zoom-sensitivity" min="50" max="1000" value="150">
-        </div>
-        <div>
-            <label>🖐️ Pan Sensitivity</label>
-            <input type="range" id="pan-sensitivity" min="50" max="1000" value="300">
+        <div id="camera-settings">
+            <div>
+                <label>🔄 Rotation Sensitivity</label>
+                <input type="range" id="rotate-sensitivity" min="50" max="1000" value="300">
+            </div>
+            <div>
+                <label>🔍 Zoom Sensitivity</label>
+                <input type="range" id="zoom-sensitivity" min="50" max="1000" value="150">
+            </div>
+            <div>
+                <label>🖐️ Pan Sensitivity</label>
+                <input type="range" id="pan-sensitivity" min="50" max="1000" value="300">
+            </div>
         </div>
         <div>
             <label>⏱️ Update Rate (ms)</label>
@@ -149,15 +160,17 @@
         </div>
     </div>
 
-    <div class="overlay instructions">
+    <div class="overlay instructions" id="instructions-panel">
         <strong>1 Hand:</strong> Move to rotate. <br>
         <strong>2 Hands:</strong> Apart/Together to zoom. <br>
         Move same direction to pan.
     </div>
 
     <script>
-        window.sessionKey = '{{ session_key }}';
+        window.sessionKey = "{{ session_key }}";
+        window.videoBucketUrl = "{{ video_bucket_url }}";
     </script>
+    <script src="/static/js/domain_expansion.js"></script>
     <script src="/static/js/hand_tracker.js"></script>
 </body>
 </html>

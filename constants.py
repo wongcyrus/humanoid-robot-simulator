@@ -57,6 +57,14 @@ class HumanoidAction(Enum):
     SQUAT = "squat"
     WEIGHTLIFTING = "weightlifting"
 
+    # Domain Expansions
+    DOMAIN_UNLIMITED_VOID = "domain_unlimited_void"
+    DOMAIN_MALEVOLENT_SHRINE = "domain_malevolent_shrine"
+    DOMAIN_SELF_EMBODIMENT = "domain_self_embodiment"
+    DOMAIN_AUTHENTIC_LOVE = "domain_authentic_love"
+    DOMAIN_IDLE_DEATH_GAMBLE = "domain_idle_death_gamble"
+    DOMAIN_YUJI_ITADORI = "domain_yuji_itadori"
+
 
 # Configuration constants
 DEFAULT_ROBOTS = [
@@ -86,6 +94,14 @@ ACTION_DURATIONS = {
 
     # Exercise actions
     'chest': 9, 'squat_up': 6, 'squat': 1, 'push_ups': 9, 'sit_ups': 12, 'weightlifting': 9,
+
+    # Domain Expansion actions
+    'domain_unlimited_void': 8,
+    'domain_malevolent_shrine': 10,
+    'domain_self_embodiment': 8,
+    'domain_authentic_love': 12,
+    'domain_idle_death_gamble': 15,
+    'domain_yuji_itadori': 8,
 
     # Other actions
     'bow': 4, 'wave': 3.5, 'default': 2

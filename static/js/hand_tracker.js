@@ -9,6 +9,9 @@ class HandTracker {
         this.canvas = document.getElementById('output-canvas');
         this.ctx = this.canvas.getContext('2d');
         
+        this.vfxCanvas = document.getElementById('vfx-canvas');
+        this.domainGame = new DomainExpansionGame();
+        
         this.sessionKey = window.sessionKey;
         this.socket = null;
         
@@ -31,6 +34,9 @@ class HandTracker {
                 if (this.canvas.width !== this.video.videoWidth || this.canvas.height !== this.video.videoHeight) {
                     this.canvas.width = this.video.videoWidth;
                     this.canvas.height = this.video.videoHeight;
+                    this.vfxCanvas.width = this.video.videoWidth;
+                    this.vfxCanvas.height = this.video.videoHeight;
+                    this.domainGame.initVFX(this.vfxCanvas);
                 }
                 await this.hands.send({image: this.video});
             },
@@ -41,6 +47,23 @@ class HandTracker {
         this.prevHands = [];
         this.lastEmitTime = 0;
         
+        // Mode control
+        this.modeSelect = document.getElementById('operation-mode');
+        this.modeDisplay = document.getElementById('mode-display');
+        this.domainDisplay = document.getElementById('domain-display');
+        this.cameraSettings = document.getElementById('camera-settings');
+        this.instructionsPanel = document.getElementById('instructions-panel');
+        
+        this.operationMode = this.modeSelect.value;
+        this.lastTriggeredDomain = null;
+        this.videoBaseUrl = window.videoBucketUrl || 'https://cdkstack-robotsimulatorconstructrobotsimulatorwebs-fxuvfxmglhc4.s3.us-east-1.amazonaws.com/';
+        this.resetTimer = null;
+
+        this.modeSelect.addEventListener('change', () => {
+            this.operationMode = this.modeSelect.value;
+            this.updateUIMode();
+        });
+
         // Settings elements
         this.rotateSens = document.getElementById('rotate-sensitivity');
         this.zoomSens = document.getElementById('zoom-sensitivity');
@@ -59,10 +82,35 @@ class HandTracker {
         this.init();
     }
     
+    updateUIMode() {
+        if (this.operationMode === 'camera') {
+            this.modeDisplay.textContent = 'Control the 3D scene with gestures';
+            this.cameraSettings.style.display = 'block';
+            this.instructionsPanel.innerHTML = `
+                <strong>1 Hand:</strong> Move to rotate. <br>
+                <strong>2 Hands:</strong> Apart/Together to zoom. <br>
+                Move same direction to pan.
+            `;
+            this.domainDisplay.textContent = '';
+        } else {
+            this.modeDisplay.textContent = 'Strike a hand sign to expand your domain!';
+            this.cameraSettings.style.display = 'none';
+            this.instructionsPanel.innerHTML = `
+                <strong>五條悟:</strong> 無量空處 (1 hand) <br>
+                <strong>兩面宿儺:</strong> 伏魔御廚子 (2 hands) <br>
+                <strong>真人:</strong> 自閉圓頓裹 (2 hands) <br>
+                <strong>乙骨憂太:</strong> 真贋相愛 <br>
+                <strong>秤金次:</strong> 坐殺博徒 <br>
+                <strong>虎杖悠仁:</strong> 名稱不明
+            `;
+        }
+    }
+
     init() {
         console.log('🚀 Initializing HandTracker...');
         this.connectSocket();
         this.camera.start();
+        this.updateUIMode();
         
         const trackingStatus = document.getElementById('tracking-status');
         const trackingDot = document.getElementById('tracking-dot');
@@ -101,9 +149,90 @@ class HandTracker {
                 drawLandmarks(this.ctx, landmarks, {color: '#FF0000', lineWidth: 2});
             }
             
-            this.processGestures(results.multiHandLandmarks);
+            if (this.operationMode === 'camera') {
+                this.processGestures(results.multiHandLandmarks);
+                this.domainGame.drawVFX(this.vfxCanvas, null);
+            } else {
+                const stableDomain = this.domainGame.update(results.multiHandLandmarks);
+                this.processDomainExpansion(stableDomain);
+                this.domainGame.drawVFX(this.vfxCanvas, stableDomain);
+            }
+        } else {
+            if (this.operationMode === 'domain') {
+                this.domainGame.update([]);
+                this.domainGame.drawVFX(this.vfxCanvas, null);
+            }
         }
         this.ctx.restore();
+    }
+
+    processDomainExpansion(stableDomain) {
+        if (stableDomain) {
+            // Clear reset timer if it exists
+            if (this.resetTimer) {
+                clearTimeout(this.resetTimer);
+                this.resetTimer = null;
+            }
+
+            const displayName = this.domainGame.displayNames[stableDomain] || stableDomain;
+            this.domainDisplay.textContent = displayName;
+            this.domainDisplay.style.color = this.domainGame.domainColors[stableDomain];
+            
+            if (stableDomain !== this.lastTriggeredDomain) {
+                console.log(`✨ DOMAIN EXPANSION: ${displayName}`);
+                this.lastTriggeredDomain = stableDomain;
+                
+                // Trigger robot action
+                const actionMap = {
+                    "Unlimited Void": "domain_unlimited_void",
+                    "Malevolent Shrine": "domain_malevolent_shrine",
+                    "Self-Embodiment of Perfection": "domain_self_embodiment",
+                    "Authentic Mutual Love": "domain_authentic_love",
+                    "Idle Death Gamble": "domain_idle_death_gamble",
+                    "Yuji Itadori": "domain_yuji_itadori"
+                };
+                
+                const action = actionMap[stableDomain];
+                if (action && this.socket && this.socket.connected) {
+                    // Send robot action
+                    this.socket.emit('robot_action', {
+                        session_key: this.sessionKey,
+                        robot_id: 'all',
+                        action: action
+                    });
+
+                    // Trigger video change
+                    const videoMap = {
+                        "Unlimited Void": "domain_unlimited_void.mp4",
+                        "Malevolent Shrine": "domain_malevolent_shrine.mp4",
+                        "Self-Embodiment of Perfection": "domain_self_embodiment.mp4",
+                        "Authentic Mutual Love": "domain_authentic_love.mp4",
+                        "Idle Death Gamble": "domain_idle_death_gamble.mp4",
+                        "Yuji Itadori": "domain_yuji_itadori.mp4"
+                    };
+
+                    const videoFile = videoMap[stableDomain];
+                    if (videoFile) {
+                        const videoUrl = `${this.videoBaseUrl}${videoFile}`;
+                        console.log(`📺 Requesting video change: ${videoUrl}`);
+                        this.socket.emit('change_video_source', {
+                            session_key: this.sessionKey,
+                            video_src: videoUrl
+                        });
+                    }
+                }
+            }
+        } else {
+            this.domainDisplay.textContent = '';
+            // Only reset lastTriggeredDomain if we haven't seen a domain for a while
+            // This adds extra stability against flickering
+            if (!this.resetTimer) {
+                this.resetTimer = setTimeout(() => {
+                    this.lastTriggeredDomain = null;
+                    this.resetTimer = null;
+                }, 2000); // 2 second cooldown before allowing same domain to re-trigger
+            }
+        }
     }
     
     processGestures(multiHandLandmarks) {

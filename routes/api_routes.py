@@ -104,4 +104,11 @@ class APIRoutes(ValidationMixin):
                     400,
                 )
 
-            return render_template("hand_controller.html", session_key=session_key)
+            import os
+            video_bucket_url = os.environ.get("VIDEO_BUCKET_URL", "https://cdkstack-robotsimulatorconstructrobotsimulatorwebs-fxuvfxmglhc4.s3.us-east-1.amazonaws.com/")
+            
+            return render_template(
+                "hand_controller.html", 
+                session_key=session_key,
+                video_bucket_url=video_bucket_url
+            )
