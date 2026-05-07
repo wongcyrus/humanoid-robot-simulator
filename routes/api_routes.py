@@ -105,7 +105,7 @@ class APIRoutes(ValidationMixin):
                 )
 
             import os
-            video_bucket_url = os.environ.get("VIDEO_BUCKET_URL", "https://cdkstack-robotsimulatorconstructrobotsimulatorwebs-fxuvfxmglhc4.s3.us-east-1.amazonaws.com/")
+            video_bucket_url = os.environ.get("VIDEO_BUCKET_URL", "")
             
             return render_template(
                 "hand_controller.html", 

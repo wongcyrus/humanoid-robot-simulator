@@ -46,4 +46,4 @@ echo ""
 
 
 # Run the web simulator
-ROBOT_API_URL=https://6mz6soy3j3.execute-api.us-east-1.amazonaws.com/prod/run_action/ python3 app.py $PORT
+ROBOT_API_URL=https://6mz6soy3j3.execute-api.us-east-1.amazonaws.com/prod/api/run_action/ python3 app.py $PORT

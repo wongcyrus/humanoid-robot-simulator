@@ -944,6 +944,7 @@ class HumanoidSimulator {
         }
 
         const { type, params } = data;
+        console.log(`📷 Camera control logic processing: ${type}`, params);
 
         switch (type) {
             case 'rotate':
@@ -954,6 +955,10 @@ class HumanoidSimulator {
                 break;
             case 'pan':
                 this.scene3d.panCamera(params.dx, params.dy, 0.05);
+                break;
+            case 'reset':
+                console.log('📷 EXECUTING CAMERA RESET');
+                this.scene3d.resetCamera();
                 break;
             default:
                 console.warn('📷 Unknown camera control type:', type);

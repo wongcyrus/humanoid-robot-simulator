@@ -5,17 +5,50 @@ import base64
 import json
 import logging
 import os
+import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 from urllib.parse import unquote_plus
 from zoneinfo import ZoneInfo
 
 import requests
+import boto3
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-ROBOT_API_URL = os.getenv("ROBOT_API_URL", None)
+_ROBOT_API_URL = os.getenv("ROBOT_API_URL", None)
+_LAST_SSM_FETCH_TIME = 0
+
+def get_robot_api_url():
+    """Dynamically fetch the Robot API URL from environment or SSM with caching"""
+    global _ROBOT_API_URL, _LAST_SSM_FETCH_TIME
+    
+    # 1. Return cached or env-set URL immediately
+    if _ROBOT_API_URL:
+        return _ROBOT_API_URL
+
+    # 2. Rate-limit SSM lookups to prevent freezing the server on failures (once per min)
+    now = time.time()
+    if now - _LAST_SSM_FETCH_TIME < 60:
+        return None
+    
+    _LAST_SSM_FETCH_TIME = now
+
+    try:
+        # Fallback: Try to get from SSM Parameter Store
+        ssm = boto3.client("ssm")
+        param_name = "/robotics/robot_api_url"
+        logger.info(f"🔍 ROBOT_API_URL not set. Attempting lookup from SSM: {param_name}")
+        
+        response = ssm.get_parameter(Name=param_name)
+        _ROBOT_API_URL = response["Parameter"]["Value"]
+        
+        logger.info(f"✅ Discovered API URL via SSM: {_ROBOT_API_URL}")
+        return _ROBOT_API_URL
+    except Exception as e:
+        logger.error(f"❌ Failed to fetch ROBOT_API_URL from SSM: {e}")
+        return None
 
 SESSION_AES_KEY = os.environ.get("SESSION_AES_KEY", "0123456789012345").encode()
 SESSION_AES_IV = os.environ.get("SESSION_AES_IV", "5432109876543210").encode()
@@ -24,26 +57,54 @@ SESSION_AES_IV = os.environ.get("SESSION_AES_IV", "5432109876543210").encode()
 logger = logging.getLogger(__name__)
 
 
+# Mapping from Simulation/Domain actions to standard Real Robot actions
+# (Using only short combat/gesture moves - no long dances)
+# NOTE: Actions MUST start with "robot_" to be recognized by Text Control tools
+REAL_ROBOT_ACTION_MAP = {
+    "domain_unlimited_void": "robot_twist",            # Gojo: Rhythmic focus
+    "domain_malevolent_shrine": "robot_kung_fu",       # Sukuna: Sharp martial arts
+    "domain_self_embodiment": "robot_right_uppercut", # Mahito: Powerful hand strike
+    "domain_authentic_love": "robot_bow",             # Yuta: Respectful bow
+    "domain_idle_death_gamble": "robot_stepping",      # Hakari: Constant rhythm
+    "domain_yuji_itadori": "robot_sit_ups"             # Yuji: Sit up
+}
+
 def send_request(method: str, robot_id: str, action: str) -> Optional[Dict[str, Any]]:
-    """Send request to external robot API"""
-    if not ROBOT_API_URL:
-        logger.info("ROBOT_API_URL environment variable is not set.")
+    """Send request to external robot API with action mapping for hardware compatibility"""
+    api_url = get_robot_api_url()
+    if not api_url:
+        logger.warning("❌ ROBOT_API_URL is NOT set and SSM lookup failed. Cannot call real robot.")
         return None
 
-    data = {"method": method, "action": action}
+    # Map the action to a standard hardware-supported action if necessary
+    hardware_action = REAL_ROBOT_ACTION_MAP.get(action, action)
+    
+    target_url = f"{api_url.rstrip('/')}/{robot_id.lstrip('/')}"
+    data = {"method": method, "action": hardware_action}
+    
+    # Internal secret for service-to-service bypass
+    INTERNAL_SECRET = os.getenv("INTERNAL_ROBOT_SECRET", "hktiit_robot_internal_bypass_2026")
+    headers = {
+        "X-Internal-Secret": INTERNAL_SECRET,
+        "Content-Type": "application/json"
+    }
+    
+    logger.info(f"🚀 CALLING REAL ROBOT (INTERNAL): {target_url} with data: {data} (Original: {action})")
+    
     try:
         response = requests.post(
-            ROBOT_API_URL + robot_id,
+            target_url,
             json=data,
-            timeout=3,
+            headers=headers,
+            timeout=5,
         )
+        logger.info(f"📥 API RESPONSE [{response.status_code}]: {response.text}")
         response.raise_for_status()
-        logger.info(
-            f"Action {method} successful for robot_id={robot_id}. Response: {response.json()}"
-        )
         return response.json()
     except requests.RequestException as e:
-        logger.error(f"Error sending request: {e}")
+        logger.error(f"❌ Error sending request to {target_url}: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+             logger.error(f"❌ Response details: {e.response.text}")
         return None
 
 

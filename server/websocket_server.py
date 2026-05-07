@@ -80,8 +80,12 @@ class RobotWebSocketServer:
             self.app,
             cors_allowed_origins="*",
             cors_credentials=False,
-            logger=debug_mode,  # Enable SocketIO logging in debug mode
-            engineio_logger=debug_mode,  # Enable EngineIO logging in debug mode
+            logger=debug_mode,
+            engineio_logger=debug_mode,
+            async_mode="eventlet",
+            ping_timeout=60,
+            ping_interval=25,
+            max_http_buffer_size=1e8 # 100MB
         )
 
         # Initialize components

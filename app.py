@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Main application entry point for the Robot Simulator"""
 
+import eventlet
+eventlet.monkey_patch()
+
 import os
 import sys
 import logging

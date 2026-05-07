@@ -175,16 +175,29 @@ class ActionRoutes:
 
     def _send_real_robot_commands(self, session_key, robots, action, target_robot_id):
         """Send commands to real robots if session is valid"""
+        logger.info(f"🔍 Checking if should call real robot for action: {action}")
         real_robot_session = decrypt(session_key)
-        if not real_robot_session or not real_robot_session.get("is_valid"):
+        
+        if not real_robot_session:
+            logger.warning("❌ Decryption failed or returned None for session_key")
+            return
+            
+        if not real_robot_session.get("is_valid"):
+            logger.warning(f"❌ Session is NOT valid. Content: {real_robot_session}")
             return
 
+        logger.info(f"✅ Session validated for real robot control: {real_robot_session}")
+
         if target_robot_id == "all" and real_robot_session.get("robot") == "all":
+            if not robots:
+                logger.warning("⚠️ 'all' robots targeted but robots list is empty in session")
+                return
+            
             # Send action to all robots via the external API
             for robot in robots.values():
                 robot_data = robot.to_dict()
                 logger.info(
-                    f"Sending action {action} to robot {robot_data['robot_id']}"
+                    f"📤 Sending action {action} to robot {robot_data['robot_id']}"
                 )
                 send_request(
                     method="RunAction", robot_id=robot_data["robot_id"], action=action

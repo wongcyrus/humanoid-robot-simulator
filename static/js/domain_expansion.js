@@ -6,7 +6,7 @@
 class DomainExpansionGame {
     constructor() {
         this.predictionHistory = [];
-        this.historyMaxLen = 8;
+        this.historyMaxLen = 10;
         
         this.activeDomain = null;
         this.stableDomain = null;
@@ -289,7 +289,7 @@ class DomainExpansionGame {
             }
         }
 
-        if (topCount >= 4 && topCount >= (this.predictionHistory.length / 2 + 1)) {
+        if (topCount >= 8 && topCount >= (this.predictionHistory.length * 0.6)) {
             this.stableDomain = topLabel;
         } else {
             this.stableDomain = null;

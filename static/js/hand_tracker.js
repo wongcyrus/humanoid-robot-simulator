@@ -47,37 +47,77 @@ class HandTracker {
         this.prevHands = [];
         this.lastEmitTime = 0;
         
-        // Mode control
+        // --- 1. Mode Control ---
         this.modeSelect = document.getElementById('operation-mode');
         this.modeDisplay = document.getElementById('mode-display');
         this.domainDisplay = document.getElementById('domain-display');
         this.cameraSettings = document.getElementById('camera-settings');
+        this.cooldownSettings = document.getElementById('cooldown-settings');
         this.instructionsPanel = document.getElementById('instructions-panel');
         
         this.operationMode = this.modeSelect.value;
-        this.lastTriggeredDomain = null;
-        this.videoBaseUrl = window.videoBucketUrl || 'https://cdkstack-robotsimulatorconstructrobotsimulatorwebs-fxuvfxmglhc4.s3.us-east-1.amazonaws.com/';
-        this.resetTimer = null;
-
         this.modeSelect.addEventListener('change', () => {
             this.operationMode = this.modeSelect.value;
             this.updateUIMode();
         });
 
-        // Settings elements
+        // --- 2. Cooldown Sliders ---
+        this.simSlider = document.getElementById('sim-cooldown-slider');
+        this.simLabel = document.getElementById('sim-cooldown-val');
+        this.realSlider = document.getElementById('real-cooldown-slider');
+        this.realLabel = document.getElementById('real-cooldown-val');
+
+        this.lastSimActionTime = 0;
+        this.lastSimDomain = null;
+        this.lastRealActionTime = 0;
+        this.lastRealDomain = null;
+
+        this.simSlider.addEventListener('input', () => {
+            this.simCooldownMs = parseInt(this.simSlider.value) * 1000;
+            this.simLabel.textContent = this.simSlider.value;
+        });
+
+        this.realSlider.addEventListener('input', () => {
+            this.realCooldownMs = parseInt(this.realSlider.value) * 1000;
+            this.realLabel.textContent = this.realSlider.value;
+        });
+
+        // --- 3. Sensitivity Sliders ---
         this.rotateSens = document.getElementById('rotate-sensitivity');
+        this.rotateLabel = document.getElementById('rotate-val');
         this.zoomSens = document.getElementById('zoom-sensitivity');
+        this.zoomLabel = document.getElementById('zoom-val');
         this.panSens = document.getElementById('pan-sensitivity');
+        this.panLabel = document.getElementById('pan-val');
+
+        this.rotateSens.addEventListener('input', () => { this.rotateLabel.textContent = this.rotateSens.value; });
+        this.zoomSens.addEventListener('input', () => { this.zoomLabel.textContent = this.zoomSens.value; });
+        this.panSens.addEventListener('input', () => { this.panLabel.textContent = this.panSens.value; });
+
+        // --- 4. System Controls ---
+        this.resetCameraBtn = document.getElementById('reset-camera-btn');
         this.intervalSlider = document.getElementById('emit-interval');
         this.intervalLabel = document.getElementById('interval-value');
-        
-        this.emitInterval = parseInt(this.intervalSlider.value);
-        
+
         this.intervalSlider.addEventListener('input', () => {
             this.emitInterval = parseInt(this.intervalSlider.value);
             const fps = Math.round(1000 / this.emitInterval);
             this.intervalLabel.textContent = `${this.emitInterval}ms (${fps} updates/s)`;
         });
+
+        if (this.resetCameraBtn) {
+            this.resetCameraBtn.addEventListener('click', () => {
+                console.log(`📷 Requesting Camera Reset for session: ${this.sessionKey}`);
+                this.emitControl('reset', { force: true });
+            });
+        }
+
+        // --- 5. Initial Sync ---
+        this.emitInterval = parseInt(this.intervalSlider.value);
+        this.simCooldownMs = parseInt(this.simSlider.value) * 1000;
+        this.realCooldownMs = parseInt(this.realSlider.value) * 1000;
+        this.videoBaseUrl = window.videoBucketUrl || '';
+        this.resetTimer = null;
 
         this.init();
     }
@@ -86,6 +126,7 @@ class HandTracker {
         if (this.operationMode === 'camera') {
             this.modeDisplay.textContent = 'Control the 3D scene with gestures';
             this.cameraSettings.style.display = 'block';
+            this.cooldownSettings.style.display = 'none';
             this.instructionsPanel.innerHTML = `
                 <strong>1 Hand:</strong> Move to rotate. <br>
                 <strong>2 Hands:</strong> Apart/Together to zoom. <br>
@@ -95,6 +136,7 @@ class HandTracker {
         } else {
             this.modeDisplay.textContent = 'Strike a hand sign to expand your domain!';
             this.cameraSettings.style.display = 'none';
+            this.cooldownSettings.style.display = 'block';
             this.instructionsPanel.innerHTML = `
                 <strong>五條悟:</strong> 無量空處 (1 hand) <br>
                 <strong>兩面宿儺:</strong> 伏魔御廚子 (2 hands) <br>
@@ -168,40 +210,42 @@ class HandTracker {
 
     processDomainExpansion(stableDomain) {
         if (stableDomain) {
-            // Clear reset timer if it exists
             if (this.resetTimer) {
                 clearTimeout(this.resetTimer);
                 this.resetTimer = null;
             }
 
+            const now = Date.now();
             const displayName = this.domainGame.displayNames[stableDomain] || stableDomain;
+            const actionMap = {
+                "Unlimited Void": "domain_unlimited_void",
+                "Malevolent Shrine": "domain_malevolent_shrine",
+                "Self-Embodiment of Perfection": "domain_self_embodiment",
+                "Authentic Mutual Love": "domain_authentic_love",
+                "Idle Death Gamble": "domain_idle_death_gamble",
+                "Yuji Itadori": "domain_yuji_itadori"
+            };
+            const action = actionMap[stableDomain];
+
+            // 1. UI & VFX Update (ALWAYS INSTANT)
             this.domainDisplay.textContent = displayName;
             this.domainDisplay.style.color = this.domainGame.domainColors[stableDomain];
-            
-            if (stableDomain !== this.lastTriggeredDomain) {
-                console.log(`✨ DOMAIN EXPANSION: ${displayName}`);
-                this.lastTriggeredDomain = stableDomain;
-                
-                // Trigger robot action
-                const actionMap = {
-                    "Unlimited Void": "domain_unlimited_void",
-                    "Malevolent Shrine": "domain_malevolent_shrine",
-                    "Self-Embodiment of Perfection": "domain_self_embodiment",
-                    "Authentic Mutual Love": "domain_authentic_love",
-                    "Idle Death Gamble": "domain_idle_death_gamble",
-                    "Yuji Itadori": "domain_yuji_itadori"
-                };
-                
-                const action = actionMap[stableDomain];
+            this.domainDisplay.style.opacity = "1.0";
+
+            // 2. SIMULATION TRIGGER (STRICT COOLDOWN)
+            if (now - this.lastSimActionTime >= this.simCooldownMs) {
                 if (action && this.socket && this.socket.connected) {
-                    // Send robot action
-                    this.socket.emit('robot_action', {
-                        session_key: this.sessionKey,
-                        robot_id: 'all',
-                        action: action
+                    this.lastSimActionTime = now;
+                    this.lastSimDomain = stableDomain;
+                    console.log(`🎮 Sim Trigger (${this.simCooldownMs/1000}s): ${displayName}`);
+                    
+                    this.socket.emit('robot_action', { 
+                        session_key: this.sessionKey, 
+                        robot_id: 'all', 
+                        action: action 
                     });
 
-                    // Trigger video change
+                    // Update Video
                     const videoMap = {
                         "Unlimited Void": "domain_unlimited_void.mp4",
                         "Malevolent Shrine": "domain_malevolent_shrine.mp4",
@@ -210,27 +254,48 @@ class HandTracker {
                         "Idle Death Gamble": "domain_idle_death_gamble.mp4",
                         "Yuji Itadori": "domain_yuji_itadori.mp4"
                     };
-
                     const videoFile = videoMap[stableDomain];
                     if (videoFile) {
-                        const videoUrl = `${this.videoBaseUrl}${videoFile}`;
-                        console.log(`📺 Requesting video change: ${videoUrl}`);
                         this.socket.emit('change_video_source', {
                             session_key: this.sessionKey,
-                            video_src: videoUrl
+                            video_src: `${this.videoBaseUrl}${videoFile}`
                         });
                     }
                 }
             }
+
+            // 3. REAL ROBOT TRIGGER (STRICT COOLDOWN)
+            if (now - this.lastRealActionTime >= this.realCooldownMs) {
+                if (action) {
+                    this.lastRealActionTime = now;
+                    this.lastRealDomain = stableDomain;
+                    console.log(`🤖 REAL ROBOT Trigger (${this.realCooldownMs/1000}s): ${displayName}`);
+                    
+                    fetch(`/run_action/all?session_key=${this.sessionKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: action })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) console.log(`✅ Real robot confirmed: ${action}`);
+                    })
+                    .catch(err => console.error('❌ Real robot trigger failed:', err));
+                }
+            } else {
+                // visual feedback
+                const wait = Math.ceil((this.realCooldownMs - (now - this.lastRealActionTime)) / 1000);
+                this.domainDisplay.textContent = `${displayName} (Hardware Busy ${wait}s)`;
+                this.domainDisplay.style.opacity = "0.7";
+            }
         } else {
             this.domainDisplay.textContent = '';
-            // Only reset lastTriggeredDomain if we haven't seen a domain for a while
-            // This adds extra stability against flickering
             if (!this.resetTimer) {
                 this.resetTimer = setTimeout(() => {
-                    this.lastTriggeredDomain = null;
+                    this.lastSimDomain = null;
+                    this.lastRealDomain = null;
                     this.resetTimer = null;
-                }, 2000); // 2 second cooldown before allowing same domain to re-trigger
+                }, 2000); 
             }
         }
     }
