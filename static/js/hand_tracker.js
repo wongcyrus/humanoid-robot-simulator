@@ -49,6 +49,7 @@ class HandTracker {
         
         // --- 1. Mode Control ---
         this.modeSelect = document.getElementById('operation-mode');
+        this.robotSelect = document.getElementById('robot-select');
         this.modeDisplay = document.getElementById('mode-display');
         this.domainDisplay = document.getElementById('domain-display');
         this.cameraSettings = document.getElementById('camera-settings');
@@ -237,11 +238,12 @@ class HandTracker {
                 if (action && this.socket && this.socket.connected) {
                     this.lastSimActionTime = now;
                     this.lastSimDomain = stableDomain;
-                    console.log(`🎮 Sim Trigger (${this.simCooldownMs/1000}s): ${displayName}`);
+                    const targetRobot = this.robotSelect.value;
+                    console.log(`🎮 Sim Trigger (${this.simCooldownMs/1000}s) for ${targetRobot}: ${displayName}`);
                     
                     this.socket.emit('robot_action', { 
                         session_key: this.sessionKey, 
-                        robot_id: 'all', 
+                        robot_id: targetRobot, 
                         action: action 
                     });
 
@@ -269,9 +271,10 @@ class HandTracker {
                 if (action) {
                     this.lastRealActionTime = now;
                     this.lastRealDomain = stableDomain;
-                    console.log(`🤖 REAL ROBOT Trigger (${this.realCooldownMs/1000}s): ${displayName}`);
+                    const targetRobot = this.robotSelect.value;
+                    console.log(`🤖 REAL ROBOT Trigger (${this.realCooldownMs/1000}s) for ${targetRobot}: ${displayName}`);
                     
-                    fetch(`/run_action/all?session_key=${this.sessionKey}`, {
+                    fetch(`/run_action/${targetRobot}?session_key=${this.sessionKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ action: action })
