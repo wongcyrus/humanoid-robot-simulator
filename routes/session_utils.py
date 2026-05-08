@@ -65,7 +65,7 @@ REAL_ROBOT_ACTION_MAP = {
     "domain_malevolent_shrine": "robot_kung_fu",       # Sukuna: Sharp martial arts
     "domain_self_embodiment": "robot_right_uppercut", # Mahito: Powerful hand strike
     "domain_authentic_love": "robot_bow",             # Yuta: Respectful bow
-    "domain_idle_death_gamble": "robot_stepping",      # Hakari: Constant rhythm
+    "domain_idle_death_gamble": "robot_wave",          # Hakari: Constant rhythm -> Wave
     "domain_yuji_itadori": "robot_sit_ups"             # Yuji: Sit up
 }
 

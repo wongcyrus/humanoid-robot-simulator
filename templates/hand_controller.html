@@ -103,6 +103,55 @@
         }
         .settings-panel label { font-size: 12px; display: block; margin-bottom: 5px; }
         .settings-panel input { width: 100%; cursor: pointer; }
+
+        /* Mobile Responsive Overrides */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.1rem; }
+            .header p { font-size: 0.7rem; }
+            #domain-display { font-size: 1.8rem !important; }
+
+            .settings-panel {
+                top: auto;
+                bottom: 0;
+                right: 0;
+                width: 100%;
+                border-radius: 20px 20px 0 0;
+                padding-bottom: 30px;
+                transform: translateY(calc(100% - 40px));
+                transition: transform 0.3s ease;
+                pointer-events: auto;
+            }
+            .settings-panel.active {
+                transform: translateY(0);
+            }
+            .settings-toggle {
+                display: block !important;
+                width: 40px;
+                height: 5px;
+                background: #888;
+                border-radius: 10px;
+                margin: 0 auto 10px auto;
+                cursor: pointer;
+            }
+
+            .status-panel {
+                top: 10px;
+                bottom: auto;
+                left: 10px;
+                padding: 8px;
+                font-size: 10px;
+                background: rgba(0,0,0,0.5);
+                border-radius: 10px;
+                gap: 2px;
+            }
+            .status-panel span { display: none; } /* Hide labels on mobile, keep dots and status text */
+            .status-panel #ws-status, .status-panel #tracking-status { display: inline; }
+            .status-panel div:last-child { display: none; } /* Hide session info on mobile status */
+            .instructions {
+                display: none; /* Hide instructions on mobile to save space */
+            }
+        }
+        .settings-toggle { display: none; }
     </style>
 </head>
 <body>
@@ -118,7 +167,8 @@
         <div id="domain-display" style="font-size: 2.5rem; font-weight: bold; margin-top: 10px; color: #4A90E2; text-shadow: 0 0 20px rgba(74, 144, 226, 0.8);"></div>
     </div>
 
-    <div class="overlay settings-panel">
+    <div class="overlay settings-panel" id="settings-panel">
+        <div class="settings-toggle" onclick="document.getElementById('settings-panel').classList.toggle('active')"></div>
         <div>
             <label>🎮 Operation Mode</label>
             <select id="operation-mode" style="width: 100%; background: rgba(0,0,0,0.5); color: white; border: 1px solid #666; padding: 5px; border-radius: 4px;">
