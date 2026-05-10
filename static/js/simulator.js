@@ -13,6 +13,11 @@ class HumanoidSimulator {
         this.maxRetries = 5;
         this.sessionKey = null;
 
+        /** @type {boolean} Whether to append timestamp to video URLs to bypass cache */
+        this.forceVideoReload = false;
+        /** @type {string} Persistent random key for controlled cache busting */
+        this.videoCacheKey = localStorage.getItem('video_cache_key') || 'v1';
+
         // Action queue system for sequential processing
         this.actionQueue = [];
         this.isProcessingQueue = false;
@@ -885,11 +890,18 @@ class HumanoidSimulator {
     handleVideoSourceChange(data) {
         console.log('📺 Handling video source change:', data);
 
-        const { video_src, session_key } = data;
+        let { video_src, session_key } = data;
 
         if (!video_src) {
             console.warn('📺 No video source provided');
             return;
+        }
+
+        // Apply cache busting if enabled
+        if (this.forceVideoReload) {
+            const separator = video_src.includes('?') ? '&' : '?';
+            video_src = `${video_src}${separator}cv=${this.videoCacheKey}`;
+            console.log('🔄 Applied controlled cache buster to video URL:', video_src);
         }
 
         // Change video source in the 3D scene
