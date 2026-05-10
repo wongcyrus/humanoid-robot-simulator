@@ -106,6 +106,11 @@ class HandTracker {
             this.intervalLabel.textContent = `${this.emitInterval}ms (${fps} updates/s)`;
         });
 
+        // --- 5. VFX Elements ---
+        this.mainContainer = document.getElementById('main-container');
+        this.atmosphereOverlay = document.getElementById('atmosphere-overlay');
+        this.lastVFXDomain = null;
+
         if (this.resetCameraBtn) {
             this.resetCameraBtn.addEventListener('click', () => {
                 console.log(`📷 Requesting Camera Reset for session: ${this.sessionKey}`);
@@ -139,12 +144,25 @@ class HandTracker {
             this.cameraSettings.style.display = 'none';
             this.cooldownSettings.style.display = 'block';
             this.instructionsPanel.innerHTML = `
-                <strong>五條悟:</strong> 無量空處 (1 hand) <br>
-                <strong>兩面宿儺:</strong> 伏魔御廚子 (2 hands) <br>
-                <strong>真人:</strong> 自閉圓頓裹 (2 hands) <br>
-                <strong>乙骨憂太:</strong> 真贋相愛 <br>
-                <strong>秤金次:</strong> 坐殺博徒 <br>
-                <strong>虎杖悠仁:</strong> 名稱不明
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85em;">
+                    <div>
+                        <strong>— Domains —</strong><br>
+                        • 五條悟: 無量空處 (1H)<br>
+                        • 兩面宿儺: 伏魔御廚子 (2H)<br>
+                        • 真人: 自閉圓頓裹 (2H)<br>
+                        • 乙骨憂太: 真贋相愛 (2H Wide)<br>
+                        • 秤金次: 坐殺博徒 (2H Stack)<br>
+                        • 伏黑惠: 嵌合暗翳庭園 (2H Fists)<br>
+                        • 直哉: 時胞月宮殿 (2H L-sign)<br>
+                        • 虎杖: 名称不明 (2H Point)
+                    </div>
+                    <div>
+                        <strong>— Techniques —</strong><br>
+                        • 蒼 (Blue): Index Point (1H)<br>
+                        • 赫 (Red): Open Palm (1H)<br>
+                        • 茈 (Purple): Blue + Red (2H)
+                    </div>
+                </div>
             `;
         }
     }
@@ -182,31 +200,47 @@ class HandTracker {
     }
     
     onResults(results) {
-        // Draw visual feedback
-        this.ctx.save();
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        if (results.multiHandLandmarks) {
-            for (const landmarks of results.multiHandLandmarks) {
-                drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 5});
-                drawLandmarks(this.ctx, landmarks, {color: '#FF0000', lineWidth: 2});
-            }
+        try {
+            // Draw visual feedback
+            this.ctx.save();
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             
-            if (this.operationMode === 'camera') {
-                this.processGestures(results.multiHandLandmarks);
-                this.domainGame.drawVFX(this.vfxCanvas, null);
+            if (results.multiHandLandmarks) {
+                // Determine skeleton color based on domain
+                let skeletonColor = '#00FF00'; // Default green
+                const currentDomain = this.domainGame.stableDomain;
+                if (currentDomain && this.domainGame.domainColors[currentDomain]) {
+                    skeletonColor = this.domainGame.domainColors[currentDomain];
+                }
+
+                for (const landmarks of results.multiHandLandmarks) {
+                    if (typeof drawConnectors === 'function' && typeof HAND_CONNECTIONS !== 'undefined') {
+                        drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {color: skeletonColor, lineWidth: 5});
+                    }
+                    if (typeof drawLandmarks === 'function') {
+                        drawLandmarks(this.ctx, landmarks, {color: '#FF0000', lineWidth: 2});
+                    }
+                }
+                
+                if (this.operationMode === 'camera') {
+                    this.processGestures(results.multiHandLandmarks);
+                    this.domainGame.drawVFX(this.vfxCanvas, null);
+                } else {
+                    const stableDomain = this.domainGame.update(results.multiHandLandmarks);
+                    this.processDomainExpansion(stableDomain);
+                    this.domainGame.drawVFX(this.vfxCanvas, stableDomain);
+                }
             } else {
-                const stableDomain = this.domainGame.update(results.multiHandLandmarks);
-                this.processDomainExpansion(stableDomain);
-                this.domainGame.drawVFX(this.vfxCanvas, stableDomain);
+                if (this.operationMode === 'domain') {
+                    this.domainGame.update([]);
+                    this.domainGame.drawVFX(this.vfxCanvas, null);
+                }
             }
-        } else {
-            if (this.operationMode === 'domain') {
-                this.domainGame.update([]);
-                this.domainGame.drawVFX(this.vfxCanvas, null);
-            }
+            this.ctx.restore();
+        } catch (err) {
+            console.error('❌ Error in hand tracking loop:', err);
+            this.ctx.restore();
         }
-        this.ctx.restore();
     }
 
     processDomainExpansion(stableDomain) {
@@ -218,22 +252,47 @@ class HandTracker {
 
             const now = Date.now();
             const displayName = this.domainGame.displayNames[stableDomain] || stableDomain;
+            const domainColor = this.domainGame.domainColors[stableDomain];
             const actionMap = {
                 "Unlimited Void": "domain_unlimited_void",
                 "Malevolent Shrine": "domain_malevolent_shrine",
                 "Self-Embodiment of Perfection": "domain_self_embodiment",
                 "Authentic Mutual Love": "domain_authentic_love",
                 "Idle Death Gamble": "domain_idle_death_gamble",
-                "Yuji Itadori": "domain_yuji_itadori"
+                "Yuji Itadori": "domain_yuji_itadori",
+                "Chimera Shadow Garden": "domain_chimera_shadow_garden",
+                "Time Cell Moon Palace": "domain_time_cell_moon_palace",
+                "Lapse Blue": "lapse_blue",
+                "Reversal Red": "reversal_red",
+                "Hollow Purple": "hollow_purple"
             };
             const action = actionMap[stableDomain];
 
             // 1. UI & VFX Update (ALWAYS INSTANT)
             this.domainDisplay.textContent = displayName;
-            this.domainDisplay.style.color = this.domainGame.domainColors[stableDomain];
+            if (domainColor) this.domainDisplay.style.color = domainColor;
             this.domainDisplay.style.opacity = "1.0";
 
-            // 2. SIMULATION TRIGGER (STRICT COOLDOWN)
+            // 2. TRIGGER SCREEN SHAKE & ATMOSPHERE (ONLY ON FIRST STABLE DETECTION)
+            if (this.lastVFXDomain !== stableDomain) {
+                this.lastVFXDomain = stableDomain;
+                
+                // Add shake class
+                if (this.mainContainer) {
+                    this.mainContainer.classList.remove('shake');
+                    void this.mainContainer.offsetWidth; // Force reflow
+                    this.mainContainer.classList.add('shake');
+                    setTimeout(() => this.mainContainer.classList.remove('shake'), 500);
+                }
+
+                // Set atmospheric tint
+                if (this.atmosphereOverlay && domainColor) {
+                    const tint = domainColor.replace('rgb', 'rgba').replace(')', ', 0.15)');
+                    this.atmosphereOverlay.style.background = `radial-gradient(circle, ${tint} 0%, rgba(0,0,0,0.6) 100%)`;
+                }
+            }
+
+            // 3. SIMULATION TRIGGER (STRICT COOLDOWN)
             if (now - this.lastSimActionTime >= this.simCooldownMs) {
                 if (action && this.socket && this.socket.connected) {
                     this.lastSimActionTime = now;
@@ -254,7 +313,12 @@ class HandTracker {
                         "Self-Embodiment of Perfection": "domain_self_embodiment.mp4",
                         "Authentic Mutual Love": "domain_authentic_love.mp4",
                         "Idle Death Gamble": "domain_idle_death_gamble.mp4",
-                        "Yuji Itadori": "domain_yuji_itadori.mp4"
+                        "Yuji Itadori": "domain_yuji_itadori.mp4",
+                        "Chimera Shadow Garden": "01-90.mp4",
+                        "Time Cell Moon Palace": "02-199.mp4",
+                        "Lapse Blue": "03-186.mp4",
+                        "Reversal Red": "04-204.mp4",
+                        "Hollow Purple": "Bling-Bang-Bang-Born.mp4"
                     };
                     const videoFile = videoMap[stableDomain];
                     if (videoFile) {
@@ -266,7 +330,7 @@ class HandTracker {
                 }
             }
 
-            // 3. REAL ROBOT TRIGGER (STRICT COOLDOWN)
+            // 4. REAL ROBOT TRIGGER (STRICT COOLDOWN)
             if (now - this.lastRealActionTime >= this.realCooldownMs) {
                 if (action) {
                     this.lastRealActionTime = now;
@@ -293,10 +357,14 @@ class HandTracker {
             }
         } else {
             this.domainDisplay.textContent = '';
+            if (this.atmosphereOverlay) {
+                this.atmosphereOverlay.style.background = 'radial-gradient(circle, transparent 40%, rgba(0,0,0,0.4) 100%)';
+            }
             if (!this.resetTimer) {
                 this.resetTimer = setTimeout(() => {
                     this.lastSimDomain = null;
                     this.lastRealDomain = null;
+                    this.lastVFXDomain = null;
                     this.resetTimer = null;
                 }, 2000); 
             }

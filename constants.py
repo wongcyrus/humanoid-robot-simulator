@@ -64,6 +64,13 @@ class HumanoidAction(Enum):
     DOMAIN_AUTHENTIC_LOVE = "domain_authentic_love"
     DOMAIN_IDLE_DEATH_GAMBLE = "domain_idle_death_gamble"
     DOMAIN_YUJI_ITADORI = "domain_yuji_itadori"
+    DOMAIN_CHIMERA_SHADOW_GARDEN = "domain_chimera_shadow_garden"
+    DOMAIN_TIME_CELL_MOON_PALACE = "domain_time_cell_moon_palace"
+
+    # Gojo Techniques
+    LAPSE_BLUE = "lapse_blue"
+    REVERSAL_RED = "reversal_red"
+    HOLLOW_PURPLE = "hollow_purple"
 
 
 # Configuration constants
@@ -102,6 +109,11 @@ ACTION_DURATIONS = {
     'domain_authentic_love': 12,
     'domain_idle_death_gamble': 15,
     'domain_yuji_itadori': 8,
+    'domain_chimera_shadow_garden': 10,
+    'domain_time_cell_moon_palace': 10,
+    'lapse_blue': 3,
+    'reversal_red': 3,
+    'hollow_purple': 5,
 
     # Other actions
     'bow': 4, 'wave': 3.5, 'default': 2

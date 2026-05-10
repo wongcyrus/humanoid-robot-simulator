@@ -1,7 +1,12 @@
 /**
  * Domain Expansion Detection and VFX System
- * Ported from Python/OpenCV implementation
+ * Logic strictly following JJK project hierarchical model.
  */
+
+// MediaPipe Hand Landmark Constants
+const W_ = 0, TH_MCP = 2, TH_TIP = 4, I_MCP = 5, I_PIP = 6, I_TIP = 8;
+const M_MCP = 9, M_PIP = 10, M_TIP = 12, R_MCP = 13, R_PIP = 14, R_TIP = 16;
+const P_MCP = 17, P_PIP = 18, P_TIP = 20;
 
 class DomainExpansionGame {
     constructor() {
@@ -25,8 +30,11 @@ class DomainExpansionGame {
         this.yujiPhase = 0;
         this.shockwaveRad = 0;
         
+        this.blueOrbRad = 0;
+        this.redOrbRad = 0;
+        this.purpleBeamProgress = 0;
+
         this.vfxCanvas = null;
-        this.stableDomain = null;
 
         this.displayNames = {
             "Unlimited Void": "無量空處",
@@ -34,17 +42,26 @@ class DomainExpansionGame {
             "Self-Embodiment of Perfection": "自閉圓頓裹",
             "Authentic Mutual Love": "真贋相愛",
             "Idle Death Gamble": "坐殺博徒",
-            "Yuji Itadori": "虎杖悠仁 (名稱不明)"
+            "Yuji Itadori": "虎杖悠仁 (名稱不明)",
+            "Chimera Shadow Garden": "嵌合暗翳庭園",
+            "Time Cell Moon Palace": "時胞月宮殿",
+            "Lapse Blue": "術式順轉「蒼」",
+            "Reversal Red": "術式反轉「赫」",
+            "Hollow Purple": "虚式「茈」"
         };
 
-        // Colors mapping
         this.domainColors = {
             "Authentic Mutual Love": "rgb(180, 100, 255)",
             "Idle Death Gamble": "rgb(0, 200, 255)",
             "Malevolent Shrine": "rgb(255, 0, 0)",
             "Yuji Itadori": "rgb(0, 255, 0)",
             "Self-Embodiment of Perfection": "rgb(255, 0, 255)",
-            "Unlimited Void": "rgb(255, 255, 255)"
+            "Unlimited Void": "rgb(255, 255, 255)",
+            "Chimera Shadow Garden": "rgb(50, 50, 80)",
+            "Time Cell Moon Palace": "rgb(255, 100, 150)",
+            "Lapse Blue": "rgb(0, 100, 255)",
+            "Reversal Red": "rgb(255, 50, 50)",
+            "Hollow Purple": "rgb(200, 100, 255)"
         };
     }
 
@@ -54,195 +71,72 @@ class DomainExpansionGame {
         this.initStars(canvas.width, canvas.height);
     }
 
-    // --- Geometry Helpers ---
+    // --- MediaPipe Helper Functions (JJK Reference) ---
 
-    distance3d(a, b) {
-        return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2));
+    fingerState(lm, mcp, pip, tip) {
+        const distMCP_PIP = this.d2(lm[mcp], lm[pip]);
+        const distMCP_TIP = this.d2(lm[mcp], lm[tip]);
+        if (distMCP_TIP > distMCP_PIP * 1.5) return 1;  // Extended
+        if (distMCP_TIP < distMCP_PIP * 0.8) return -1; // Curled
+        return 0; // Neutral
     }
 
-    angle3d(a, b, c) {
-        const bax = a.x - b.x, bay = a.y - b.y, baz = a.z - b.z;
-        const bcx = c.x - b.x, bcy = c.y - b.y, bcz = c.z - b.z;
+    d2(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+    near(a, b, t) { return this.d2(a, b) < t; }
 
-        const dot = bax * bcx + bay * bcy + baz * bcz;
-        const normBa = Math.sqrt(bax * bax + bay * bay + baz * baz);
-        const normBc = Math.sqrt(bcx * bcx + bcy * bcy + bcz * bcz);
-        
-        if (normBa === 0 || normBc === 0) return 0.0;
-
-        const cosine = Math.max(-1.0, Math.min(1.0, dot / (normBa * normBc)));
-        return (Math.acos(cosine) * 180) / Math.PI;
-    }
-
-    isFingerExtended(landmarks, mcp, pip, tip, thresholdDeg = 155.0) {
-        return this.angle3d(landmarks[mcp], landmarks[pip], landmarks[tip]) >= thresholdDeg;
-    }
-
-    isFingerCurled(landmarks, mcp, pip, tip, thresholdDeg = 130.0) {
-        return this.angle3d(landmarks[mcp], landmarks[pip], landmarks[tip]) <= thresholdDeg;
-    }
-
-    palmScale(landmarks) {
-        return Math.max(this.distance3d(landmarks[0], landmarks[9]), 1e-6);
-    }
-
-    handCenter(landmarks) {
-        const scale = this.palmScale(landmarks);
-        const centerX = (landmarks[0].x + landmarks[5].x + landmarks[9].x + landmarks[13].x + landmarks[17].x) / 5;
-        const centerY = (landmarks[0].y + landmarks[5].y + landmarks[9].y + landmarks[13].y + landmarks[17].y) / 5;
-        return { x: centerX, y: centerY, scale: scale };
-    }
-
-    normalizedPointDistance(pointA, pointB, scale) {
-        return Math.sqrt(Math.pow(pointA.x - pointB.x, 2) + Math.pow(pointA.y - pointB.y, 2)) / scale;
-    }
-
-    isFist(hand) {
-        return [
-            this.isFingerCurled(hand, 5, 6, 8, 135),
-            this.isFingerCurled(hand, 9, 10, 12, 135),
-            this.isFingerCurled(hand, 13, 14, 16, 135),
-            this.isFingerCurled(hand, 17, 18, 20, 135)
-        ].every(Boolean);
-    }
-
-    isOpenHandThumbIn(hand) {
-        const fingersExtended = [
-            this.isFingerExtended(hand, 5, 6, 8),
-            this.isFingerExtended(hand, 9, 10, 12),
-            this.isFingerExtended(hand, 13, 14, 16),
-            this.isFingerExtended(hand, 17, 18, 20)
-        ].filter(Boolean).length;
-
-        if (fingersExtended < 3) return false;
-
-        const scale = this.palmScale(hand);
-        const thumbToPalm = this.distance3d(hand[4], hand[9]) / scale;
-        return thumbToPalm < 0.55;
-    }
-
-    // --- Pair Checks ---
-
-    isYutaPair(handA, handB) {
-        const scale = (this.palmScale(handA) + this.palmScale(handB)) / 2;
-        const aIsFist = this.isFist(handA);
-        const bIsFist = this.isFist(handB);
-        const aIsOpen = this.isOpenHandThumbIn(handA);
-        const bIsOpen = this.isOpenHandThumbIn(handB);
-
-        if (!((aIsFist && bIsOpen) || (bIsFist && aIsOpen))) return false;
-
-        const wristDist = this.distance3d(handA[0], handB[0]) / scale;
-        return wristDist <= 1.8;
-    }
-
-    isHakariPair(handA, handB) {
-        let upper, lower;
-        if (handA[0].y < handB[0].y) {
-            upper = handA; lower = handB;
-        } else {
-            upper = handB; lower = handA;
-        }
-
-        const scale = (this.palmScale(upper) + this.palmScale(lower)) / 2;
-        const tipDist = this.distance3d(upper[4], upper[8]) / scale;
-        const isCircle = tipDist < 0.35;
-        const middleStraight = this.isFingerExtended(upper, 9, 10, 12);
-        const ringStraight = this.isFingerExtended(upper, 13, 14, 16);
-        const pinkyStraight = this.isFingerExtended(upper, 17, 18, 20);
-        
-        const upperOk = isCircle && middleStraight && ringStraight && pinkyStraight;
-
-        const lowerFingersStraight = [
-            this.isFingerExtended(lower, 5, 6, 8),
-            this.isFingerExtended(lower, 9, 10, 12),
-            this.isFingerExtended(lower, 13, 14, 16),
-            this.isFingerExtended(lower, 17, 18, 20)
-        ].every(Boolean);
-
-        const verticalGap = lower[9].y - upper[0].y;
-        const handsClose = verticalGap > 0.1 && verticalGap < 1.0;
-
-        return isCircle && middleStraight && ringStraight && pinkyStraight && lowerFingersStraight && handsClose;
-    }
-
-    isYujiPair(handA, handB) {
-        const scale = (this.palmScale(handA) + this.palmScale(handB)) / 2;
-        const indexA = this.isFingerExtended(handA, 5, 6, 8);
-        const indexB = this.isFingerExtended(handB, 5, 6, 8);
-
-        if (!(indexA && indexB)) return false;
-
-        const isVertical = (hand) => {
-            const tip = hand[8];
-            const mcp = hand[5];
-            const dx = Math.abs(tip.x - mcp.x);
-            const dy = Math.abs(tip.y - mcp.y);
-            return dy > dx * 1.8;
+    F(lm) {
+        return {
+            i: this.fingerState(lm, I_MCP, I_PIP, I_TIP) === 1,
+            m: this.fingerState(lm, M_MCP, M_PIP, M_TIP) === 1,
+            r: this.fingerState(lm, R_MCP, R_PIP, R_TIP) === 1,
+            p: this.fingerState(lm, P_MCP, P_PIP, P_TIP) === 1,
+            ic: this.fingerState(lm, I_MCP, I_PIP, I_TIP) === -1,
+            mc: this.fingerState(lm, M_MCP, M_PIP, M_TIP) === -1,
+            rc: this.fingerState(lm, R_MCP, R_PIP, R_TIP) === -1,
+            pc: this.fingerState(lm, P_MCP, P_PIP, P_TIP) === -1,
         };
-
-        if (!(isVertical(handA) && isVertical(handB))) return false;
-
-        const indexDist = this.distance3d(handA[8], handB[8]) / scale;
-        if (indexDist > 0.4) return false;
-
-        const wristDist = this.distance3d(handA[0], handB[0]) / scale;
-        if (wristDist < 0.3 || wristDist > 1.5) return false;
-
-        const vecA = handA[8].y - handA[5].y;
-        const vecB = handB[8].y - handB[5].y;
-
-        return vecA * vecB >= 0;
     }
 
-    isMahitoPair(handA, handB) {
-        const scale = (this.palmScale(handA) + this.palmScale(handB)) / 2;
-        const pinkyDist = this.distance3d(handA[20], handB[20]) / scale;
-        if (pinkyDist > 0.9) return false;
-
-        const thumbDist = this.distance3d(handA[4], handB[4]) / scale;
-        if (thumbDist > 1.0) return false;
-
-        const centerA = this.handCenter(handA);
-        const centerB = this.handCenter(handB);
-        const palmGap = this.normalizedPointDistance(centerA, centerB, scale);
-
-        if (palmGap < 0.6 || palmGap > 2.2) return false;
-
-        const wristDist = this.distance3d(handA[0], handB[0]) / scale;
-        return wristDist >= 0.4 && wristDist <= 3.5;
+    looseFist(lm) {
+        return lm[I_TIP].y > lm[W_].y && lm[M_TIP].y > lm[W_].y &&
+               lm[R_TIP].y > lm[W_].y && lm[P_TIP].y > lm[W_].y;
     }
 
-    isSukunaPair(handA, handB) {
-        const scale = (this.palmScale(handA) + this.palmScale(handB)) / 2;
-        const mDist = this.distance3d(handA[12], handB[12]) / scale;
-        const rDist = this.distance3d(handA[16], handB[16]) / scale;
-        const pDist = this.distance3d(handA[20], handB[20]) / scale;
-
-        const touches = [mDist <= 0.75, rDist <= 0.75, pDist <= 0.75].filter(Boolean).length;
-        if (touches < 2) return false;
-
-        const midRingLeft = this.distance3d(handA[12], handA[16]) / scale;
-        const midRingRight = this.distance3d(handB[12], handB[16]) / scale;
-        const triangleShape = (midRingLeft >= 0.25 && midRingLeft <= 1.8) && 
-                            (midRingRight >= 0.25 && midRingRight <= 1.8);
-
-        if (!triangleShape) return false;
-
-        const wristDist = this.distance3d(handA[0], handB[0]) / scale;
-        return wristDist >= 0.4 && wristDist <= 4.2;
+    allDown(lm) { 
+        const f = this.F(lm); 
+        return !f.i && !f.m && !f.r && !f.p; 
     }
 
-    isGojoHand(landmarks) {
-        const indexExt = this.isFingerExtended(landmarks, 5, 6, 8);
-        const middleExt = this.isFingerExtended(landmarks, 9, 10, 12);
-        const ringCurl = this.isFingerCurled(landmarks, 13, 14, 16);
-        const pinkyCurl = this.isFingerCurled(landmarks, 17, 18, 20);
+    shrineScore(lm) {
+        const f = this.F(lm);
+        if (f.i && !f.m) return -1;
+        let s = 0;
+        if (lm[M_TIP].y < lm[W_].y + 0.12) s++;
+        if (lm[R_TIP].y < lm[W_].y + 0.12) s++;
+        if (lm[I_TIP].y > lm[I_MCP].y - 0.10) s++;
+        if (lm[P_TIP].y > lm[P_MCP].y - 0.10) s++;
+        return s;
+    }
 
-        const scale = this.palmScale(landmarks);
-        const tipsClose = this.distance3d(landmarks[8], landmarks[12]) / scale <= 0.65;
+    timeCellHand(lm) {
+        const thumbUp = lm[TH_TIP].y < lm[W_].y - 0.05;
+        const thumbExtended = this.d2(lm[TH_TIP], lm[W_]) > 0.09;
+        const thumbActuallyUp = lm[TH_TIP].y < lm[I_MCP].y;
+        const indexUp = lm[I_TIP].y < lm[I_MCP].y - 0.02;
+        const indexExtended = this.d2(lm[I_TIP], lm[I_MCP]) > 0.10;
+        const middleNotRaised = lm[M_TIP].y > lm[M_MCP].y - 0.02;
+        const ringNotRaised = lm[R_TIP].y > lm[R_MCP].y - 0.02;
+        const pinkyNotRaised = lm[P_TIP].y > lm[P_MCP].y - 0.02;
+        return thumbUp && thumbExtended && thumbActuallyUp && indexUp && indexExtended && middleNotRaised && ringNotRaised && pinkyNotRaised;
+    }
 
-        return indexExt && middleExt && ringCurl && pinkyCurl && tipsClose;
+    yujiHand(lm) {
+        const idxUp = lm[I_TIP].y < lm[I_MCP].y - 0.02;
+        const idxExtended = this.d2(lm[I_TIP], lm[I_MCP]) > 0.10;
+        const midDown = lm[M_TIP].y > lm[M_MCP].y - 0.05;
+        const rngDown = lm[R_TIP].y > lm[R_MCP].y - 0.05;
+        const pnkDown = lm[P_TIP].y > lm[P_MCP].y - 0.05;
+        return idxUp && idxExtended && midDown && rngDown && pnkDown;
     }
 
     // --- Main Logic ---
@@ -250,19 +144,92 @@ class DomainExpansionGame {
     detectDomain(hands) {
         if (!hands || hands.length === 0) return null;
 
+        // ─────────────────────────────────────────────────────
+        // 1. INDIVIDUAL HAND TECHNIQUES
+        // ─────────────────────────────────────────────────────
+        const techResults = hands.map(h => {
+            const lm = h;
+            const f = this.F(lm);
+            
+            // Blue: Index extended, others curled
+            if (f.i && !f.m && !f.r && !f.p) return "Lapse Blue";
+            
+            // Red: All fingers extended
+            if (f.i && f.m && f.r && f.p) return "Reversal Red";
+            
+            return null;
+        });
+
+        const hasBlue = techResults.includes("Lapse Blue");
+        const hasRed = techResults.includes("Reversal Red");
+
+        // Hollow Purple: Combo of Blue and Red
+        if (hands.length >= 2 && hasBlue && hasRed) return "Hollow Purple";
+
+        // ─────────────────────────────────────────────────────
+        // 2. SINGLE HAND DOMAINS
+        // ─────────────────────────────────────────────────────
         if (hands.length === 1) {
-            if (this.isGojoHand(hands[0])) return "Unlimited Void";
+            const lm = hands[0];
+            const f = this.F(lm);
+
+            // Tech overrides
+            if (hasBlue) return "Lapse Blue";
+            if (hasRed) return "Reversal Red";
+
+            // Infinite Void: Index/Middle crossed
+            const middleNearIndex = this.near(lm[M_TIP], lm[I_TIP], 0.10) || this.near(lm[M_TIP], lm[I_PIP], 0.10);
+            if (f.i && !f.r && !f.p && middleNearIndex) return "Unlimited Void";
         }
 
+        // ─────────────────────────────────────────────────────
+        // 3. TWO HAND DOMAINS
+        // ─────────────────────────────────────────────────────
         if (hands.length >= 2) {
-            // Check pairs
-            for (let i = 0; i < hands.length - 1; i++) {
-                for (let j = i + 1; j < hands.length; j++) {
-                    if (this.isYutaPair(hands[i], hands[j])) return "Authentic Mutual Love";
-                    if (this.isHakariPair(hands[i], hands[j])) return "Idle Death Gamble";
-                    if (this.isYujiPair(hands[i], hands[j])) return "Yuji Itadori";
-                    if (this.isMahitoPair(hands[i], hands[j])) return "Self-Embodiment of Perfection";
-                    if (this.isSukunaPair(hands[i], hands[j])) return "Malevolent Shrine";
+            const [a, b] = [hands[0], hands[1]];
+            const horizDist = Math.abs(a[W_].x - b[W_].x);
+            const verticalDist = Math.abs(a[W_].y - b[W_].y);
+
+            // 1. TIME CELL MOON PALACE (Priority Check)
+            if (this.timeCellHand(a) && this.timeCellHand(b)) return "Time Cell Moon Palace";
+
+            // 2. AUTHENTIC MUTUAL LOVE (Wide horizontal distance)
+            if (horizDist > 0.35) {
+                for (const [x, y] of [[a, b], [b, a]]) {
+                    const fx = this.F(x), fy = this.F(y);
+                    const xFist = (fx.ic && fx.mc && fx.rc && fx.pc) || this.looseFist(x);
+                    const yOpenCount = (fy.i?1:0)+(fy.m?1:0)+(fy.r?1:0)+(fy.p?1:0);
+                    if (xFist && yOpenCount >= 3) return "Authentic Mutual Love";
+                }
+            }
+
+            // 3. CLOSE-HANDS ZONE (Side-by-side)
+            if (horizDist <= 0.50 && verticalDist < 0.20) {
+                // YUJI UNNAMED
+                if (this.yujiHand(a) && this.yujiHand(b) && this.d2(a[I_TIP], b[I_TIP]) < 0.30) return "Yuji Itadori";
+
+                // CHIMERA SHADOW GARDEN
+                if (this.allDown(a) && this.allDown(b)) return "Chimera Shadow Garden";
+
+                // MALEVOLENT SHRINE (Checked after Chimera to avoid overlap)
+                const sa = this.shrineScore(a), sb = this.shrineScore(b);
+                if (sa >= 0 && sb >= 0 && ((sa>=3 && sb>=1) || (sb>=3 && sa>=1))) return "Malevolent Shrine";
+                
+                // SELF-EMBODIMENT OF PERFECTION (Mahito - original proximity logic)
+                if (this.near(a[P_TIP], b[P_TIP], 0.08) && this.near(a[TH_TIP], b[TH_TIP], 0.12)) return "Self-Embodiment of Perfection";
+            }
+
+            // 4. IDLE DEATH GAMBLE (Vertically stacked)
+            if (verticalDist > 0.15 && this.d2(a[W_], b[W_]) > 0.20) {
+                for (const [upper, lower] of [[a, b], [b, a]]) {
+                    if (upper[W_].y >= lower[W_].y) continue;
+                    const fu = this.F(upper), fl = this.F(lower);
+                    // Proximity of thumb and index tips
+                    const okCircle = this.near(upper[TH_TIP], upper[I_TIP], 0.22);
+                    // Lenient: at least 1 other finger extended (middle, ring, or pinky)
+                    const okFingers = (fu.m?1:0)+(fu.r?1:0)+(fu.p?1:0) >= 1;
+                    const lowerOpen = (fl.i?1:0)+(fl.m?1:0)+(fl.r?1:0)+(fl.p?1:0) >= 3;
+                    if (okCircle && okFingers && lowerOpen) return "Idle Death Gamble";
                 }
             }
         }
@@ -289,7 +256,7 @@ class DomainExpansionGame {
             }
         }
 
-        if (topCount >= 8 && topCount >= (this.predictionHistory.length * 0.6)) {
+        if (topCount >= 6 && topCount >= (this.predictionHistory.length * 0.5)) {
             this.stableDomain = topLabel;
         } else {
             this.stableDomain = null;
@@ -320,10 +287,12 @@ class DomainExpansionGame {
         ctx.clearRect(0, 0, w, h);
 
         if (!stableDomain) {
-            // Reset VFX states when no domain is active
             this.slashes = [];
             this.flashCounter = 0;
             this.ghostFrames = [];
+            this.blueOrbRad = 0;
+            this.redOrbRad = 0;
+            this.purpleBeamProgress = 0;
             return;
         }
 
@@ -346,15 +315,27 @@ class DomainExpansionGame {
             case "Yuji Itadori":
                 this.applyYujiDomain(ctx, w, h);
                 break;
+            case "Chimera Shadow Garden":
+                this.applyChimera(ctx, w, h);
+                break;
+            case "Time Cell Moon Palace":
+                this.applyNaoya(ctx, w, h);
+                break;
+            case "Lapse Blue":
+                this.applyLapseBlue(ctx, w, h);
+                break;
+            case "Reversal Red":
+                this.applyReversalRed(ctx, w, h);
+                break;
+            case "Hollow Purple":
+                this.applyHollowPurple(ctx, w, h);
+                break;
         }
     }
 
     applyUnlimitedVoid(ctx, w, h) {
-        // Darken
         ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
         ctx.fillRect(0, 0, w, h);
-
-        // Stars
         ctx.fillStyle = "white";
         this.stars.forEach(s => {
             s.y = (s.y + s.speed) % h;
@@ -362,8 +343,6 @@ class DomainExpansionGame {
             ctx.arc(s.x, s.y, 1, 0, Math.PI * 2);
             ctx.fill();
         });
-
-        // Symbols
         ctx.font = "15px monospace";
         this.symbols.forEach(s => {
             s.y = (s.y + s.speed) % h;
@@ -372,18 +351,13 @@ class DomainExpansionGame {
     }
 
     applyMalevolentShrine(ctx, w, h) {
-        // Red tint
         ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
         ctx.fillRect(0, 0, w, h);
-
-        // Flash
         this.flashCounter++;
         if (this.flashCounter % 10 === 0) {
             ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
             ctx.fillRect(0, 0, w, h);
         }
-
-        // Slashes
         if (Math.random() < 0.6) {
             const x1 = Math.random() * w;
             const y1 = Math.random() * h;
@@ -396,7 +370,6 @@ class DomainExpansionGame {
                 life: 3 + Math.floor(Math.random() * 4)
             });
         }
-
         ctx.strokeStyle = "white";
         this.slashes = this.slashes.filter(s => {
             ctx.lineWidth = s.life;
@@ -411,25 +384,17 @@ class DomainExpansionGame {
 
     applySelfEmbodiment(ctx, w, h) {
         this.mahitoPhase += 0.2;
-        // Purple tint
         ctx.fillStyle = `rgba(150, 0, 150, ${0.2 + 0.05 * Math.sin(this.mahitoPhase)})`;
         ctx.fillRect(0, 0, w, h);
-        
-        // Distortion and ghosts are harder in pure 2D canvas without access to previous frame's pixels efficiently
-        // but we can do a simple trailing effect if we don't clearRect completely, but here we do.
-        // We'll skip complex pixel manipulation for now and use simple overlays.
     }
 
     applyAuthenticLove(ctx, w, h) {
         this.yutaPhase += 0.03;
-        // Pink vignette
         const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
         grad.addColorStop(0, "rgba(180, 100, 255, 0)");
         grad.addColorStop(1, "rgba(180, 100, 255, 0.4)");
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
-
-        // Pulse
         const brightness = 0.1 * Math.sin(this.yutaPhase);
         ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, brightness)})`;
         ctx.fillRect(0, 0, w, h);
@@ -437,11 +402,8 @@ class DomainExpansionGame {
 
     applyIdleDeathGamble(ctx, w, h) {
         this.hakariPhase++;
-        // Gold tint
         ctx.fillStyle = "rgba(255, 215, 0, 0.2)";
         ctx.fillRect(0, 0, w, h);
-
-        // Slots
         if (this.hakariPhase % 3 === 0) {
             this.slotNumbers = [
                 Math.floor(Math.random()*10).toString(),
@@ -453,8 +415,6 @@ class DomainExpansionGame {
         ctx.font = "bold 40px Arial";
         ctx.textAlign = "center";
         ctx.fillText(`[${this.slotNumbers[0]}] [${this.slotNumbers[1]}] [${this.slotNumbers[2]}]`, w/2, h - 50);
-
-        // Confetti
         if (this.confetti.length === 0) {
             for(let i=0; i<50; i++) {
                 this.confetti.push({
@@ -475,17 +435,73 @@ class DomainExpansionGame {
 
     applyYujiDomain(ctx, w, h) {
         this.yujiPhase += 0.1;
-        // Green pulse
         ctx.fillStyle = `rgba(0, 255, 0, ${0.1 * Math.abs(Math.sin(this.yujiPhase * 4))})`;
         ctx.fillRect(0, 0, w, h);
-
-        // Shockwave
         this.shockwaveRad = (this.shockwaveRad + 10) % Math.max(w, h);
         ctx.strokeStyle = "rgba(100, 255, 100, 0.5)";
         ctx.lineWidth = 5 * (1 - this.shockwaveRad / Math.max(w, h));
         ctx.beginPath();
         ctx.arc(w/2, h/2, this.shockwaveRad, 0, Math.PI * 2);
         ctx.stroke();
+    }
+
+    applyChimera(ctx, w, h) {
+        ctx.fillStyle = "rgba(20, 20, 40, 0.4)";
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        for (let i = 0; i < 5; i++) {
+            const time = (Date.now() / 1000 + i) % 2;
+            const radius = time * 100;
+            ctx.beginPath();
+            ctx.arc(w/2 + Math.sin(i) * 200, h, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    applyNaoya(ctx, w, h) {
+        ctx.fillStyle = "rgba(255, 100, 150, 0.2)";
+        ctx.fillRect(0, 0, w, h);
+        const pulse = Math.abs(Math.sin(Date.now() / 200)) * 0.2;
+        ctx.fillStyle = `rgba(255, 255, 255, ${pulse})`;
+        ctx.fillRect(0, 0, w, h);
+    }
+
+    applyLapseBlue(ctx, w, h) {
+        this.blueOrbRad = (this.blueOrbRad + 2) % 40;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "blue";
+        ctx.fillStyle = "rgba(0, 100, 255, 0.8)";
+        ctx.beginPath();
+        ctx.arc(w/2, h/2, this.blueOrbRad + 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    applyReversalRed(ctx, w, h) {
+        this.redOrbRad = (this.redOrbRad + 3) % 50;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = "red";
+        ctx.fillStyle = "rgba(255, 50, 50, 0.8)";
+        ctx.beginPath();
+        ctx.arc(w/2, h/2, this.redOrbRad, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    applyHollowPurple(ctx, w, h) {
+        this.purpleBeamProgress += 0.05;
+        if (this.purpleBeamProgress > 1) this.purpleBeamProgress = 0;
+        
+        ctx.fillStyle = "rgba(200, 100, 255, 0.3)";
+        ctx.fillRect(0, 0, w, h);
+        
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = "purple";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.beginPath();
+        ctx.arc(w/2, h/2, 60 * (1 + this.purpleBeamProgress), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
     }
 }
 

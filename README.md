@@ -362,6 +362,14 @@ Complete documentation is available in the `docs/` directory:
 
 This project is open source and available under the MIT License.
 
+## 📚 Credits & References
+
+This project integrates and builds upon the following open-source works:
+
+1.  **[Humanoid Robot Simulator](https://github.com/wongcyrus/humanoid-robot-simulator)**: The core 3D simulation engine, action library, and robot management system.
+2.  **[JJK Domain Expansion (TheAgencyMGE)](https://github.com/TheAgencyMGE/JJKDomainExpansion)**: The hand gesture detection models, VFX patterns, and JJK-themed interaction logic.
+3.  **[Domain Expansion (montasirmoyen)](https://github.com/montasirmoyen/domain-expansion)**: Inspiration for atmospheric effects and gesture-based domain transitions.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
