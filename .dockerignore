@@ -42,3 +42,6 @@ README.md
 # Shell scripts (since we're using the Python entry point)
 *.sh
 test_commands/*
+
+# Static video assets (served from S3 or external volume)
+static/video/

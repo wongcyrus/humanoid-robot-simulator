@@ -12,28 +12,28 @@ Welcome to the Humanoid Robot Simulator's JJK-themed gesture control system. Thi
 
 Techniques are simpler gestures often used as building blocks.
 
-| Technique | Japanese | Gesture (1H = Single Hand, 2H = Both Hands) |
-| :--- | :--- | :--- |
-| **Lapse Blue** | 術式順轉「苍」 | **(1H)** Point with your index finger; keep others curled. |
-| **Reversal Red** | 術式反轉「赫」 | **(1H)** Open your palm wide with all fingers extended. |
-| **Hollow Purple** | 虚式「茈」 | **(2H)** Show **Blue** on one hand and **Red** on the other. |
+| Technique | Japanese | Gesture | Robot Behavior |
+| :--- | :--- | :--- | :--- |
+| **Lapse Blue** | 術式順轉「苍」 | **(1H)** Point index; others curled. | **Attraction**: Left hand strike. |
+| **Reversal Red** | 術式反轉「赫」 | **(1H)** Open palm wide. | **Repulsion**: Right hand upward strike. |
+| **Hollow Purple** | 虚式「茈」 | **(2H)** Blue + Red signs. | **Total Purge**: 2-hand chest expansion blast. |
 
 ---
 
 ## 2. Domain Expansions
 
-Domain Expansions are powerful gestures that trigger atmospheric changes and specific robot animations.
+Domain Expansions are powerful gestures that trigger atmospheric changes and unique robot animations.
 
-| User | Domain Name | Japanese | Gesture |
+| User | Domain Name | Gesture | Robot Behavior |
 | :--- | :--- | :--- | :--- |
-| **Gojo Satoru** | **Unlimited Void** | 無量空處 | **(1H)** Cross your index and middle fingers. |
-| **Sukuna** | **Malevolent Shrine** | 伏魔御廚子 | **(2H)** Hands together side-by-side, fingers slightly curled like claws. |
-| **Mahito** | **Self-Embodiment of Perfection** | 自閉圓頓裹 | **(2H)** Touch thumb-tips and pinky-tips together; palms facing you. |
-| **Yuta Okkotsu** | **Authentic Mutual Love** | 真贋相愛 | **(2H)** Hands wide apart. One loose fist, one open palm. |
-| **Hakari Kinji** | **Idle Death Gamble** | 坐殺博徒 | **(2H)** Stack hands vertically. Top hand 'OK' sign, bottom open. |
-| **Megumi Fushiguro** | **Chimera Shadow Garden** | 嵌合暗翳庭園 | **(2H)** Two closed fists side-by-side. |
-| **Naoya Zenin** | **Time Cell Moon Palace** | 時胞月宮殿 | **(2H)** Thumb and index extended (L-shape) on both hands. |
-| **Yuji Itadori** | **Unnamed Domain** | 名称不明 | **(2H)** Both index fingers pointing toward each other. |
+| **Gojo Satoru** | **Unlimited Void** | **(1H)** Crossed fingers. | **Ascension**: Floats and rotates at high speed. |
+| **Sukuna** | **Malevolent Shrine** | **(2H)** Claw hands. | **Desolation**: Deep squat and intense ground shaking. |
+| **Mahito** | **Self-Embodiment** | **(2H)** Egg shape. | **Mutation**: Wavy, organic body pulsations. |
+| **Yuta Okkotsu** | **Authentic Love** | **(2H)** Wide apart. | **Embrace**: Pulsing scale followed by hugging motion. |
+| **Hakari Kinji** | **Idle Death Gamble** | **(2H)** Vertical stack. | **Jackpot**: Rapid spinning and celebratory jumps. |
+| **Megumi Fushiguro** | **Chimera Garden** | **(2H)** Two fists. | **Submerge**: Dives into shadows and re-emerges. |
+| **Naoya Zenin** | **Time Cell Palace** | **(2H)** L-shape hands. | **Projection**: Jittery, frame-by-frame high-speed motion. |
+| **Yuji Itadori** | **Unnamed Domain** | **(2H)** Pointing fingers. | **Physical Mastery**: High-intensity sit-ups. |
 
 ---
 

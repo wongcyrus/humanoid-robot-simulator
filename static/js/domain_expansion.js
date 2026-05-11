@@ -5,27 +5,54 @@
 
 // MediaPipe Hand Landmark Constants
 const W_ = 0, TH_MCP = 2, TH_TIP = 4, I_MCP = 5, I_PIP = 6, I_TIP = 8;
-const M_MCP = 9, M_PIP = 10, M_TIP = 12, R_MCP = 13, R_PIP = 14, R_TIP = 16;
-const P_MCP = 17, P_PIP = 18, P_TIP = 20;
+const M_MCP = 9, M_PIP = 10, M_TIP = 12, R_MCP = 13, R_PIP = 14, R_TIP = 16, P_MCP = 17, P_PIP = 18, P_TIP = 20;
 
 class DomainExpansionGame {
     constructor() {
         this.predictionHistory = [];
         this.historyMaxLen = 10;
-        
-        this.activeDomain = null;
         this.stableDomain = null;
-        
+
+        this.vfxCanvas = null;
+        this.vfxCtx = null;
+
+        this.displayNames = {
+            "Unlimited Void": "領域展開: 無量空処",
+            "Malevolent Shrine": "領域展開: 伏魔御廚子",
+            "Self-Embodiment of Perfection": "領域展開: 自閉圓頓裹",
+            "Authentic Mutual Love": "領域展開: 真贋相愛",
+            "Idle Death Gamble": "領域展開: 坐殺博徒",
+            "Yuji Itadori": "領域展開: 名称不明",
+            "Chimera Shadow Garden": "領域展開: 嵌合暗翳庭園",
+            "Time Cell Moon Palace": "領域展開: 時胞月宮殿",
+            "Lapse Blue": "术式顺转: 「苍」",
+            "Reversal Red": "术式反转: 「赫」",
+            "Hollow Purple": "虚式: 「茈」"
+        };
+
+        this.domainColors = {
+            "Unlimited Void": "#FFFFFF",
+            "Malevolent Shrine": "#FF0000",
+            "Self-Embodiment of Perfection": "#AA00FF",
+            "Authentic Mutual Love": "#EE82EE",
+            "Idle Death Gamble": "#FFD700",
+            "Yuji Itadori": "#00FF00",
+            "Chimera Shadow Garden": "#191970",
+            "Time Cell Moon Palace": "#FF69B4",
+            "Lapse Blue": "#0000FF",
+            "Reversal Red": "#FF4500",
+            "Hollow Purple": "#9400D3"
+        };
+
         // VFX State
         this.stars = [];
         this.symbols = [];
         this.slashes = [];
         this.flashCounter = 0;
         this.mahitoPhase = 0;
-        this.ghostFrames = [];
         this.yutaPhase = 0;
         this.hakariPhase = 0;
-        this.slotNumbers = ['0', '0', '0'];
+        this.slotNumbers = ["7", "7", "7"];
         this.confetti = [];
         this.yujiPhase = 0;
         this.shockwaveRad = 0;
@@ -33,36 +60,6 @@ class DomainExpansionGame {
         this.blueOrbRad = 0;
         this.redOrbRad = 0;
         this.purpleBeamProgress = 0;
-
-        this.vfxCanvas = null;
-
-        this.displayNames = {
-            "Unlimited Void": "無量空處",
-            "Malevolent Shrine": "伏魔御廚子",
-            "Self-Embodiment of Perfection": "自閉圓頓裹",
-            "Authentic Mutual Love": "真贋相愛",
-            "Idle Death Gamble": "坐殺博徒",
-            "Yuji Itadori": "虎杖悠仁 (名稱不明)",
-            "Chimera Shadow Garden": "嵌合暗翳庭園",
-            "Time Cell Moon Palace": "時胞月宮殿",
-            "Lapse Blue": "術式順轉「蒼」",
-            "Reversal Red": "術式反轉「赫」",
-            "Hollow Purple": "虚式「茈」"
-        };
-
-        this.domainColors = {
-            "Authentic Mutual Love": "rgb(180, 100, 255)",
-            "Idle Death Gamble": "rgb(0, 200, 255)",
-            "Malevolent Shrine": "rgb(255, 0, 0)",
-            "Yuji Itadori": "rgb(0, 255, 0)",
-            "Self-Embodiment of Perfection": "rgb(255, 0, 255)",
-            "Unlimited Void": "rgb(255, 255, 255)",
-            "Chimera Shadow Garden": "rgb(50, 50, 80)",
-            "Time Cell Moon Palace": "rgb(255, 100, 150)",
-            "Lapse Blue": "rgb(0, 100, 255)",
-            "Reversal Red": "rgb(255, 50, 50)",
-            "Hollow Purple": "rgb(200, 100, 255)"
-        };
     }
 
     initVFX(canvas) {
@@ -93,23 +90,20 @@ class DomainExpansionGame {
             ic: this.fingerState(lm, I_MCP, I_PIP, I_TIP) === -1,
             mc: this.fingerState(lm, M_MCP, M_PIP, M_TIP) === -1,
             rc: this.fingerState(lm, R_MCP, R_PIP, R_TIP) === -1,
-            pc: this.fingerState(lm, P_MCP, P_PIP, P_TIP) === -1,
+            pc: this.fingerState(lm, P_MCP, P_PIP, P_TIP) === -1
         };
     }
 
     looseFist(lm) {
-        return lm[I_TIP].y > lm[W_].y && lm[M_TIP].y > lm[W_].y &&
-               lm[R_TIP].y > lm[W_].y && lm[P_TIP].y > lm[W_].y;
-    }
-
-    allDown(lm) { 
-        const f = this.F(lm); 
-        return !f.i && !f.m && !f.r && !f.p; 
+        let curled = 0;
+        if (lm[I_TIP].y > lm[I_PIP].y) curled++;
+        if (lm[M_TIP].y > lm[M_PIP].y) curled++;
+        if (lm[R_TIP].y > lm[R_PIP].y) curled++;
+        if (lm[P_TIP].y > lm[P_PIP].y) curled++;
+        return curled >= 3;
     }
 
     shrineScore(lm) {
-        const f = this.F(lm);
-        if (f.i && !f.m) return -1;
         let s = 0;
         if (lm[M_TIP].y < lm[W_].y + 0.12) s++;
         if (lm[R_TIP].y < lm[W_].y + 0.12) s++;
@@ -137,6 +131,11 @@ class DomainExpansionGame {
         const rngDown = lm[R_TIP].y > lm[R_MCP].y - 0.05;
         const pnkDown = lm[P_TIP].y > lm[P_MCP].y - 0.05;
         return idxUp && idxExtended && midDown && rngDown && pnkDown;
+    }
+
+    allDown(lm) { 
+        const f = this.F(lm); 
+        return !f.i && !f.m && !f.r && !f.p; 
     }
 
     // --- Main Logic ---
@@ -284,6 +283,9 @@ class DomainExpansionGame {
         const w = this.vfxCanvas.width;
         const h = this.vfxCanvas.height;
 
+        // Reset state before clearing
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1.0;
         ctx.clearRect(0, 0, w, h);
 
         if (!stableDomain) {
@@ -334,16 +336,16 @@ class DomainExpansionGame {
     }
 
     applyUnlimitedVoid(ctx, w, h) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
         ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = "white";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
         this.stars.forEach(s => {
             s.y = (s.y + s.speed) % h;
             ctx.beginPath();
-            ctx.arc(s.x, s.y, 1, 0, Math.PI * 2);
+            ctx.arc(s.x, s.y, 0.6, 0, Math.PI * 2);
             ctx.fill();
         });
-        ctx.font = "15px monospace";
+        ctx.font = "10px monospace";
         this.symbols.forEach(s => {
             s.y = (s.y + s.speed) % h;
             ctx.fillText(s.text, s.x, s.y);
@@ -351,26 +353,26 @@ class DomainExpansionGame {
     }
 
     applyMalevolentShrine(ctx, w, h) {
-        ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
+        ctx.fillStyle = "rgba(255, 0, 0, 0.05)";
         ctx.fillRect(0, 0, w, h);
         this.flashCounter++;
-        if (this.flashCounter % 10 === 0) {
-            ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        if (this.flashCounter % 20 === 0) {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
             ctx.fillRect(0, 0, w, h);
         }
-        if (Math.random() < 0.6) {
+        if (Math.random() < 0.3) {
             const x1 = Math.random() * w;
             const y1 = Math.random() * h;
-            const length = 80 + Math.random() * 120;
+            const length = 50 + Math.random() * 70;
             const angle = (Math.random() - 0.5) * 1.6;
             this.slashes.push({
                 x1: x1, y1: y1,
                 x2: x1 + length * Math.cos(angle),
                 y2: y1 + length * Math.sin(angle),
-                life: 3 + Math.floor(Math.random() * 4)
+                life: 2 + Math.floor(Math.random() * 2)
             });
         }
-        ctx.strokeStyle = "white";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
         this.slashes = this.slashes.filter(s => {
             ctx.lineWidth = s.life;
             ctx.beginPath();
@@ -383,26 +385,26 @@ class DomainExpansionGame {
     }
 
     applySelfEmbodiment(ctx, w, h) {
-        this.mahitoPhase += 0.2;
-        ctx.fillStyle = `rgba(150, 0, 150, ${0.2 + 0.05 * Math.sin(this.mahitoPhase)})`;
+        this.mahitoPhase += 0.15;
+        ctx.fillStyle = `rgba(150, 0, 150, ${0.08 + 0.02 * Math.sin(this.mahitoPhase)})`;
         ctx.fillRect(0, 0, w, h);
     }
 
     applyAuthenticLove(ctx, w, h) {
-        this.yutaPhase += 0.03;
+        this.yutaPhase += 0.02;
         const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
         grad.addColorStop(0, "rgba(180, 100, 255, 0)");
-        grad.addColorStop(1, "rgba(180, 100, 255, 0.4)");
+        grad.addColorStop(1, "rgba(180, 100, 255, 0.15)");
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
-        const brightness = 0.1 * Math.sin(this.yutaPhase);
+        const brightness = 0.05 * Math.sin(this.yutaPhase);
         ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, brightness)})`;
         ctx.fillRect(0, 0, w, h);
     }
 
     applyIdleDeathGamble(ctx, w, h) {
         this.hakariPhase++;
-        ctx.fillStyle = "rgba(255, 215, 0, 0.2)";
+        ctx.fillStyle = "rgba(255, 215, 0, 0.08)";
         ctx.fillRect(0, 0, w, h);
         if (this.hakariPhase % 3 === 0) {
             this.slotNumbers = [
@@ -411,15 +413,15 @@ class DomainExpansionGame {
                 Math.floor(Math.random()*10).toString()
             ];
         }
-        ctx.fillStyle = "white";
-        ctx.font = "bold 40px Arial";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.font = "bold 28px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(`[${this.slotNumbers[0]}] [${this.slotNumbers[1]}] [${this.slotNumbers[2]}]`, w/2, h - 50);
+        ctx.fillText(`[${this.slotNumbers[0]}] [${this.slotNumbers[1]}] [${this.slotNumbers[2]}]`, w/2, h - 20);
         if (this.confetti.length === 0) {
-            for(let i=0; i<50; i++) {
+            for(let i=0; i<30; i++) {
                 this.confetti.push({
                     x: Math.random()*w, y: Math.random()*h, 
-                    speed: 2+Math.random()*3, 
+                    speed: 1.2+Math.random()*1.5, 
                     color: ["#FFFF00", "#FFD700", "#FFFFFF"][Math.floor(Math.random()*3)]
                 });
             }
@@ -427,81 +429,90 @@ class DomainExpansionGame {
         this.confetti.forEach(p => {
             p.y = (p.y + p.speed) % h;
             ctx.fillStyle = p.color;
+            ctx.globalAlpha = 0.4;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+            ctx.arc(p.x, p.y, 2, 0, Math.PI*2);
             ctx.fill();
+            ctx.globalAlpha = 1.0;
         });
     }
 
     applyYujiDomain(ctx, w, h) {
-        this.yujiPhase += 0.1;
-        ctx.fillStyle = `rgba(0, 255, 0, ${0.1 * Math.abs(Math.sin(this.yujiPhase * 4))})`;
+        this.yujiPhase += 0.08;
+        ctx.fillStyle = `rgba(0, 255, 0, ${0.04 * Math.abs(Math.sin(this.yujiPhase * 2))})`;
         ctx.fillRect(0, 0, w, h);
-        this.shockwaveRad = (this.shockwaveRad + 10) % Math.max(w, h);
-        ctx.strokeStyle = "rgba(100, 255, 100, 0.5)";
-        ctx.lineWidth = 5 * (1 - this.shockwaveRad / Math.max(w, h));
+        this.shockwaveRad = (this.shockwaveRad + 6) % Math.max(w, h);
+        ctx.strokeStyle = "rgba(100, 255, 100, 0.3)";
+        ctx.lineWidth = 3 * (1 - this.shockwaveRad / Math.max(w, h));
         ctx.beginPath();
         ctx.arc(w/2, h/2, this.shockwaveRad, 0, Math.PI * 2);
         ctx.stroke();
     }
 
     applyChimera(ctx, w, h) {
-        ctx.fillStyle = "rgba(20, 20, 40, 0.4)";
+        ctx.fillStyle = "rgba(20, 20, 40, 0.15)";
         ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-        for (let i = 0; i < 5; i++) {
-            const time = (Date.now() / 1000 + i) % 2;
-            const radius = time * 100;
+        ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+        for (let i = 0; i < 3; i++) {
+            const time = (Date.now() / 1500 + i) % 2;
+            const radius = time * 60;
             ctx.beginPath();
-            ctx.arc(w/2 + Math.sin(i) * 200, h, radius, 0, Math.PI * 2);
+            ctx.arc(w/2 + Math.sin(i) * 150, h, radius, 0, Math.PI * 2);
             ctx.fill();
         }
     }
 
     applyNaoya(ctx, w, h) {
-        ctx.fillStyle = "rgba(255, 100, 150, 0.2)";
+        ctx.fillStyle = "rgba(255, 100, 150, 0.08)";
         ctx.fillRect(0, 0, w, h);
-        const pulse = Math.abs(Math.sin(Date.now() / 200)) * 0.2;
+        const pulse = Math.abs(Math.sin(Date.now() / 300)) * 0.1;
         ctx.fillStyle = `rgba(255, 255, 255, ${pulse})`;
         ctx.fillRect(0, 0, w, h);
     }
 
     applyLapseBlue(ctx, w, h) {
-        this.blueOrbRad = (this.blueOrbRad + 2) % 40;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "blue";
-        ctx.fillStyle = "rgba(0, 100, 255, 0.8)";
+        this.blueOrbRad = (this.blueOrbRad + 1.2) % 30;
+        ctx.fillStyle = "rgba(0, 100, 255, 0.4)";
         ctx.beginPath();
-        ctx.arc(w/2, h/2, this.blueOrbRad + 20, 0, Math.PI * 2);
+        ctx.arc(w/2, h/2, this.blueOrbRad + 10, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
+        // Inner core
+        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.beginPath();
+        ctx.arc(w/2, h/2, 5, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     applyReversalRed(ctx, w, h) {
-        this.redOrbRad = (this.redOrbRad + 3) % 50;
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = "red";
-        ctx.fillStyle = "rgba(255, 50, 50, 0.8)";
+        this.redOrbRad = (this.redOrbRad + 1.8) % 40;
+        ctx.fillStyle = "rgba(255, 50, 50, 0.4)";
         ctx.beginPath();
         ctx.arc(w/2, h/2, this.redOrbRad, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
+        // Inner core
+        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.beginPath();
+        ctx.arc(w/2, h/2, 5, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     applyHollowPurple(ctx, w, h) {
-        this.purpleBeamProgress += 0.05;
+        this.purpleBeamProgress += 0.03;
         if (this.purpleBeamProgress > 1) this.purpleBeamProgress = 0;
         
-        ctx.fillStyle = "rgba(200, 100, 255, 0.3)";
+        ctx.fillStyle = "rgba(200, 100, 255, 0.1)";
         ctx.fillRect(0, 0, w, h);
         
-        ctx.shadowBlur = 30;
-        ctx.shadowColor = "purple";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
         ctx.beginPath();
-        ctx.arc(w/2, h/2, 60 * (1 + this.purpleBeamProgress), 0, Math.PI * 2);
+        ctx.arc(w/2, h/2, 40 * (1 + this.purpleBeamProgress), 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
+        // Pulse ring
+        ctx.strokeStyle = "rgba(200, 100, 255, 0.5)";
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.arc(w/2, h/2, 45 * (1 + this.purpleBeamProgress), 0, Math.PI * 2);
+        ctx.stroke();
     }
 }
 

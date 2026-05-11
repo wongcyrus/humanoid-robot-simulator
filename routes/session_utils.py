@@ -63,15 +63,15 @@ logger = logging.getLogger(__name__)
 REAL_ROBOT_ACTION_MAP = {
     "domain_unlimited_void": "robot_twist",            # Gojo: Rhythmic focus
     "domain_malevolent_shrine": "robot_kung_fu",       # Sukuna: Sharp martial arts
-    "domain_self_embodiment": "robot_right_uppercut", # Mahito: Powerful hand strike
+    "domain_self_embodiment": "robot_right_shot_fast", # Mahito: Powerful direct strike
     "domain_authentic_love": "robot_bow",             # Yuta: Respectful bow
-    "domain_idle_death_gamble": "robot_wave",          # Hakari: Constant rhythm -> Wave
-    "domain_yuji_itadori": "robot_sit_ups",            # Yuji: Sit up
+    "domain_idle_death_gamble": "robot_wave",          # Hakari: Rhythmic waving
+    "domain_yuji_itadori": "robot_sit_ups",            # Yuji: Physical training (Sit ups)
     "domain_chimera_shadow_garden": "robot_squat",     # Megumi: Submerge in shadows
     "domain_time_cell_moon_palace": "robot_left_move_fast", # Naoya: High-speed movement
-    "lapse_blue": "robot_kung_fu",                    # Blue: Converging energy
-    "reversal_red": "robot_right_shot_fast",          # Red: Diverging repulsion
-    "hollow_purple": "robot_right_uppercut"            # Purple: Colliding destruction
+    "lapse_blue": "robot_left_shot_fast",             # Blue: Left hand strike
+    "reversal_red": "robot_right_uppercut",           # Red: Right hand strike
+    "hollow_purple": "robot_chest"                     # Purple: 2-hand chest expansion blast
 }
 
 def send_request(method: str, robot_id: str, action: str) -> Optional[Dict[str, Any]]:

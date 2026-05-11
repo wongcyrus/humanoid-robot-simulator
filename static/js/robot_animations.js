@@ -77,6 +77,11 @@ class RobotAnimator {
             'domain_authentic_love': 12 * 1000,
             'domain_idle_death_gamble': 15 * 1000,
             'domain_yuji_itadori': 8 * 1000,
+            'domain_chimera_shadow_garden': 10 * 1000,
+            'domain_time_cell_moon_palace': 10 * 1000,
+            'lapse_blue': 3 * 1000,
+            'reversal_red': 3 * 1000,
+            'hollow_purple': 6 * 1000,
 
             // Default duration for unlisted actions
             'default': 2 * 1000
@@ -458,6 +463,21 @@ class RobotAnimator {
                 break;
             case 'domain_yuji_itadori':
                 this.animateDomainYuji(progress, phaseInfo);
+                break;
+            case 'domain_chimera_shadow_garden':
+                this.animateDomainChimera(progress, phaseInfo);
+                break;
+            case 'domain_time_cell_moon_palace':
+                this.animateDomainNaoya(progress, phaseInfo);
+                break;
+            case 'lapse_blue':
+                this.animateLapseBlue(progress, phaseInfo);
+                break;
+            case 'reversal_red':
+                this.animateReversalRed(progress, phaseInfo);
+                break;
+            case 'hollow_purple':
+                this.animateHollowPurple(progress, phaseInfo);
                 break;
 
             default:
@@ -2134,6 +2154,133 @@ class RobotAnimator {
             
             // Stomp
             this.robot.group.position.y = this.robot.position.y + Math.abs(Math.sin(punchTime * 0.5)) * 5;
+        }
+    }
+
+    animateDomainChimera(progress, phaseInfo) {
+        const leftArm = this.robot.parts.leftArm;
+        const rightArm = this.robot.parts.rightArm;
+        const torso = this.robot.parts.torso;
+        
+        if (!leftArm || !rightArm || !torso) return;
+        
+        // Shadow pose: Two fists together
+        leftArm.rotation.x = -Math.PI / 2.2;
+        leftArm.rotation.z = Math.PI / 10;
+        rightArm.rotation.x = -Math.PI / 2.2;
+        rightArm.rotation.z = -Math.PI / 10;
+        
+        // Submerge into shadow
+        if (progress < 0.5) {
+            this.robot.group.position.y = this.robot.position.y - (30 * progress * 2);
+        } else {
+            // Re-emerge with multiple jumps
+            const jumpTime = (progress - 0.5) * 2 * Math.PI * 4;
+            this.robot.group.position.y = this.robot.position.y - 30 + Math.abs(Math.sin(jumpTime)) * 40;
+        }
+        
+        torso.rotation.x = 0.2;
+    }
+
+    animateDomainNaoya(progress, phaseInfo) {
+        const leftArm = this.robot.parts.leftArm;
+        const rightArm = this.robot.parts.rightArm;
+        const torso = this.robot.parts.torso;
+        
+        if (!leftArm || !rightArm || !torso) return;
+        
+        // L-pose
+        leftArm.rotation.z = Math.PI / 2;
+        leftArm.rotation.x = -Math.PI / 4;
+        rightArm.rotation.z = -Math.PI / 2;
+        rightArm.rotation.x = -Math.PI / 4;
+        
+        // Frame-by-frame jittery motion
+        const frames = Math.floor(progress * 24); // 24 frames
+        const jitterX = (frames % 3 - 1) * 5;
+        const jitterZ = (Math.floor(frames / 2) % 3 - 1) * 5;
+        
+        this.robot.group.position.x = this.robot.position.x + jitterX;
+        this.robot.group.position.z = this.robot.position.z + jitterZ;
+        
+        // High speed bursts
+        if (frames % 6 === 0) {
+            torso.scale.y = 1.2;
+            this.robot.group.position.y = this.robot.position.y + 10;
+        } else {
+            torso.scale.y = 1.0;
+        }
+    }
+
+    animateLapseBlue(progress, phaseInfo) {
+        const rightArm = this.robot.parts.rightArm;
+        const torso = this.robot.parts.torso;
+        
+        if (!rightArm || !torso) return;
+        
+        // Pointing forward
+        rightArm.rotation.x = -Math.PI / 2;
+        rightArm.rotation.y = 0;
+        
+        // Pulling effect
+        const pull = Math.sin(progress * Math.PI);
+        this.robot.group.position.z = this.robot.position.z + pull * 20;
+        torso.rotation.x = -pull * 0.3; // Lean forward
+        
+        // Vibration
+        this.robot.group.position.x = this.robot.position.x + Math.sin(progress * Math.PI * 40) * 2;
+    }
+
+    animateReversalRed(progress, phaseInfo) {
+        const rightArm = this.robot.parts.rightArm;
+        const torso = this.robot.parts.torso;
+        
+        if (!rightArm || !torso) return;
+        
+        // Open palm forward
+        rightArm.rotation.x = -Math.PI / 2;
+        rightArm.rotation.z = -Math.PI / 8;
+        
+        // Pushing effect
+        const push = Math.sin(progress * Math.PI);
+        this.robot.group.position.z = this.robot.position.z - push * 30;
+        torso.rotation.x = push * 0.4; // Lean back
+        
+        // Flash scale
+        const scale = 1 + Math.pow(Math.sin(progress * Math.PI), 2) * 0.2;
+        this.robot.group.scale.setScalar(scale);
+    }
+
+    animateHollowPurple(progress, phaseInfo) {
+        const leftArm = this.robot.parts.leftArm;
+        const rightArm = this.robot.parts.rightArm;
+        const torso = this.robot.parts.torso;
+        
+        if (!leftArm || !rightArm || !torso) return;
+        
+        // Charging pose: hands meeting in center
+        if (progress < 0.6) {
+            const charge = progress / 0.6;
+            leftArm.rotation.x = -Math.PI / 2;
+            leftArm.rotation.z = Math.PI / 4 * charge;
+            rightArm.rotation.x = -Math.PI / 2;
+            rightArm.rotation.z = -Math.PI / 4 * charge;
+            
+            // Intense vibration
+            const vibrate = Math.sin(progress * Math.PI * 60) * charge * 3;
+            this.robot.group.position.x = this.robot.position.x + vibrate;
+            torso.scale.setScalar(1 + charge * 0.2);
+        } else {
+            // The Launch
+            const launch = (progress - 0.6) / 0.4;
+            leftArm.rotation.z = (1 - launch) * Math.PI / 4;
+            rightArm.rotation.z = -(1 - launch) * Math.PI / 4;
+            
+            // Explosive recoil
+            this.robot.group.position.z = this.robot.position.z - Math.pow(launch, 0.5) * 80;
+            this.robot.group.position.y = this.robot.position.y + Math.sin(launch * Math.PI) * 20;
+            
+            torso.rotation.x = launch * 0.6;
         }
     }
 }

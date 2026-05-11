@@ -56,11 +56,13 @@ class HandTracker {
         this.cooldownSettings = document.getElementById('cooldown-settings');
         this.instructionsPanel = document.getElementById('instructions-panel');
         
-        this.operationMode = this.modeSelect.value;
-        this.modeSelect.addEventListener('change', () => {
-            this.operationMode = this.modeSelect.value;
-            this.updateUIMode();
-        });
+        this.operationMode = this.modeSelect ? this.modeSelect.value : 'camera';
+        if (this.modeSelect) {
+            this.modeSelect.addEventListener('change', () => {
+                this.operationMode = this.modeSelect.value;
+                this.updateUIMode();
+            });
+        }
 
         // --- 2. Cooldown Sliders ---
         this.simSlider = document.getElementById('sim-cooldown-slider');
@@ -73,15 +75,19 @@ class HandTracker {
         this.lastRealActionTime = 0;
         this.lastRealDomain = null;
 
-        this.simSlider.addEventListener('input', () => {
-            this.simCooldownMs = parseInt(this.simSlider.value) * 1000;
-            this.simLabel.textContent = this.simSlider.value;
-        });
+        if (this.simSlider) {
+            this.simSlider.addEventListener('input', () => {
+                this.simCooldownMs = parseInt(this.simSlider.value) * 1000;
+                if (this.simLabel) this.simLabel.textContent = this.simSlider.value;
+            });
+        }
 
-        this.realSlider.addEventListener('input', () => {
-            this.realCooldownMs = parseInt(this.realSlider.value) * 1000;
-            this.realLabel.textContent = this.realSlider.value;
-        });
+        if (this.realSlider) {
+            this.realSlider.addEventListener('input', () => {
+                this.realCooldownMs = parseInt(this.realSlider.value) * 1000;
+                if (this.realLabel) this.realLabel.textContent = this.realSlider.value;
+            });
+        }
 
         // --- 3. Sensitivity Sliders ---
         this.rotateSens = document.getElementById('rotate-sensitivity');
@@ -91,20 +97,22 @@ class HandTracker {
         this.panSens = document.getElementById('pan-sensitivity');
         this.panLabel = document.getElementById('pan-val');
 
-        this.rotateSens.addEventListener('input', () => { this.rotateLabel.textContent = this.rotateSens.value; });
-        this.zoomSens.addEventListener('input', () => { this.zoomLabel.textContent = this.zoomSens.value; });
-        this.panSens.addEventListener('input', () => { this.panLabel.textContent = this.panSens.value; });
+        if (this.rotateSens) this.rotateSens.addEventListener('input', () => { if (this.rotateLabel) this.rotateLabel.textContent = this.rotateSens.value; });
+        if (this.zoomSens) this.zoomSens.addEventListener('input', () => { if (this.zoomLabel) this.zoomLabel.textContent = this.zoomSens.value; });
+        if (this.panSens) this.panSens.addEventListener('input', () => { if (this.panLabel) this.panLabel.textContent = this.panSens.value; });
 
         // --- 4. System Controls ---
         this.resetCameraBtn = document.getElementById('reset-camera-btn');
         this.intervalSlider = document.getElementById('emit-interval');
         this.intervalLabel = document.getElementById('interval-value');
 
-        this.intervalSlider.addEventListener('input', () => {
-            this.emitInterval = parseInt(this.intervalSlider.value);
-            const fps = Math.round(1000 / this.emitInterval);
-            this.intervalLabel.textContent = `${this.emitInterval}ms (${fps} updates/s)`;
-        });
+        if (this.intervalSlider) {
+            this.intervalSlider.addEventListener('input', () => {
+                this.emitInterval = parseInt(this.intervalSlider.value);
+                const fps = Math.round(1000 / this.emitInterval);
+                if (this.intervalLabel) this.intervalLabel.textContent = `${this.emitInterval}ms (${fps} updates/s)`;
+            });
+        }
 
         // --- 5. VFX Elements ---
         this.mainContainer = document.getElementById('main-container');
@@ -224,6 +232,7 @@ class HandTracker {
                 
                 if (this.operationMode === 'camera') {
                     this.processGestures(results.multiHandLandmarks);
+                    this.domainGame.update([]); // Clear history to prevent sticking
                     this.domainGame.drawVFX(this.vfxCanvas, null);
                 } else {
                     const stableDomain = this.domainGame.update(results.multiHandLandmarks);
@@ -231,8 +240,8 @@ class HandTracker {
                     this.domainGame.drawVFX(this.vfxCanvas, stableDomain);
                 }
             } else {
+                this.domainGame.update([]); // No hands: clear history
                 if (this.operationMode === 'domain') {
-                    this.domainGame.update([]);
                     this.domainGame.drawVFX(this.vfxCanvas, null);
                 }
             }
@@ -314,11 +323,11 @@ class HandTracker {
                         "Authentic Mutual Love": "domain_authentic_love.mp4",
                         "Idle Death Gamble": "domain_idle_death_gamble.mp4",
                         "Yuji Itadori": "domain_yuji_itadori.mp4",
-                        "Chimera Shadow Garden": "01-90.mp4",
-                        "Time Cell Moon Palace": "02-199.mp4",
-                        "Lapse Blue": "03-186.mp4",
-                        "Reversal Red": "04-204.mp4",
-                        "Hollow Purple": "Bling-Bang-Bang-Born.mp4"
+                        "Chimera Shadow Garden": "domain_chimera_shadow_garden.mp4",
+                        "Time Cell Moon Palace": "domain_time_cell_moon_palace.mp4",
+                        "Lapse Blue": "technique_lapse_blue.mp4",
+                        "Reversal Red": "technique_reversal_red.mp4",
+                        "Hollow Purple": "technique_hollow_purple.mp4"
                     };
                     const videoFile = videoMap[stableDomain];
                     if (videoFile) {
@@ -358,7 +367,7 @@ class HandTracker {
         } else {
             this.domainDisplay.textContent = '';
             if (this.atmosphereOverlay) {
-                this.atmosphereOverlay.style.background = 'radial-gradient(circle, transparent 40%, rgba(0,0,0,0.4) 100%)';
+                this.atmosphereOverlay.style.background = 'transparent';
             }
             if (!this.resetTimer) {
                 this.resetTimer = setTimeout(() => {
