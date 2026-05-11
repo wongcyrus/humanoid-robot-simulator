@@ -213,6 +213,8 @@ class HandTracker {
             this.ctx.save();
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             
+            let stableDomain = null;
+
             if (results.multiHandLandmarks) {
                 // Determine skeleton color based on domain
                 let skeletonColor = '#00FF00'; // Default green
@@ -232,24 +234,43 @@ class HandTracker {
                 
                 if (this.operationMode === 'camera') {
                     this.processGestures(results.multiHandLandmarks);
-                    this.domainGame.update([]); // Clear history to prevent sticking
-                    this.domainGame.drawVFX(this.vfxCanvas, null);
+                    stableDomain = this.domainGame.update([]); // Update with empty to clear history
                 } else {
-                    const stableDomain = this.domainGame.update(results.multiHandLandmarks);
-                    this.processDomainExpansion(stableDomain);
-                    this.domainGame.drawVFX(this.vfxCanvas, stableDomain);
+                    stableDomain = this.domainGame.update(results.multiHandLandmarks);
                 }
             } else {
-                this.domainGame.update([]); // No hands: clear history
-                if (this.operationMode === 'domain') {
-                    this.domainGame.drawVFX(this.vfxCanvas, null);
-                }
+                stableDomain = this.domainGame.update([]); // No hands: clear history
             }
+
+            // ALWAYS execute these logic blocks to ensure UI and Canvas are reset properly
+            if (this.operationMode === 'domain') {
+                this.processDomainExpansion(stableDomain);
+                this.domainGame.drawVFX(this.vfxCanvas, stableDomain, results.multiHandLandmarks);
+            } else {
+                // Camera mode: ensure everything is cleared/reset
+                this.processDomainExpansion(null); 
+                this.domainGame.drawVFX(this.vfxCanvas, null, []);
+            }
+
             this.ctx.restore();
         } catch (err) {
             console.error('❌ Error in hand tracking loop:', err);
             this.ctx.restore();
         }
+    }
+
+    hexToRgba(hex, opacity) {
+        let r = 0, g = 0, b = 0;
+        if (hex.length === 4) {
+            r = parseInt(hex[1] + hex[1], 16);
+            g = parseInt(hex[2] + hex[2], 16);
+            b = parseInt(hex[3] + hex[3], 16);
+        } else if (hex.length === 7) {
+            r = parseInt(hex.substring(1, 3), 16);
+            g = parseInt(hex.substring(3, 5), 16);
+            b = parseInt(hex.substring(5, 7), 16);
+        }
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     }
 
     processDomainExpansion(stableDomain) {
@@ -294,10 +315,9 @@ class HandTracker {
                     setTimeout(() => this.mainContainer.classList.remove('shake'), 500);
                 }
 
-                // Set atmospheric tint
+                // Set atmospheric tint - Solid color instead of radial gradient to fix blur bug
                 if (this.atmosphereOverlay && domainColor) {
-                    const tint = domainColor.replace('rgb', 'rgba').replace(')', ', 0.15)');
-                    this.atmosphereOverlay.style.background = `radial-gradient(circle, ${tint} 0%, rgba(0,0,0,0.6) 100%)`;
+                    this.atmosphereOverlay.style.background = this.hexToRgba(domainColor, 0.15);
                 }
             }
 

@@ -277,7 +277,7 @@ class DomainExpansionGame {
         }
     }
 
-    drawVFX(frameCanvas, stableDomain) {
+    drawVFX(frameCanvas, stableDomain, hands) {
         if (!this.vfxCtx) return;
         const ctx = this.vfxCtx;
         const w = this.vfxCanvas.width;
@@ -296,6 +296,20 @@ class DomainExpansionGame {
             this.redOrbRad = 0;
             this.purpleBeamProgress = 0;
             return;
+        }
+
+        // Calculate hand center if hands are present
+        let center = { x: w/2, y: h/2 };
+        if (hands && hands.length > 0) {
+            let sx = 0, sy = 0, count = 0;
+            hands.forEach(h => {
+                h.forEach(lm => {
+                    sx += lm.x * w;
+                    sy += lm.y * h;
+                    count++;
+                });
+            });
+            center = { x: sx / count, y: sy / count };
         }
 
         switch (stableDomain) {
@@ -324,28 +338,28 @@ class DomainExpansionGame {
                 this.applyNaoya(ctx, w, h);
                 break;
             case "Lapse Blue":
-                this.applyLapseBlue(ctx, w, h);
+                this.applyLapseBlue(ctx, center, w, h);
                 break;
             case "Reversal Red":
-                this.applyReversalRed(ctx, w, h);
+                this.applyReversalRed(ctx, center, w, h);
                 break;
             case "Hollow Purple":
-                this.applyHollowPurple(ctx, w, h);
+                this.applyHollowPurple(ctx, center, w, h);
                 break;
         }
     }
 
     applyUnlimitedVoid(ctx, w, h) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
         ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.fillStyle = "white";
         this.stars.forEach(s => {
             s.y = (s.y + s.speed) % h;
             ctx.beginPath();
-            ctx.arc(s.x, s.y, 0.6, 0, Math.PI * 2);
+            ctx.arc(s.x, s.y, 1, 0, Math.PI * 2);
             ctx.fill();
         });
-        ctx.font = "10px monospace";
+        ctx.font = "15px monospace";
         this.symbols.forEach(s => {
             s.y = (s.y + s.speed) % h;
             ctx.fillText(s.text, s.x, s.y);
@@ -353,26 +367,26 @@ class DomainExpansionGame {
     }
 
     applyMalevolentShrine(ctx, w, h) {
-        ctx.fillStyle = "rgba(255, 0, 0, 0.05)";
+        ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
         ctx.fillRect(0, 0, w, h);
         this.flashCounter++;
-        if (this.flashCounter % 20 === 0) {
-            ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+        if (this.flashCounter % 10 === 0) {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
             ctx.fillRect(0, 0, w, h);
         }
-        if (Math.random() < 0.3) {
+        if (Math.random() < 0.6) {
             const x1 = Math.random() * w;
             const y1 = Math.random() * h;
-            const length = 50 + Math.random() * 70;
+            const length = 80 + Math.random() * 120;
             const angle = (Math.random() - 0.5) * 1.6;
             this.slashes.push({
                 x1: x1, y1: y1,
                 x2: x1 + length * Math.cos(angle),
                 y2: y1 + length * Math.sin(angle),
-                life: 2 + Math.floor(Math.random() * 2)
+                life: 3 + Math.floor(Math.random() * 4)
             });
         }
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.strokeStyle = "white";
         this.slashes = this.slashes.filter(s => {
             ctx.lineWidth = s.life;
             ctx.beginPath();
@@ -385,26 +399,26 @@ class DomainExpansionGame {
     }
 
     applySelfEmbodiment(ctx, w, h) {
-        this.mahitoPhase += 0.15;
-        ctx.fillStyle = `rgba(150, 0, 150, ${0.08 + 0.02 * Math.sin(this.mahitoPhase)})`;
+        this.mahitoPhase += 0.2;
+        ctx.fillStyle = `rgba(150, 0, 150, ${0.2 + 0.05 * Math.sin(this.mahitoPhase)})`;
         ctx.fillRect(0, 0, w, h);
     }
 
     applyAuthenticLove(ctx, w, h) {
-        this.yutaPhase += 0.02;
+        this.yutaPhase += 0.03;
         const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
         grad.addColorStop(0, "rgba(180, 100, 255, 0)");
-        grad.addColorStop(1, "rgba(180, 100, 255, 0.15)");
+        grad.addColorStop(1, "rgba(180, 100, 255, 0.4)");
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
-        const brightness = 0.05 * Math.sin(this.yutaPhase);
+        const brightness = 0.1 * Math.sin(this.yutaPhase);
         ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, brightness)})`;
         ctx.fillRect(0, 0, w, h);
     }
 
     applyIdleDeathGamble(ctx, w, h) {
         this.hakariPhase++;
-        ctx.fillStyle = "rgba(255, 215, 0, 0.08)";
+        ctx.fillStyle = "rgba(255, 215, 0, 0.2)";
         ctx.fillRect(0, 0, w, h);
         if (this.hakariPhase % 3 === 0) {
             this.slotNumbers = [
@@ -413,15 +427,15 @@ class DomainExpansionGame {
                 Math.floor(Math.random()*10).toString()
             ];
         }
-        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-        ctx.font = "bold 28px Arial";
+        ctx.fillStyle = "white";
+        ctx.font = "bold 40px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(`[${this.slotNumbers[0]}] [${this.slotNumbers[1]}] [${this.slotNumbers[2]}]`, w/2, h - 20);
+        ctx.fillText(`[${this.slotNumbers[0]}] [${this.slotNumbers[1]}] [${this.slotNumbers[2]}]`, w/2, h - 50);
         if (this.confetti.length === 0) {
-            for(let i=0; i<30; i++) {
+            for(let i=0; i<50; i++) {
                 this.confetti.push({
                     x: Math.random()*w, y: Math.random()*h, 
-                    speed: 1.2+Math.random()*1.5, 
+                    speed: 2+Math.random()*3, 
                     color: ["#FFFF00", "#FFD700", "#FFFFFF"][Math.floor(Math.random()*3)]
                 });
             }
@@ -429,90 +443,72 @@ class DomainExpansionGame {
         this.confetti.forEach(p => {
             p.y = (p.y + p.speed) % h;
             ctx.fillStyle = p.color;
-            ctx.globalAlpha = 0.4;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, 2, 0, Math.PI*2);
+            ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
             ctx.fill();
-            ctx.globalAlpha = 1.0;
         });
     }
 
     applyYujiDomain(ctx, w, h) {
-        this.yujiPhase += 0.08;
-        ctx.fillStyle = `rgba(0, 255, 0, ${0.04 * Math.abs(Math.sin(this.yujiPhase * 2))})`;
+        this.yujiPhase += 0.1;
+        ctx.fillStyle = `rgba(0, 255, 0, ${0.1 * Math.abs(Math.sin(this.yujiPhase * 4))})`;
         ctx.fillRect(0, 0, w, h);
-        this.shockwaveRad = (this.shockwaveRad + 6) % Math.max(w, h);
-        ctx.strokeStyle = "rgba(100, 255, 100, 0.3)";
-        ctx.lineWidth = 3 * (1 - this.shockwaveRad / Math.max(w, h));
+        this.shockwaveRad = (this.shockwaveRad + 10) % Math.max(w, h);
+        ctx.strokeStyle = "rgba(100, 255, 100, 0.5)";
+        ctx.lineWidth = 5 * (1 - this.shockwaveRad / Math.max(w, h));
         ctx.beginPath();
         ctx.arc(w/2, h/2, this.shockwaveRad, 0, Math.PI * 2);
         ctx.stroke();
     }
 
     applyChimera(ctx, w, h) {
-        ctx.fillStyle = "rgba(20, 20, 40, 0.15)";
+        ctx.fillStyle = "rgba(20, 20, 40, 0.4)";
         ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
-        for (let i = 0; i < 3; i++) {
-            const time = (Date.now() / 1500 + i) % 2;
-            const radius = time * 60;
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        for (let i = 0; i < 5; i++) {
+            const time = (Date.now() / 1000 + i) % 2;
+            const radius = time * 100;
             ctx.beginPath();
-            ctx.arc(w/2 + Math.sin(i) * 150, h, radius, 0, Math.PI * 2);
+            ctx.arc(w/2 + Math.sin(i) * 200, h, radius, 0, Math.PI * 2);
             ctx.fill();
         }
     }
 
     applyNaoya(ctx, w, h) {
-        ctx.fillStyle = "rgba(255, 100, 150, 0.08)";
+        ctx.fillStyle = "rgba(255, 100, 150, 0.2)";
         ctx.fillRect(0, 0, w, h);
-        const pulse = Math.abs(Math.sin(Date.now() / 300)) * 0.1;
+        const pulse = Math.abs(Math.sin(Date.now() / 200)) * 0.2;
         ctx.fillStyle = `rgba(255, 255, 255, ${pulse})`;
         ctx.fillRect(0, 0, w, h);
     }
 
-    applyLapseBlue(ctx, w, h) {
-        this.blueOrbRad = (this.blueOrbRad + 1.2) % 30;
-        ctx.fillStyle = "rgba(0, 100, 255, 0.4)";
+    applyLapseBlue(ctx, pos, w, h) {
+        this.blueOrbRad = (this.blueOrbRad + 2) % 40;
+        ctx.fillStyle = "rgba(0, 100, 255, 0.8)";
         ctx.beginPath();
-        ctx.arc(w/2, h/2, this.blueOrbRad + 10, 0, Math.PI * 2);
-        ctx.fill();
-        // Inner core
-        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-        ctx.beginPath();
-        ctx.arc(w/2, h/2, 5, 0, Math.PI * 2);
+        ctx.arc(pos.x, pos.y, this.blueOrbRad + 20, 0, Math.PI * 2);
         ctx.fill();
     }
 
-    applyReversalRed(ctx, w, h) {
-        this.redOrbRad = (this.redOrbRad + 1.8) % 40;
-        ctx.fillStyle = "rgba(255, 50, 50, 0.4)";
+    applyReversalRed(ctx, pos, w, h) {
+        this.redOrbRad = (this.redOrbRad + 3) % 50;
+        ctx.fillStyle = "rgba(255, 50, 50, 0.8)";
         ctx.beginPath();
-        ctx.arc(w/2, h/2, this.redOrbRad, 0, Math.PI * 2);
-        ctx.fill();
-        // Inner core
-        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-        ctx.beginPath();
-        ctx.arc(w/2, h/2, 5, 0, Math.PI * 2);
+        ctx.arc(pos.x, pos.y, this.redOrbRad, 0, Math.PI * 2);
         ctx.fill();
     }
 
-    applyHollowPurple(ctx, w, h) {
-        this.purpleBeamProgress += 0.03;
+    applyHollowPurple(ctx, pos, w, h) {
+        this.purpleBeamProgress += 0.05;
         if (this.purpleBeamProgress > 1) this.purpleBeamProgress = 0;
         
-        ctx.fillStyle = "rgba(200, 100, 255, 0.1)";
+        ctx.fillStyle = "rgba(200, 100, 255, 0.3)";
         ctx.fillRect(0, 0, w, h);
         
-        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
         ctx.beginPath();
-        ctx.arc(w/2, h/2, 40 * (1 + this.purpleBeamProgress), 0, Math.PI * 2);
+        ctx.arc(pos.x, pos.y, 60 * (1 + this.purpleBeamProgress), 0, Math.PI * 2);
         ctx.fill();
-        // Pulse ring
-        ctx.strokeStyle = "rgba(200, 100, 255, 0.5)";
-        ctx.lineWidth = 10;
-        ctx.beginPath();
-        ctx.arc(w/2, h/2, 45 * (1 + this.purpleBeamProgress), 0, Math.PI * 2);
-        ctx.stroke();
     }
 }
 
