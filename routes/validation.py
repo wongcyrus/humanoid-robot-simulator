@@ -12,8 +12,13 @@ class ValidationMixin:
     """Mixin class providing validation methods for API routes"""
 
     def get_session_key_from_request(self):
-        """Extract session key from request arguments"""
-        return request.args.get("session_key")
+        """Extract and normalize session key from request arguments"""
+        from urllib.parse import unquote_plus
+        session_key = request.args.get("session_key")
+        if session_key:
+            # Normalize: handle URL encoding and common copy-paste space/+ issues
+            return unquote_plus(session_key).replace(" ", "+")
+        return session_key
 
     def validate_session_key(self, session_key):
         """Validate session key and return validation result"""

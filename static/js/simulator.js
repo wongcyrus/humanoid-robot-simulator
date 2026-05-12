@@ -122,10 +122,12 @@ class HumanoidSimulator {
     getSessionKey() {
         // Try to get session key from URL parameters
         const urlParams = new URLSearchParams(window.location.search);
-        const sessionKey = urlParams.get('session_key');
+        let sessionKey = urlParams.get('session_key');
 
         if (sessionKey) {
-            return sessionKey;
+            // Normalize: handle URL encoding and common copy-paste space/+ issues
+            // This MUST match the backend normalization in validation.py
+            return decodeURIComponent(sessionKey).trim().replace(/ /g, "+");
         }
 
         // If no session key in URL, show error

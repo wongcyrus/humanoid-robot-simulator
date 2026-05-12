@@ -215,7 +215,7 @@ class ActionRoutes:
             self._emit_action_events(ROBOT_SESSION_KEY, action, target_robot_id, robots)
 
     def _emit_action_events(self, session_key, action, robot_id, robots):
-        """Emit WebSocket events for action execution"""
+        """Emit WebSocket events for action execution and video synchronization"""
         # Emit action event
         self.socketio.emit(
             "actions",
@@ -226,6 +226,31 @@ class ActionRoutes:
             },
             room=f"session_{session_key}",
         )
+
+        # Sync Video for Domain/Technique actions
+        video_map = {
+            "domain_unlimited_void": "domain_unlimited_void.mp4",
+            "domain_malevolent_shrine": "domain_malevolent_shrine.mp4",
+            "domain_self_embodiment": "domain_self_embodiment.mp4",
+            "domain_authentic_love": "domain_authentic_love.mp4",
+            "domain_idle_death_gamble": "domain_idle_death_gamble.mp4",
+            "domain_yuji_itadori": "domain_yuji_itadori.mp4",
+            "domain_chimera_shadow_garden": "domain_chimera_shadow_garden.mp4",
+            "domain_time_cell_moon_palace": "domain_time_cell_moon_palace.mp4",
+            "lapse_blue": "technique_lapse_blue.mp4",
+            "reversal_red": "technique_reversal_red.mp4",
+            "hollow_purple": "technique_hollow_purple.mp4"
+        }
+
+        if action in video_map:
+            video_bucket_url = os.environ.get("VIDEO_BUCKET_URL", "")
+            video_src = f"{video_bucket_url}{video_map[action]}"
+            self.socketio.emit(
+                "video_source_changed",
+                {"video_src": video_src, "session_key": session_key},
+                room=f"session_{session_key}",
+            )
+            logger.info(f"🎬 Synced video {video_map[action]} to session {session_key}")
 
         # Emit robot states update
         robot_states = {rid: robot.to_dict() for rid, robot in robots.items()}
