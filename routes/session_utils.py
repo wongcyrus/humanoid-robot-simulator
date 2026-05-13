@@ -67,9 +67,9 @@ REAL_ROBOT_ACTION_MAP = {
     "domain_authentic_love": "robot_bow",             # Yuta: Respectful bow
     "domain_idle_death_gamble": "robot_wave",          # Hakari: Rhythmic waving
     "domain_yuji_itadori": "robot_sit_ups",            # Yuji: Physical training (Sit ups)
-    "domain_chimera_shadow_garden": "robot_squat",     # Megumi: Submerge in shadows
-    "domain_time_cell_moon_palace": "robot_left_move_fast", # Naoya: High-speed movement
-    "lapse_blue": "robot_left_shot_fast",             # Blue: Left hand strike
+    "domain_chimera_shadow_garden": "robot_weightlifting", # Megumi: Shadow strength (Weightlifting)
+    "domain_time_cell_moon_palace": "robot_left_shot_fast", # Naoya: Frame-by-frame strike (Left Shot)
+    "lapse_blue": "robot_left_uppercut",              # Blue: Left hand attraction strike
     "reversal_red": "robot_right_uppercut",           # Red: Right hand strike
     "hollow_purple": "robot_chest"                     # Purple: 2-hand chest expansion blast
 }
